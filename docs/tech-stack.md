@@ -6,7 +6,7 @@
 ## 1. 总览
 
 | 层 | 选型 | 版本基准 |
-|---|---|---|
+| --- | --- | --- |
 | 后端语言/运行时 | Go | 1.27(本机 1.27.1) |
 | 后端 HTTP 框架 | **Gin** | v1.12(Go 生态 star 最高、使用最广的 Web 框架,事实标准) |
 | 参数校验 | go-playground/validator v10(Gin binding 内置同一引擎) | v10 |
@@ -79,7 +79,7 @@ go get github.com/swaggo/swag/cmd/swag github.com/swaggo/gin-swagger github.com/
 官方为 AI 代理提供的资源(**勿依赖训练数据中的 antd v3–v5 知识,v6 差异大**),接入方式与配置片段统一维护在项目根 [AGENTS.md](../AGENTS.md):
 
 | 资源 | 用途 |
-|---|---|
+| --- | --- |
 | `https://ant.design/llms.txt` / `llms-full-cn.txt` | LLM 友好文档索引/全量(按需取,勿整包塞上下文) |
 | `https://ant.design/components/<name>.md` | 单组件 markdown 直链,查 API 首选,不爆 context |
 | `npx -y @ant-design/cli mcp` | MCP Server:`antd info/demo/token/changelog/lint/doctor`,跨版本 API 对比、废弃 API 检查 |
@@ -89,7 +89,7 @@ go get github.com/swaggo/swag/cmd/swag github.com/swaggo/gin-swagger github.com/
 ## 4. 开发与运行形态
 
 | 形态 | 命令(约定) | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | 本地开发 | `go run ./cmd/panel`(后端 :8080)+ `bun run dev`(前端 :5173,proxy /api) | 依赖本机 Caddy(:2019);无 Caddy 时仅配置管理不可下发 |
 | Docker | `docker compose up`(deploy/ 下:panel + caddy 两容器) | 面板经容器网络访问 caddy:2019,生产建议面板 sidecar 共享 netns + unix socket |
 | 单二进制 | `go:embed` 前端 `dist/`,一个可执行文件承载 UI + API | 交付主形态,对标 Nginx UI |

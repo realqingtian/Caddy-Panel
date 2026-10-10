@@ -52,7 +52,7 @@ Caddy Panel:可视化管理 Caddy 的面板(Go + Gin 后端 / React 19 + Ant Des
 ## 查 antd 6 文档的正确姿势
 
 | 场景 | 用法 |
-|---|---|
+| --- | --- |
 | 查单个组件 API(首选) | `https://ant.design/components/<name>.md`(如 `table.md`、`form.md`) |
 | 找有哪些文档 | `https://ant.design/llms.txt`(中文全量:`llms-full-cn.txt`,按需分段取,勿整包塞上下文) |
 | 跨版本 API 对比 / 废弃检查 | `npx -y @ant-design/cli` 的 `antd changelog` / `antd lint` / `antd doctor` |

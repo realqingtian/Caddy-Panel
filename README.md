@@ -10,7 +10,7 @@
 ## 文档
 
 | 文档 | 内容 |
-|---|---|
+| --- | --- |
 | [AGENTS.md](AGENTS.md) | AI 代理/协作者入口:antd 6 查阅姿势、MCP 配置、swaggo 约定、常用命令、提交检查 |
 | [实现方案调研](docs/research-implementation-plan.md) | Caddy 管理能力(Admin API/持久化/Go 库)、竞品对比、架构方案对比与推荐、风险对策 |
 | [需求规格 PRD](docs/requirements.md) | 功能需求与验收标准(编号化)、非功能需求、M2/M3 占位、追溯矩阵 |

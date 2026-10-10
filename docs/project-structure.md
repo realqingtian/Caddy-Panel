@@ -127,7 +127,7 @@ Caddy-Panel/
 ## 4. 环境约定
 
 | 变量 | 默认(开发) | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | `PANEL_LISTEN` | `:8080` | Panel API 监听 |
 | `PANEL_DB_PATH` | `./data/panel.db` | SQLite 路径 |
 | `PANEL_ADMIN_URL` | `http://localhost:2019` | Caddy Admin API;生产推荐 `unix:///run/caddy/admin.sock`(client 以 unix socket dial) |

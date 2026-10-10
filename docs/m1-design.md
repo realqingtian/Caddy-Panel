@@ -87,7 +87,7 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint、锁�
 ## 5. 后端 API 设计(REST,`/api/v1`)
 
 | 方法 | 路径 | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | POST | `/auth/login` | 登录,返回 JWT |
 | GET | `/me` | 当前用户 |
 | GET | `/status` | Dashboard:Caddy 存活、版本、站点数、最近下发 |

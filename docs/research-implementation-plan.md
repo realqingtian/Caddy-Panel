@@ -14,7 +14,7 @@
 ### 2.1 Admin API(默认 `localhost:2019`)
 
 | 端点 | 方法 | 用途 |
-|---|---|---|
+| --- | --- | --- |
 | `/load` | POST | 整体替换配置;阻塞直到完成;失败自动回滚旧配置,**零停机** |
 | `/stop` | POST | 优雅关闭进程 |
 | `/config/[path]` | GET/POST/PUT/PATCH/DELETE | 按 JSON 路径细粒度读写配置(如 `/config/apps/http/servers/srv1/listen`) |
@@ -45,7 +45,7 @@
 ## 3. 现有方案对比
 
 | 项目 | 形态 | 技术栈 | 管理方式 | 成熟度 |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | [gsmlg-dev/caddy-admin-ui](https://github.com/gsmlg-dev/caddy-admin-ui) | Caddy 插件(需 xcaddy 自编译) | Go + 内嵌 UI | 代理 Admin API | 实验性,58 stars |
 | [caddymanager/caddymanager](https://github.com/caddymanager/caddymanager) | 独立面板,多机管理 | MEVN(Vue3+Express+Mongo/SQLite) | — | Alpha(2025-06 发布) |
 | [rhad00/CaddyManager](https://github.com/rhad00/CaddyManager) | 单机域名反代 UI | — | Caddyfile | 小型 |
@@ -105,7 +105,7 @@ Caddy 热加载生效(零停机,失败自动回滚)
 ## 5. 推荐技术栈
 
 | 层 | 选型 | 理由 |
-|---|---|---|
+| --- | --- | --- |
 | 后端 | Go + Gin + GORM + SQLite | 单二进制跨平台分发(Nginx UI 验证过该模式受欢迎);Gin 为 Go 生态最主流 Web 框架;可直接 import Caddy 官方库做 adapt/parse/fmt;与 Caddy 部署形态契合 |
 | 前端 | React 19 + TypeScript + Vite + Ant Design 6;依赖管理用 **Bun** | 组件库成熟、中后台组件覆盖全(antd 6 原生支持 React 19);配套 React Router、TanStack Query(服务端状态)、Zustand(本地状态);Bun 安装/脚本执行显著快于 npm |
 | 编辑器 | Monaco(@monaco-editor/react,带 Caddyfile 高亮) | 配置编辑体验,VS Code 同源内核 |
@@ -142,7 +142,7 @@ Caddy 热加载生效(零停机,失败自动回滚)
 ## 7. 关键风险与对策
 
 | # | 风险 | 对策 |
-|---|---|---|
+| --- | --- | --- |
 | 1 | systemd 默认 `--config` 启动,重启丢失 API 改动 | Caddyfile 落盘;面板启动时校验 DB 与磁盘配置一致性并告警 |
 | 2 | Admin API 无鉴权 | 强制 unix socket/localhost;面板做唯一入口与鉴权 |
 | 3 | Caddyfile 反向导入无法 100% 还原模型 | MVP 以面板为事实源;导入降级为"保留自定义片段" |
