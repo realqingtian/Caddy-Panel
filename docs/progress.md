@@ -15,7 +15,7 @@
 | M0 设计与规划 | 文档体系定稿(调研/技术栈/架构/M1 设计/PRD/本文件) | ✅ |
 | M1 MVP 可用 | T1–T9 全部完成,PRD 中 ✅ 需求验收全过,Docker Compose 一键可跑 | ✅ |
 | M2 进阶 | T2.1–T2.6 完成,FR-701~706 验收通过 | ✅ |
-| M3 平台化 | 同上 | ⬜ |
+| M3 平台化 | T3.1–T3.4 完成,FR 验收通过 | ⬜ |
 
 ## 3. 任务看板
 
@@ -41,6 +41,15 @@
 | T7 | 日志 tail API + Logs 页 | FR-50x | ✅ | 2026-10-10 | 末尾读取(上限 1000 行/2MiB,半行丢弃);文件不存在 exists=false 明确提示;前端 usePolling(3s 可暂停)+ access/error 切换 + 行数选择 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ✅ | 2026-10-10 | drift 三方对比:DB rendered vs 磁盘(文本)+ 运行态 vs 磁盘(站点指纹语义比较,规避 Caddy JSON 往返噪声);/status 聚合(Caddy 存活/适配器版本/站点计数/最近 5 次下发);启动检查日志留痕;前端 Dashboard 卡片 + 告警;联调:一致态 true、直编不误报 |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ✅ | 2026-10-10 | 多阶段镜像(bun→swag→CGO=0)+ 双容器 compose 多轮联调;README 重写(部署/配置/工程命令);FR-308 证书状态查看补齐(只读共享 caddy_data 卷);全量回归通过 |
+
+### M3 — 平台化(设计见 [m3-design.md](./m3-design.md))
+
+| ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ⬜ | | token 只存哈希;scope 按路由组声明 |
+| T3.2 | Web 终端(xterm.js + WebSocket) | M3 | ⬜ | | 仅 admin;进程用户执行,不开 root |
+| T3.3 | 多节点 Agent(反向连接) | M3 | ⬜ | | node_id 回填 local;中心按节点路由下发 |
+| T3.4 | l4 转发(caddy-l4) | M3 | ⬜ | | 插件镜像追加;与 http 渲染互斥 |
 
 ### M2 — 进阶(设计见 [m2-design.md](./m2-design.md))
 
@@ -86,11 +95,12 @@
 | 2026-10-11 | 漂移运行态对比、metrics 解析等全部通过"产物契约/行为测试"先行验证后再接入;全 mock 单测无法发现生产装配漏注入(T2.1 的 deps.Client),冒烟冒烟兜底 | M2 期间缺陷均在测试/冒烟阶段拦截 |
 | 2026-10-11 | 插件支持落地:compose 默认构建带插件 Caddy(caddy-rate-limit + caddy-dns/cloudflare),面板渲染限流(rate_limit,按 IP)与 DNS challenge(tls { dns ... {env.X} },凭据 {env.X} 占位不落库) | 用户拍板;凭据不落库原则延续 |
 | 2026-10-11 | SMTP 通知渠道落地:settings 可视化配置(host/port/username/password/from/to),密码脱敏(GET 不回显、PUT 空值保留);到期提醒 Webhook/SMTP 双渠道并存 | 用户拍板;渠道配置必须可视化而非 .env |
+| 2026-10-11 | M3 设计定稿与任务拆解(T3.1 API Token+RBAC → T3.2 Web 终端 → T3.3 多节点 Agent → T3.4 l4),见 m3-design.md;Agent 采用反向连接,Token 只存哈希,RBAC 先行 admin/viewer 两级 | 认证层增强(鉴权/token)是多节点与终端的前置依赖,故列首位 |
 
 ## 5. 待决事项
 
 | 事项 | 状态 | 说明 |
 | --- | --- | --- |
 | M2 范围细化 | ✅ | 已细化为 FR-701~706,见 PRD 第 5 节;M1 验收后复核优先级 |
-| 是否上线 CI(GitHub Actions) | ⬜ | 建议 T9 完成后决定;最少做 lint + go test + build |
+| 是否上线 CI(GitHub Actions) | ✅ | 已落地 .github/workflows/ci.yml:backend(go vet/test/build)+ frontend(bun lint/build),push/PR 触发 |
 | Oxlint 评估(替代/混用 ESLint) | ✅ | 已评估(2026-10-10):**维持 ESLint 现状不动** —— react-refresh/typescript-eslint 插件能力是刚需,M1 期间已实际抓出多类问题;Oxlint 速度优势当前不构成切换理由 |
