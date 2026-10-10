@@ -157,5 +157,19 @@
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings"
+  },
+  "logs": {
+    "title": "Logs",
+    "tab": {
+      "access": "Access log",
+      "error": "Error log"
+    },
+    "lines": "lines",
+    "autoRefresh": "Auto refresh",
+    "refreshNow": "Refresh now",
+    "missing": "Log file not generated yet",
+    "missingHint": "{{path}} not found; content appears here once access/error logs are produced",
+    "truncated": "File is large, showing the tail only",
+    "empty": "(empty)"
   }
 }

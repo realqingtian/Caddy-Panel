@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:M1 编码进行中 —— T6 配置中心已完成,下一任务 T7(日志 tail API + Logs 页,轮询)。**
-T7 注意事项:tail 强制上限(超大文件);日志文件不存在返回明确提示而非报错(FR-502);前端 usePolling hook 可复用。
+**阶段:M1 编码进行中 —— T7 日志已完成,下一任务 T8(启动漂移检测 + Dashboard)。**
+T8 注意事项:drift 独立模块(service/drift.go):DB 最新 applied 快照 rendered vs 磁盘 Caddyfile vs GET /config 三方对比;Dashboard 聚合(Caddy 存活/站点数/最近下发)复用既有查询。
 
 ## 2. 里程碑
 
@@ -38,7 +38,7 @@ T7 注意事项:tail 强制上限(超大文件);日志文件不存在返回明�
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ✅ | 2026-10-10 | 模板嵌入 templates 包(转换层厚/模板薄);离线适配 modules/standard 全注册;golden 渲染测试 + "产物必过离线校验"契约测试;pipeline 单写者锁 + tmp+rename 原子写 + Deploy 开关(Caddy 未运行可保存);新增 PANEL_CADDY_ADMIN_BIND;真机 /load 集成验证随 T5 联调 |
 | T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ✅ | 2026-10-10 | service 编排(先 Caddy 后 DB)+ 域名查重 + dry_run 预检 + 版本快照(成败都留痕);compose 真 Caddy 联调:创建→反代生效→停用下线→启用恢复→删除,域名冲突 409/非法输入 400/下发失败 422(含 Caddy 原文);前端 Sites 页 Table+动态 Drawer+启停+删除 |
 | T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ✅ | 2026-10-10 | 版本历史/详情/回滚(恢复站点快照+下发,生成新版本)/直编(校验+防护:缺全局 admin 指令直接拒绝)/当前配置双视图;系统设置白名单+值校验(env 默认兜底);前端 Monaco+Caddyfile 高亮+DiffEditor+暗色同步;联调:直编生效/非法 422/回滚恢复反代/设置读写 |
-| T7 | 日志 tail API + Logs 页 | FR-50x | ⬜ | | 轮询 |
+| T7 | 日志 tail API + Logs 页 | FR-50x | ✅ | 2026-10-10 | 末尾读取(上限 1000 行/2MiB,半行丢弃);文件不存在 exists=false 明确提示;前端 usePolling(3s 可暂停)+ access/error 切换 + 行数选择 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ⬜ | | drift.go |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ⬜ | | 多阶段构建 |
 

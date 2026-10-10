@@ -157,5 +157,19 @@
     },
     "saved": "设置已保存",
     "saveFailed": "设置保存失败"
+  },
+  "logs": {
+    "title": "日志",
+    "tab": {
+      "access": "访问日志",
+      "error": "错误日志"
+    },
+    "lines": "行",
+    "autoRefresh": "自动刷新",
+    "refreshNow": "立即刷新",
+    "missing": "日志文件尚未生成",
+    "missingHint": "未找到 {{path}};产生访问/错误日志后此处会自动显示内容",
+    "truncated": "文件较大,仅展示末尾部分",
+    "empty": "(暂无内容)"
   }
 }

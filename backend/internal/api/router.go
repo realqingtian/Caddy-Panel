@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -120,6 +121,23 @@ func New(deps Deps) *gin.Engine {
 	settingsHandler := handler.NewSettings(settingSvc)
 	authorized.GET("/settings", settingsHandler.Get())
 	authorized.PUT("/settings", settingsHandler.Update())
+
+	// 日志查看:路径解析与渲染参数同源(settings 优先,FR-502)。
+	logPathFn := func(kind string) string {
+		key := model.SettingKeyLogAccessPath
+		if kind == "error" {
+			key = model.SettingKeyLogErrorPath
+		}
+		if v, ok, err := deps.Store.GetSetting(context.Background(), key); err == nil && ok && v != "" {
+			return v
+		}
+		if kind == "error" {
+			return deps.Cfg.LogErrorPath
+		}
+		return deps.Cfg.LogAccessPath
+	}
+	logsHandler := handler.NewLogs(service.NewLogs(logPathFn))
+	authorized.GET("/logs", logsHandler.Tail())
 
 	mountFrontend(r, deps.Bundle)
 
