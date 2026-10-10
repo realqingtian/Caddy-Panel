@@ -126,12 +126,12 @@ Caddy-Panel/
 | `PANEL_ADMIN_URL` | `http://localhost:2019` | Caddy Admin API;生产推荐 `unix:///run/caddy/admin.sock`(client 以 unix socket dial) |
 | `PANEL_CADDYFILE_PATH` | `./data/Caddyfile`(生产 `/etc/caddy/Caddyfile`) | 渲染产物落盘位置 |
 | `PANEL_JWT_SECRET` | 启动时生成并持久化到 settings | JWT 签名密钥 |
-| `PANEL_JWT_TTL` | `24h` | JWT 有效期;设置页可改,对新签发会话生效 |
+| `PANEL_JWT_TTL` | `24h` | JWT 有效期;仅 .env 配置,重启生效(不进设置页) |
 | `PANEL_LOGIN_MAX_FAILS` | `5` | 登录连续失败锁定阈值;设置页可改,立即生效 |
 | `PANEL_LOGIN_LOCK_WINDOW` | `1m` | 登录锁定时长;设置页可改,立即生效 |
 | `PANEL_LOG_ACCESS_PATH` / `PANEL_LOG_ERROR_PATH` | `./data/access.log` / `./data/error.log` | 日志 tail 读取目标 |
 
-> 优先级:env 提供**默认值**;路径类与安全类配置(路径、JWT 有效期、登录锁定参数)可在设置页(FR-601)修改并持久化到 `settings` 表,运行时以 settings 为准。
+> 优先级:env 提供**默认值**;路径类与登录锁定参数可在设置页(FR-601)修改并持久化到 `settings` 表,运行时以 settings 为准;`PANEL_JWT_TTL` 与 `PANEL_JWT_SECRET` 仅 env/启动侧管理。
 
 ## 5. 测试与质量约定
 
