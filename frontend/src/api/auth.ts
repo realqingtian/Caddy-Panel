@@ -6,6 +6,7 @@ import type { ApiError } from './types'
 export interface LoginResponse {
   token: string
   username: string
+  role: 'admin' | 'viewer'
 }
 
 /** 登录:成功返回 JWT;失败抛出 axios 错误(响应体为统一 {code,message,detail})。 */

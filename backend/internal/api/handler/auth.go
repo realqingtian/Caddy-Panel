@@ -36,12 +36,14 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Token    string `json:"token"`
 	Username string `json:"username" example:"admin"`
+	Role     string `json:"role" example:"admin"`
 }
 
 // MeResponse 当前用户响应体。
 type MeResponse struct {
 	UserID   uint   `json:"id" example:"1"`
 	Username string `json:"username" example:"admin"`
+	Role     string `json:"role" example:"admin"`
 }
 
 // Login godoc
@@ -79,7 +81,7 @@ func (h *AuthHandler) Login() gin.HandlerFunc {
 		default:
 			// 登录成功同样把身份写入 context,审计中间件记录"谁在登录"。
 			c.Set(middleware.CtxKeyUserID, result.UserID)
-			c.JSON(http.StatusOK, LoginResponse{Token: result.Token, Username: result.Username})
+			c.JSON(http.StatusOK, LoginResponse{Token: result.Token, Username: result.Username, Role: result.Role})
 		}
 	}
 }
@@ -98,6 +100,7 @@ func (h *AuthHandler) Me() gin.HandlerFunc {
 		c.JSON(http.StatusOK, MeResponse{
 			UserID:   c.GetUint(middleware.CtxKeyUserID),
 			Username: c.GetString(middleware.CtxKeyUsername),
+			Role:     c.GetString(middleware.CtxKeyRole),
 		})
 	}
 }

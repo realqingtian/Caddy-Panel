@@ -75,6 +75,7 @@ type LoginResult struct {
 	Token    string
 	Username string
 	UserID   uint
+	Role     string
 }
 
 // Login 校验凭证并签发 JWT;登录失败计入来源(IP)失败次数,达到阈值临时锁定。
@@ -103,7 +104,7 @@ func (a *Auth) Login(ctx context.Context, username, password, clientIP string) (
 	if err != nil {
 		return nil, fmt.Errorf("签发 JWT: %w", err)
 	}
-	return &LoginResult{Token: token, Username: user.Username, UserID: user.ID}, nil
+	return &LoginResult{Token: token, Username: user.Username, UserID: user.ID, Role: user.Role}, nil
 }
 
 // reject 记录一次失败并统一返回"凭证错误",不区分用户不存在/密码错误。

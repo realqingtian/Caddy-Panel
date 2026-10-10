@@ -15,6 +15,12 @@ jobs:
         with:
           go-version: '1.27'
           cache-dependency-path: backend/go.sum
+      # swag 生成物不入库(gitignore 约定),编译前先生成(main.go import docs_swag)。
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+      - name: Generate OpenAPI docs
+        working-directory: backend
+        run: "$(go env GOPATH)/bin/swag" init -g cmd/panel/main.go -o docs_swag
       - name: go vet
         working-directory: backend
         run: go vet ./...

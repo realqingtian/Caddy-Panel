@@ -9,7 +9,8 @@
     "logs": "Logs",
     "settings": "Settings",
     "upstreams": "Upstreams",
-    "metrics": "Metrics"
+    "metrics": "Metrics",
+    "terminal": "Terminal"
   },
   "layout": {
     "theme": "Theme",
@@ -304,5 +305,13 @@
     "noSeries": "No data for this metric in the selected window",
     "counterHint": "Counters are cumulative; curves appear after ~15 minutes of scraping",
     "loadFailed": "Load failed"
+  },
+  "terminal": {
+    "title": "Web Terminal",
+    "adminOnly": "Admin role only",
+    "warning": "Runs as the panel process user (not root); all sessions are audited",
+    "connectionFailed": "Terminal connection failed",
+    "closed": "Connection closed",
+    "closedBanner": "—— session ended, refresh to reopen ——"
   }
 }

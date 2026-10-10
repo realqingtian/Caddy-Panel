@@ -8,6 +8,7 @@ import LoginPage from '@/pages/Login'
 import LogsPage from '@/pages/Logs'
 import MetricsPage from '@/pages/Metrics'
 import SettingsPage from '@/pages/Settings'
+import TerminalPage from '@/pages/Terminal'
 import SitesPage from '@/pages/Sites'
 import UpstreamsPage from '@/pages/Upstreams'
 
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
           { path: 'config', element: <ConfigEditorPage /> },
           { path: 'logs', element: <LogsPage /> },
           { path: 'metrics', element: <MetricsPage /> },
+          { path: 'terminal', element: <TerminalPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },

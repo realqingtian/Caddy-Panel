@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 
 import {
   ApiOutlined,
+  CodeOutlined,
   LineChartOutlined,
   ControlOutlined,
   DashboardOutlined,
@@ -36,6 +37,8 @@ export function AdminLayout() {
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
 
+  const role = useAuthStore((state) => state.role)
+  const isAdmin = role === null || role === 'admin' // 历史会话无 role 按 admin
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
     { key: '/sites', icon: <GlobalOutlined />, label: t('menu.sites') },
@@ -44,6 +47,7 @@ export function AdminLayout() {
     { key: '/logs', icon: <FileTextOutlined />, label: t('menu.logs') },
     { key: '/metrics', icon: <LineChartOutlined />, label: t('menu.metrics') },
     { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
+    ...(isAdmin ? [{ key: '/terminal', icon: <CodeOutlined />, label: t('menu.terminal') }] : []),
   ]
 
   return (

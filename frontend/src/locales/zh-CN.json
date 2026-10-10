@@ -9,7 +9,8 @@
     "logs": "日志",
     "settings": "设置",
     "upstreams": "上游状态",
-    "metrics": "监控"
+    "metrics": "监控",
+    "terminal": "终端"
   },
   "layout": {
     "theme": "主题",
@@ -304,5 +305,13 @@
     "noSeries": "当前指标在所选窗口内无数据",
     "counterHint": "counter 类型指标为累计值;开启抓取约 15 分钟后曲线可见",
     "loadFailed": "加载失败"
+  },
+  "terminal": {
+    "title": "Web 终端",
+    "adminOnly": "仅 admin 角色可用",
+    "warning": "终端以面板进程用户执行(非 root);所有操作均记录审计",
+    "connectionFailed": "终端连接失败",
+    "closed": "连接已关闭",
+    "closedBanner": "—— 会话已结束,刷新页面重新打开 ——"
   }
 }

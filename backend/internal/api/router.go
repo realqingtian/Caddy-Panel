@@ -143,6 +143,10 @@ func New(deps Deps) *gin.Engine {
 	authorized.GET("/backup", backupHandler.Export())
 	write.POST("/restore", backupHandler.Restore())
 
+	// Web 终端(M3):WS 无法带自定义头,认证在 handler 内以查询参数完成
+	// (仅 JWT + admin);不进 authorized 组。
+	r.GET("/api/v1/terminal/ws", handler.NewTerminal(jwtSecret, deps.Store).WS())
+
 	// API Token 管理(M3):仅 JWT + admin。
 	tokenSvc := service.NewTokenService(deps.Store)
 	tokenAdmin := authorized.Group("/tokens", middleware.RequireJWTAdmin(forbidden))

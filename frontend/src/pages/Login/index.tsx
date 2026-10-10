@@ -24,7 +24,7 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       const result = await login(values.username, values.password)
-      setSession(result.token, result.username)
+      setSession(result.token, result.username, result.role)
       navigate('/', { replace: true })
     } catch (error) {
       message.error(apiErrorMessage(error, t('login.failed')))
