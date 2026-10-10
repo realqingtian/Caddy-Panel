@@ -1,7 +1,10 @@
 import { Button, Card, Form, Input, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 
+import { login, apiErrorMessage } from '@/api/auth'
+import { App } from 'antd'
 import { useAuthStore } from '@/stores/auth'
 
 interface LoginValues {
@@ -9,18 +12,25 @@ interface LoginValues {
   password: string
 }
 
-/**
- * 登录页(T2 接入真实接口前的骨架):
- * 提交后写入演示会话以走通"登录 → 布局"流程,真实 POST /api/v1/auth/login 随 T2 落地。
- */
+/** 登录页:调用 POST /api/v1/auth/login;错误消息为后端 i18n 文案(FR-101/103)。 */
 export default function LoginPage() {
   const { t } = useTranslation()
+  const { message } = App.useApp()
   const navigate = useNavigate()
   const setSession = useAuthStore((state) => state.setSession)
+  const [submitting, setSubmitting] = useState(false)
 
-  const onFinish = (values: LoginValues) => {
-    setSession(`dev-${values.username}`, values.username)
-    navigate('/', { replace: true })
+  const onFinish = async (values: LoginValues) => {
+    setSubmitting(true)
+    try {
+      const result = await login(values.username, values.password)
+      setSession(result.token, result.username)
+      navigate('/', { replace: true })
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('login.failed')))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -41,14 +51,14 @@ export default function LoginPage() {
           >
             <Input.Password autoComplete="current-password" />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={submitting}>
             {t('login.submit')}
           </Button>
           <Typography.Text
             type="secondary"
             style={{ display: 'block', marginTop: 12, fontSize: 12 }}
           >
-            {t('login.devHint')}
+            {t('login.firstRunHint')}
           </Typography.Text>
         </Form>
       </Card>

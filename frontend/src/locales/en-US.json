@@ -28,7 +28,8 @@
     "usernameRequired": "Please enter your username",
     "passwordRequired": "Please enter your password",
     "submit": "Sign in",
-    "devHint": "Skeleton stage: submitting enters a demo session; real login lands with T2"
+    "failed": "Sign-in failed, please try again later",
+    "firstRunHint": "First run: admin account, random password is printed in the panel startup log"
   },
   "pages": {
     "dashboard": {

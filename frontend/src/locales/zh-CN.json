@@ -28,7 +28,8 @@
     "usernameRequired": "请输入用户名",
     "passwordRequired": "请输入密码",
     "submit": "登录",
-    "devHint": "骨架阶段:提交后直接进入演示会话,真实登录在 T2 接入"
+    "failed": "登录失败,请稍后再试",
+    "firstRunHint": "首次启动:管理员账号 admin,随机密码见面板启动日志"
   },
   "pages": {
     "dashboard": {

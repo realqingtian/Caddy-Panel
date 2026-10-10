@@ -1,0 +1,9 @@
+{
+  "error.invalid_credentials": "Incorrect username or password",
+  "error.account_locked": "Too many failed attempts, temporarily locked for {{.seconds}} seconds",
+  "error.unauthorized": "Not signed in or session expired, please sign in again",
+  "error.bad_request": "Invalid request: {{.reason}}",
+  "error.not_found": "API not found",
+  "error.internal": "Internal server error, please try again later",
+  "error.forbidden": "You are not allowed to perform this action"
+}
