@@ -11,6 +11,7 @@ type Setting struct {
 // 设置键名常量(除 JWT 密钥/有效期外,均可在设置页修改,见 FR-601)。
 const (
 	SettingKeyAdminURL        = "admin_url"
+	SettingKeyCaddyAdminBind  = "caddy_admin_bind" // 渲染全局块的 admin 监听地址(与 Panel 连接用的 admin_url 不同)
 	SettingKeyCaddyfilePath   = "caddyfile_path"
 	SettingKeyLogAccessPath   = "log_access_path"
 	SettingKeyLogErrorPath    = "log_error_path"

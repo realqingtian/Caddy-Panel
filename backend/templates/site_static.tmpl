@@ -1,0 +1,13 @@
+{{define "site_static"}}{{siteaddr .}} {
+{{- if .AccessLogPath}}
+	log {
+		output file {{.AccessLogPath}}
+	}
+{{- end}}
+	root * {{.RootPath}}
+	file_server
+{{- if .RawExtra}}
+	{{.RawExtra}}
+{{- end}}
+}
+{{end}}

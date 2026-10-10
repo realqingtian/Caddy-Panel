@@ -1,0 +1,43 @@
+{
+	admin localhost:2019
+	log {
+		output file /data/logs/error.log
+		level INFO
+	}
+	metrics
+	servers {
+		protocols h1 h2 h3
+	}
+}
+app.example.com, www.example.com {
+	log {
+		output file /data/logs/access.log
+	}
+	reverse_proxy 127.0.0.1:8080 127.0.0.1:8081 {
+		flush_interval -1
+	}
+	header X-Frame-Options "DENY"
+	header X-Served-By "caddy \"panel\""
+}
+api.example.com {
+	log {
+		output file /data/logs/access.log
+	}
+	reverse_proxy 10.0.0.1:80 10.0.0.2:80 {
+		lb_policy least_conn
+	}
+}
+static.example.com {
+	log {
+		output file /data/logs/access.log
+	}
+	root * /var/www/static
+	file_server
+}
+http://old.example.com {
+	log {
+		output file /data/logs/access.log
+	}
+	redir "https://new.example.com" permanent
+}
+

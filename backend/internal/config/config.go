@@ -17,7 +17,8 @@ type Config struct {
 	Listen          string        // HTTP 监听地址,默认 :8080
 	Mode            string        // Gin 运行模式:debug / release
 	DBPath          string        // SQLite 数据库路径
-	AdminURL        string        // Caddy Admin API 地址(http(s):// 或 unix://)
+	AdminURL        string        // Caddy Admin API 地址(http(s):// 或 unix://,Panel → Caddy)
+	CaddyAdminBind  string        // 渲染全局块的 Caddy admin 监听地址(Caddy 侧绑定,重启恢复依赖它)
 	CaddyfilePath   string        // 渲染产物落盘路径
 	JWTSecret       string        // JWT 签名密钥
 	JWTTTL          time.Duration // JWT 有效期(仅 env 配置,重启生效)
@@ -39,6 +40,7 @@ func Load() (*Config, error) {
 	v.SetDefault("mode", "debug")
 	v.SetDefault("db_path", "./data/panel.db")
 	v.SetDefault("admin_url", "http://localhost:2019")
+	v.SetDefault("caddy_admin_bind", "localhost:2019")
 	v.SetDefault("caddyfile_path", "./data/Caddyfile")
 	v.SetDefault("jwt_ttl", "24h")
 	v.SetDefault("login_max_fails", 5)
@@ -65,6 +67,7 @@ func Load() (*Config, error) {
 		Mode:            v.GetString("mode"),
 		DBPath:          v.GetString("db_path"),
 		AdminURL:        v.GetString("admin_url"),
+		CaddyAdminBind:  v.GetString("caddy_admin_bind"),
 		CaddyfilePath:   v.GetString("caddyfile_path"),
 		JWTSecret:       secret,
 		JWTTTL:          jwtTTL,

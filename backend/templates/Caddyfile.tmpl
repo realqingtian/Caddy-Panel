@@ -1,0 +1,7 @@
+{{- template "global" .Global -}}
+{{- range .Sites}}
+{{- if eq .Type "proxy"}}{{template "site_proxy" .}}
+{{- else if eq .Type "static"}}{{template "site_static" .}}
+{{- else if eq .Type "redirect"}}{{template "site_redirect" .}}
+{{- end}}
+{{- end}}

@@ -131,6 +131,7 @@ Caddy-Panel/
 | `PANEL_LISTEN` | `:8080` | Panel API 监听 |
 | `PANEL_DB_PATH` | `./data/panel.db` | SQLite 路径 |
 | `PANEL_ADMIN_URL` | `http://localhost:2019` | Caddy Admin API;生产推荐 `unix:///run/caddy/admin.sock`(client 以 unix socket dial) |
+| `PANEL_CADDY_ADMIN_BIND` | `localhost:2019` | 渲染全局块的 Caddy admin 监听地址(Caddy 重启恢复依赖此绑定);compose 中为 `caddy:2019` |
 | `PANEL_CADDYFILE_PATH` | `./data/Caddyfile`(生产 `/etc/caddy/Caddyfile`) | 渲染产物落盘位置 |
 | `PANEL_JWT_SECRET` | 启动时生成并持久化到 settings | JWT 签名密钥 |
 | `PANEL_JWT_TTL` | `24h` | JWT 有效期;仅 .env 配置,重启生效(不进设置页) |

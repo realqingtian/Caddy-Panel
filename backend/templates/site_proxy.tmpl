@@ -1,0 +1,22 @@
+{{define "site_proxy"}}{{siteaddr .}} {
+{{- if .AccessLogPath}}
+	log {
+		output file {{.AccessLogPath}}
+	}
+{{- end}}
+	reverse_proxy {{join .Upstreams " "}} {
+{{- range .LBPolicyLines}}
+		{{.}}
+{{- end}}
+{{- if .Websocket}}
+		flush_interval -1
+{{- end}}
+	}
+{{- range .HeaderLines}}
+	{{.}}
+{{- end}}
+{{- if .RawExtra}}
+	{{.RawExtra}}
+{{- end}}
+}
+{{end}}
