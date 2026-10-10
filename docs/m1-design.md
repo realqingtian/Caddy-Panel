@@ -59,6 +59,7 @@ sites             -- 站点(领域模型核心表)
   redirect_to, redirect_permanent -- BOOL(301/308 vs 302)
   https_redirect,                 -- BOOL,http→https(默认 true)
   enabled,                        -- BOOL,停用站点不渲染
+  raw_extra,                      -- TEXT,自定义片段,渲染时原样拼入站点块尾部(逃生舱:面板表单覆盖不到的高级路由在此兜底;M1 仅管道预留无 UI,M2 导入 Caddyfile 复用)
   created_at, updated_at
 
 config_versions   -- 每次成功/失败下发都留痕
@@ -68,13 +69,13 @@ config_versions   -- 每次成功/失败下发都留痕
 audit_logs        -- 操作审计
   id, user_id, action, target, detail(JSON), ip, created_at
 
-settings          -- KV:日志路径、Caddyfile 路径、admin endpoint 等
+settings          -- KV:日志路径、Caddyfile 路径、admin endpoint、锁定参数、metrics 开关、global_extra(全局自定义片段)等
   key, value
 ```
 
 ## 4. 配置管道(核心流程)
 
-1. **渲染**:`sites` 表 → Go 模板 → Caddyfile(全局块:admin 绑定、log 输出、可选 metrics;每站点一个站点块)。
+1. **渲染**:领域字段(sites 表)→ Go 模板 → Caddyfile(全局块:admin 绑定、log 输出、可选 metrics;每站点一个站点块);`raw_extra`(站点级)与 `global_extra`(settings)作为**自定义片段原样拼入** —— 表单覆盖不到的能力由此兜底。
 2. **预检**(二选一,优先前者):
    - 离线:import `github.com/caddyserver/caddy/v2/caddyconfig/caddyfile` + `httpcaddyfile` 适配器,Caddyfile → JSON,不触网;
    - 在线兜底:`POST /adapt`(Content-Type: `text/caddyfile`)。

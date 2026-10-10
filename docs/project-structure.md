@@ -49,7 +49,7 @@ Caddy-Panel/
 │       │   └── seed.go            # 首次启动创建管理员(用户名默认 admin):密码取 PANEL_ADMIN_PASSWORD,未设置则随机生成并打印到日志(仅一次)
 │       ├── caddy/
 │       │   ├── client.go          # Admin API client:Load/Adapt/GetConfig/Upstreams/Stop
-│       │   ├── render.go          # 模板渲染引擎:sites[] → Caddyfile
+│       │   ├── render.go          # 模板渲染引擎:领域字段 → Caddyfile,含 raw_extra/global_extra 片段原样拼入
 │       │   ├── validate.go        # 校验:优先进程内 httpcaddyfile 适配,兜底 POST /adapt
 │       │   └── pipeline.go        # 编排:render → validate → load → 原子落盘(tmp+rename)→ 留版本快照;内置全局单写者锁,串行化所有下发
 │       ├── service/               # 业务逻辑层(全部业务在这里,可单测:mock store 与 caddy 接口)
@@ -97,7 +97,14 @@ Caddy-Panel/
 └── scripts/dev.sh                 # 一键起本地开发(可选)
 ```
 
-**M2/M3 扩展点(先留边界、不建目录)**:多节点 Agent(独立 `agent/` 模块 + 中心下发协议)、监控(`/metrics` 抓取与图表页)、Web 终端(后端 WebSocket handler + xterm.js)。M1 的 `caddy.Client` 与 `pipeline` 接口按单机设计,但方法签名不写死 host,多节点时改为按节点实例化即可。
+**M2/M3 扩展点(先留边界、不建目录,演进路径已定):**
+
+- **多节点 Agent(M3)**:独立 `agent/` 模块 + 中心下发协议;`caddy.Client`/`pipeline` 方法签名不写死 host,多节点时按节点实例化;届时 `sites`/`config_versions` 增加 `node_id` 列(AutoMigrate + 一次性回填 `local`),API 按节点过滤;
+- **upstream 独立配置(M2)**:`upstreams` 当前为逗号分隔 TEXT;M2 引入健康检查/权重时拆 `site_upstreams` 子表(AutoMigrate + 一次性回填),渲染产物不变;
+- **监控(M2)**:全局模板已预留 metrics 位,开关在设置页(FR-601),M2 只需补抓取与图表;
+- **导入与复杂配置(M2)**:`sites.raw_extra` / `settings.global_extra` 片段通道 M1 已预留,M2 导入 Caddyfile 时不可识别内容落入片段,渲染管道零改动;
+- **Web 终端(M3)**:后端 WebSocket handler + xterm.js;
+- **版本对齐**:Panel 内嵌的离线适配器(import 的 caddy 库版本)须与部署的 Caddy 保持同一 minor 序列(compose 中两者同步升级),避免"离线校验通过、`/load` 被运行时拒绝"的版本偏差。
 
 ## 3. 关键流转(以"新建反代站点"为例)
 
