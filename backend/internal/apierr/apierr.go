@@ -15,6 +15,7 @@ const (
 	CodeAccountLocked              = "AUTH_ACCOUNT_LOCKED"
 	CodeUnauthorized               = "AUTH_UNAUTHORIZED"
 	CodeBadRequest                 = "BAD_REQUEST"
+	CodeForbidden                  = "FORBIDDEN"
 	CodeInternal                   = "INTERNAL_ERROR"
 	CodeSiteNotFound               = "SITE_NOT_FOUND"
 	CodeSiteDomainConflict         = "SITE_DOMAIN_CONFLICT"

@@ -36,6 +36,7 @@ type Deps struct {
 	Pipeline        *caddy.Pipeline
 	Client          caddy.Client // Admin API 通信出口(透传类接口使用)
 	Collector       *service.MetricsCollector
+	TokenService    *service.TokenService
 	CaddyfilePathFn func() string // 落盘路径解析(与 Pipeline 同源)
 }
 
@@ -55,6 +56,9 @@ func New(deps Deps) *gin.Engine {
 	unauthorized := func(c *gin.Context, status int) {
 		apierr.RespondError(c, status, apierr.CodeUnauthorized, i18n.MsgUnauthorized, nil, nil)
 	}
+	forbidden := func(c *gin.Context) {
+		apierr.RespondError(c, http.StatusForbidden, apierr.CodeForbidden, i18n.MsgForbidden, nil, nil)
+	}
 
 	apiV1 := r.Group("/api/v1")
 	apiV1.Use(apierr.InjectI18n(deps.Bundle), middleware.Language(), middleware.Audit(deps.Store))
@@ -71,7 +75,10 @@ func New(deps Deps) *gin.Engine {
 
 	apiV1.POST("/auth/login", authHandler.Login())
 
-	authorized := apiV1.Group("", middleware.JWTAuth(jwtSecret, unauthorized))
+	// 认证(JWT / API Token 双轨)+ RBAC:读路由要求 read,写路由要求 write,
+	// Token 管理仅限"JWT + admin"(API Token 不得自我管理)。
+	authorized := apiV1.Group("", middleware.Authenticate(jwtSecret, deps.TokenService, unauthorized))
+	write := authorized.Group("", middleware.RequireScope(model.ScopeWrite, forbidden))
 	authorized.GET("/me", authHandler.Me())
 
 	// 站点管理:渲染参数 settings 优先、env 默认兜底(FR-601)。
@@ -89,13 +96,13 @@ func New(deps Deps) *gin.Engine {
 	certHandler := handler.NewCert(service.NewCert(func() string {
 		return deps.Cfg.CertStoragePath
 	}, deps.Store))
-	authorized.POST("/sites", sites.Create())
+	write.POST("/sites", sites.Create())
 	authorized.GET("/sites", sites.List())
 	authorized.GET("/sites/:id", sites.Get())
-	authorized.PUT("/sites/:id", sites.Update())
-	authorized.DELETE("/sites/:id", sites.Delete())
-	authorized.POST("/sites/:id/enable", sites.Enable())
-	authorized.POST("/sites/:id/disable", sites.Disable())
+	write.PUT("/sites/:id", sites.Update())
+	write.DELETE("/sites/:id", sites.Delete())
+	write.POST("/sites/:id/enable", sites.Enable())
+	write.POST("/sites/:id/disable", sites.Disable())
 	authorized.GET("/sites/:id/certificate", certHandler.SiteCertificate())
 	authorized.POST("/sites/:id/certificate/upload", certHandler.UploadCertificate())
 
@@ -108,9 +115,9 @@ func New(deps Deps) *gin.Engine {
 	configHandler := handler.NewConfig(configSvc)
 	authorized.GET("/config/versions", configHandler.ListVersions())
 	authorized.GET("/config/versions/:id", configHandler.GetVersion())
-	authorized.POST("/config/versions/:id/rollback", configHandler.Rollback())
+	write.POST("/config/versions/:id/rollback", configHandler.Rollback())
 	authorized.GET("/config/caddyfile", configHandler.CurrentCaddyfile())
-	authorized.POST("/config/caddyfile", configHandler.SaveCaddyfile())
+	write.POST("/config/caddyfile", configHandler.SaveCaddyfile())
 	authorized.GET("/config/current", configHandler.CurrentJSON())
 
 	// 系统设置:env 默认 + settings 表覆盖(FR-601)。
@@ -134,7 +141,14 @@ func New(deps Deps) *gin.Engine {
 	// 备份与恢复(FR-706):复用 settings service(env 默认 + 白名单校验)。
 	backupHandler := handler.NewBackup(service.NewBackup(deps.Store, settingSvc))
 	authorized.GET("/backup", backupHandler.Export())
-	authorized.POST("/restore", backupHandler.Restore())
+	write.POST("/restore", backupHandler.Restore())
+
+	// API Token 管理(M3):仅 JWT + admin。
+	tokenSvc := service.NewTokenService(deps.Store)
+	tokenAdmin := authorized.Group("/tokens", middleware.RequireJWTAdmin(forbidden))
+	tokenAdmin.GET("", handler.NewToken(tokenSvc).List())
+	tokenAdmin.POST("", handler.NewToken(tokenSvc).Create())
+	tokenAdmin.DELETE("/:id", handler.NewToken(tokenSvc).Delete())
 
 	// 监控查询(FR-702);抓取循环在 main 启动,此处仅查询。
 	authorized.GET("/metrics/summary", handler.NewMetrics(deps.Collector).Summary())
@@ -167,8 +181,8 @@ func New(deps Deps) *gin.Engine {
 
 	// Caddyfile 导入(FR-705)。
 	importHandler := handler.NewImport(deps.Store)
-	authorized.POST("/import/preview", importHandler.Preview())
-	authorized.POST("/import/apply", importHandler.Apply())
+	write.POST("/import/preview", importHandler.Preview())
+	write.POST("/import/apply", importHandler.Apply())
 
 	mountFrontend(r, deps.Bundle)
 

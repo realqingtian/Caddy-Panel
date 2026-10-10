@@ -46,7 +46,7 @@
 
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ⬜ | | token 只存哈希;scope 按路由组声明 |
+| T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ✅ | 2026-10-11 | api_tokens 表(仅 sha256,前缀展示,过期/last_used);Bearer cpt_* 与 JWT 双轨认证;scope 路由级校验(读=read,写=write);users.role 启用 viewer(JWT 空 role 兼容 admin);token 管理仅限 JWT+admin;Settings 页 token 管理卡片(明文一次性展示) |
 | T3.2 | Web 终端(xterm.js + WebSocket) | M3 | ⬜ | | 仅 admin;进程用户执行,不开 root |
 | T3.3 | 多节点 Agent(反向连接) | M3 | ⬜ | | node_id 回填 local;中心按节点路由下发 |
 | T3.4 | l4 转发(caddy-l4) | M3 | ⬜ | | 插件镜像追加;与 http 渲染互斥 |

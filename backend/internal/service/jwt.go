@@ -13,15 +13,17 @@ import (
 type Claims struct {
 	UserID   uint   `json:"uid"`
 	Username string `json:"name"`
+	Role     string `json:"role"` // admin | viewer;空值视为 admin(历史会话兼容)
 	jwt.RegisteredClaims
 }
 
 // SignJWT 签发 HS256 Token;过期时间取 now+ttl。
-func SignJWT(secret []byte, ttl time.Duration, userID uint, username string) (string, error) {
+func SignJWT(secret []byte, ttl time.Duration, userID uint, username, role string) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   username,
 			IssuedAt:  jwt.NewNumericDate(now),

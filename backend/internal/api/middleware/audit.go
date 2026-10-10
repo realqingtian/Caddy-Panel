@@ -39,8 +39,8 @@ func Audit(repo AuditRepo) gin.HandlerFunc {
 			Detail: `{"status":` + strconv.Itoa(c.Writer.Status()) + `}`,
 		}
 		if id, ok := c.Get(CtxKeyUserID); ok {
-			if userID, ok := id.(uint); ok {
-				entry.UserID = &userID
+			if userID, ok := id.(uint); ok && userID > 0 {
+				entry.UserID = &userID // API Token 主体(user 0)审计记空,Username 已含 token 标识
 			}
 		}
 

@@ -234,6 +234,21 @@
     },
     "smtp": {
       "title": "SMTP 通知渠道(证书到期提醒)"
+    },
+    "tokens": {
+      "title": "API Token(开放接口)",
+      "namePlaceholder": "Token 名称",
+      "create": "签发",
+      "hint": "Bearer 方式调用 /api/v1 接口;仅存哈希,明文仅签发时显示一次;write 可执行全部操作,read 仅只读;Token 不能管理 Token",
+      "column": {
+        "name": "名称",
+        "prefix": "前缀",
+        "scope": "权限",
+        "lastUsed": "最后使用"
+      },
+      "deleteConfirm": "确认删除该 Token?使用它的客户端将立即失效",
+      "plainTitle": "Token 已签发",
+      "plainWarning": "请立即复制保存 —— 明文仅此一次显示,丢失只能删除重建"
     }
   },
   "logs": {

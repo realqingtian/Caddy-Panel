@@ -7,7 +7,7 @@ import (
 
 func TestJWT_RoundTrip(t *testing.T) {
 	secret := []byte("unit-secret")
-	token, err := SignJWT(secret, time.Hour, 7, "admin")
+	token, err := SignJWT(secret, time.Hour, 7, "admin", "admin")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
@@ -25,12 +25,17 @@ func TestJWT_RoundTrip(t *testing.T) {
 }
 
 func TestJWT_RejectsTamperedToken(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin")
+	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
-	// 篡改签名段末尾两个字符,签名校验必然失败。
-	tampered := token[:len(token)-2] + "xx"
+	// 篡改签名段末字符为必不同的合法 base64url 字符,签名校验必然失败。
+	last := token[len(token)-1]
+	mutated := byte('A')
+	if last == 'A' {
+		mutated = 'B'
+	}
+	tampered := token[:len(token)-1] + string(mutated)
 
 	if _, err := ParseJWT([]byte("unit-secret"), tampered); err == nil {
 		t.Fatal("被篡改的 token 必须解析失败")
@@ -38,7 +43,7 @@ func TestJWT_RejectsTamperedToken(t *testing.T) {
 }
 
 func TestJWT_RejectsExpired(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), -time.Minute, 1, "admin")
+	token, err := SignJWT([]byte("unit-secret"), -time.Minute, 1, "admin", "admin")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
@@ -48,7 +53,7 @@ func TestJWT_RejectsExpired(t *testing.T) {
 }
 
 func TestJWT_RejectsWrongSecret(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin")
+	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}

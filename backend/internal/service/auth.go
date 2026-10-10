@@ -99,7 +99,7 @@ func (a *Auth) Login(ctx context.Context, username, password, clientIP string) (
 	}
 
 	a.guard.Reset(clientIP)
-	token, err := SignJWT(a.jwtSecret, a.jwtTTL, user.ID, user.Username)
+	token, err := SignJWT(a.jwtSecret, a.jwtTTL, user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, fmt.Errorf("签发 JWT: %w", err)
 	}

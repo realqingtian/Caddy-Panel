@@ -234,6 +234,21 @@
     },
     "smtp": {
       "title": "SMTP notification channel (certificate expiry)"
+    },
+    "tokens": {
+      "title": "API Tokens (open API)",
+      "namePlaceholder": "Token name",
+      "create": "Issue",
+      "hint": "Call /api/v1 with Bearer auth; only hashes are stored, the plaintext is shown once at issuance; write performs everything, read is read-only; tokens cannot manage tokens",
+      "column": {
+        "name": "Name",
+        "prefix": "Prefix",
+        "scope": "Scope",
+        "lastUsed": "Last used"
+      },
+      "deleteConfirm": "Delete this token? Clients using it stop working immediately",
+      "plainTitle": "Token issued",
+      "plainWarning": "Copy it now — the plaintext is shown only once; if lost, delete and reissue"
     }
   },
   "logs": {

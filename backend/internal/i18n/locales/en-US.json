@@ -5,7 +5,7 @@
   "error.bad_request": "Invalid request: {{.reason}}",
   "error.not_found": "API not found",
   "error.internal": "Internal server error, please try again later",
-  "error.forbidden": "You are not allowed to perform this action",
+  "error.forbidden": "The current account is read-only (viewer) or the token lacks permission",
   "error.site_not_found": "Site not found or already deleted",
   "error.site_domain_conflict": "Domain {{.domain}} is already used by another site",
   "error.site_deploy_failed": "Config validation or deploy failed, nothing changed; see detail for the reason",

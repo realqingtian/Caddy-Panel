@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"caddy-panel/backend/internal/config"
 	"caddy-panel/backend/internal/i18n"
 	"caddy-panel/backend/internal/model"
+	"caddy-panel/backend/internal/service"
 	"caddy-panel/backend/internal/store"
 )
 
@@ -86,7 +88,8 @@ func newTestServer(t *testing.T) (*gin.Engine, *store.Store) {
 			fakeDeployClient{},
 			func() string { return filepath.Join(t.TempDir(), "Caddyfile") },
 		),
-		Client: fakeDeployClient{},
+		Client:       fakeDeployClient{},
+		TokenService: service.NewTokenService(st),
 	})
 	return engine, st
 }
@@ -416,4 +419,129 @@ func uintToString(v uint64) string {
 		v /= 10
 	}
 	return string(digits[i:])
+}
+
+// --- T3.1 API Token 与 RBAC ---
+
+func TestApiToken_Lifecycle(t *testing.T) {
+	engine, st := newTestServer(t)
+	adminToken := loginToken(t, engine)
+	adminHeader := authHeader(adminToken)
+
+	// 创建 write scope token。
+	rec := postJSON(t, engine, "/api/v1/tokens",
+		map[string]string{"name": "ci", "scope": "write"}, adminHeader)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("创建 token 期望 201,实际 %d: %s", rec.Code, rec.Body.String())
+	}
+	body := decode(t, rec)
+	plain, _ := body["plain_token"].(string)
+	if !strings.HasPrefix(plain, "cpt_") {
+		t.Fatalf("明文前缀不符: %q", plain)
+	}
+	// 哈希不外泄。
+	if strings.Contains(rec.Body.String(), strings.TrimPrefix(plain, "cpt_")[:8]) && strings.Contains(rec.Body.String(), `"token_hash"`) {
+		t.Fatal("响应不得包含 token_hash")
+	}
+
+	// API Token 可读。
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/sites", nil)
+	req.Header.Set("Authorization", "Bearer "+plain)
+	rec = httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("API Token 读期望 200,实际 %d", rec.Code)
+	}
+
+	// API Token(write)可写。
+	rec = postJSON(t, engine, "/api/v1/sites", siteBody("token-site"), map[string]string{"Authorization": "Bearer " + plain})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("API Token 写期望 201,实际 %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// API Token 不得管理 token。
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/tokens", nil)
+	req.Header.Set("Authorization", "Bearer "+plain)
+	rec = httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("API Token 管理 tokens 期望 403,实际 %d", rec.Code)
+	}
+
+	// read scope token:读 OK、写 403。
+	rec = postJSON(t, engine, "/api/v1/tokens", map[string]string{"name": "ro", "scope": "read"}, adminHeader)
+	roPlain := decode(t, rec)["plain_token"].(string)
+	rec = getJSON(t, engine, "/api/v1/sites", authHeader(roPlain))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("read token 读期望 200,实际 %d", rec.Code)
+	}
+	rec = postJSON(t, engine, "/api/v1/sites", siteBody("denied"), authHeader(roPlain))
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("read token 写期望 403,实际 %d", rec.Code)
+	}
+	if body := decode(t, rec); body["code"] != "FORBIDDEN" {
+		t.Fatalf("403 错误码不符: %v", body)
+	}
+
+	// 删除 token 后失效。
+	rec = postJSON(t, engine, "/api/v1/tokens", map[string]string{"name": "tmp", "scope": "read"}, adminHeader)
+	tmpPlain := decode(t, rec)["plain_token"].(string)
+	rec = getJSON(t, engine, "/api/v1/tokens", adminHeader)
+	var tokens []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &tokens); err != nil {
+		t.Fatalf("解析 token 列表: %v", err)
+	}
+	for _, tok := range tokens {
+		if tok["prefix"].(string) == tmpPlain[:12] {
+			req = httptest.NewRequest(http.MethodDelete, "/api/v1/tokens/"+strconvFormat(uint64(int(tok["id"].(float64)))), nil)
+			for k, v := range adminHeader {
+				req.Header.Set(k, v)
+			}
+			rec = httptest.NewRecorder()
+			engine.ServeHTTP(rec, req)
+		}
+	}
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("删除 token 期望 204,实际 %d", rec.Code)
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/sites", nil)
+	req.Header.Set("Authorization", "Bearer "+tmpPlain)
+	rec = httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("已删除 token 应 401,实际 %d", rec.Code)
+	}
+	_ = st
+}
+
+func TestViewerRole_CannotWrite(t *testing.T) {
+	engine, st := newTestServer(t)
+	// 直接造 viewer 用户。
+	hash, err := bcrypt.GenerateFromPassword([]byte("viewer-pass"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("哈希: %v", err)
+	}
+	if err := st.CreateUser(t.Context(), &model.User{Username: "viewer", PasswordHash: string(hash), Role: model.RoleViewer}); err != nil {
+		t.Fatalf("创建 viewer: %v", err)
+	}
+
+	rec := postJSON(t, engine, "/api/v1/auth/login",
+		map[string]string{"username": "viewer", "password": "viewer-pass"}, nil)
+	viewerToken := decode(t, rec)["token"].(string)
+	h := authHeader(viewerToken)
+
+	// viewer 可读。
+	if rec := getJSON(t, engine, "/api/v1/sites", h); rec.Code != http.StatusOK {
+		t.Fatalf("viewer 读期望 200,实际 %d", rec.Code)
+	}
+	// viewer 写 403。
+	rec = postJSON(t, engine, "/api/v1/sites", siteBody("nope"), h)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("viewer 写期望 403,实际 %d: %s", rec.Code, rec.Body.String())
+	}
+	// viewer 不可管理 token。
+	rec = getJSON(t, engine, "/api/v1/tokens", h)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("viewer 管理 token 期望 403,实际 %d", rec.Code)
+	}
 }

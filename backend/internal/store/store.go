@@ -25,6 +25,7 @@ type Store struct {
 func allModels() []any {
 	return []any{
 		model.User{},
+		model.ApiToken{},
 		model.Site{},
 		model.ConfigVersion{},
 		model.AuditLog{},

@@ -1,13 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Alert, Button, Card, Form, Input, Space, Switch, Upload } from 'antd'
-import { useEffect } from 'react'
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Typography,
+  Upload,
+} from 'antd'
+import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '@/api/auth'
 import { getSettings, updateSettings, type Settings } from '@/api/config'
-import { Typography } from 'antd'
 import { exportBackup, restoreBackup } from '@/api/backup'
+import { listTokens, createToken, deleteToken, type ApiToken } from '@/api/tokens'
 
 interface SettingsFormValues {
   admin_url: string
@@ -89,6 +104,34 @@ export default function SettingsPage() {
     },
     onError: (error) => message.error(apiErrorMessage(error, t('settings.saveFailed'))),
   })
+
+  const tokensQuery = useQuery({
+    queryKey: ['tokens'],
+    queryFn: listTokens,
+    enabled: settingsQuery.isSuccess,
+  })
+  const tokens = tokensQuery.data ?? []
+
+  const [newTokenName, setNewTokenName] = useState('')
+  const [newTokenScope, setNewTokenScope] = useState('read')
+  const [newTokenExpiry, setNewTokenExpiry] = useState('')
+  const [plainToken, setPlainToken] = useState<string | null>(null)
+
+  const runCreateToken = async () => {
+    try {
+      const result = await createToken(newTokenName, newTokenScope, newTokenExpiry)
+      setPlainToken(result.plain_token)
+      setNewTokenName('')
+      void tokensQuery.refetch()
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('settings.tokens.createFailed')))
+    }
+  }
+
+  const runDeleteToken = async (id: number) => {
+    await deleteToken(id)
+    void tokensQuery.refetch()
+  }
 
   const restoreFile = async (file: UploadFile) => {
     try {
@@ -192,6 +235,94 @@ export default function SettingsPage() {
           <Typography.Text type="secondary">{t('settings.backup.hint')}</Typography.Text>
         </Space>
       </Card>
+      <Card
+        title={t('settings.tokens.title')}
+        extra={
+          <Space>
+            <Input
+              value={newTokenName}
+              onChange={(e) => setNewTokenName(e.target.value)}
+              placeholder={t('settings.tokens.namePlaceholder')}
+              style={{ width: 160 }}
+            />
+            <Select
+              value={newTokenScope}
+              onChange={setNewTokenScope}
+              style={{ width: 100 }}
+              options={[
+                { value: 'read', label: 'read' },
+                { value: 'write', label: 'write' },
+              ]}
+            />
+            <Input
+              value={newTokenExpiry}
+              onChange={(e) => setNewTokenExpiry(e.target.value)}
+              placeholder="720h"
+              style={{ width: 90 }}
+            />
+            <Button disabled={!newTokenName.trim()} onClick={() => void runCreateToken()}>
+              {t('settings.tokens.create')}
+            </Button>
+          </Space>
+        }
+      >
+        <Alert
+          type="info"
+          showIcon
+          message={t('settings.tokens.hint')}
+          style={{ marginBottom: 12 }}
+        />
+        <Table<ApiToken>
+          rowKey="id"
+          size="small"
+          dataSource={tokens}
+          pagination={false}
+          columns={[
+            { title: t('settings.tokens.column.name'), dataIndex: 'name' },
+            { title: t('settings.tokens.column.prefix'), dataIndex: 'prefix' },
+            { title: t('settings.tokens.column.scope'), dataIndex: 'scopes' },
+            {
+              title: t('settings.tokens.column.lastUsed'),
+              dataIndex: 'last_used_at',
+              render: (v: string | null) => (v ? new Date(v).toLocaleString() : '—'),
+            },
+            {
+              title: t('common.actions'),
+              key: 'actions',
+              render: (_: unknown, record: ApiToken) => (
+                <Popconfirm
+                  title={t('settings.tokens.deleteConfirm')}
+                  onConfirm={() => void runDeleteToken(record.id)}
+                >
+                  <Button type="link" size="small" danger>
+                    {t('common.delete')}
+                  </Button>
+                </Popconfirm>
+              ),
+            },
+          ]}
+        />
+      </Card>
+      <Modal
+        open={plainToken !== null}
+        title={t('settings.tokens.plainTitle')}
+        footer={
+          <Button type="primary" onClick={() => setPlainToken(null)}>
+            {t('common.close')}
+          </Button>
+        }
+        onCancel={() => setPlainToken(null)}
+      >
+        <Alert
+          type="warning"
+          showIcon
+          message={t('settings.tokens.plainWarning')}
+          style={{ marginBottom: 12 }}
+        />
+        <Typography.Paragraph copyable style={{ fontFamily: 'monospace' }}>
+          {plainToken}
+        </Typography.Paragraph>
+      </Modal>
     </Space>
   )
 }
