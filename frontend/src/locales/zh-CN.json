@@ -171,5 +171,26 @@
     "missingHint": "未找到 {{path}};产生访问/错误日志后此处会自动显示内容",
     "truncated": "文件较大,仅展示末尾部分",
     "empty": "(暂无内容)"
+  },
+  "dashboard": {
+    "stat": {
+      "caddy": "Caddy 状态",
+      "panel": "面板版本",
+      "sites": "站点总数",
+      "drift": "配置一致性"
+    },
+    "caddyUp": "运行中",
+    "caddyDown": "不可达",
+    "caddyUnreachable": "Caddy Admin API 不可达:无法读取运行态与下发配置,请检查 Caddy 是否运行",
+    "sitesBreakdown": "启用 {{enabled}} / 停用 {{disabled}}",
+    "driftOk": "一致",
+    "driftDetected": "存在漂移",
+    "driftTitle": "检测到配置漂移:面板外改动或回滚不一致,建议核对后回滚或重新下发",
+    "drift": {
+      "dbVsDisk": "DB 记录 vs 磁盘 Caddyfile",
+      "caddyVsDisk": "Caddy 运行态 vs 磁盘 Caddyfile"
+    },
+    "recentTitle": "最近下发",
+    "noVersions": "暂无下发记录"
   }
 }

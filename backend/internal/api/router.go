@@ -139,6 +139,11 @@ func New(deps Deps) *gin.Engine {
 	logsHandler := handler.NewLogs(service.NewLogs(logPathFn))
 	authorized.GET("/logs", logsHandler.Tail())
 
+	// Dashboard:状态聚合 + 漂移检测(FR-201/202)。
+	driftChecker := service.NewDriftChecker(deps.Store, deps.Pipeline, deps.CaddyfilePathFn)
+	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Drift: driftChecker})
+	authorized.GET("/status", handler.NewDashboard(dashboardSvc).Status())
+
 	mountFrontend(r, deps.Bundle)
 
 	return r

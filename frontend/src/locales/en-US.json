@@ -171,5 +171,26 @@
     "missingHint": "{{path}} not found; content appears here once access/error logs are produced",
     "truncated": "File is large, showing the tail only",
     "empty": "(empty)"
+  },
+  "dashboard": {
+    "stat": {
+      "caddy": "Caddy status",
+      "panel": "Panel version",
+      "sites": "Sites",
+      "drift": "Config consistency"
+    },
+    "caddyUp": "Running",
+    "caddyDown": "Unreachable",
+    "caddyUnreachable": "Caddy Admin API is unreachable: cannot read live config or deploy; check whether Caddy is running",
+    "sitesBreakdown": "{{enabled}} enabled / {{disabled}} disabled",
+    "driftOk": "In sync",
+    "driftDetected": "Drift detected",
+    "driftTitle": "Config drift detected: out-of-panel changes or partial rollback; verify then roll back or redeploy",
+    "drift": {
+      "dbVsDisk": "DB record vs disk Caddyfile",
+      "caddyVsDisk": "Caddy live vs disk Caddyfile"
+    },
+    "recentTitle": "Recent deploys",
+    "noVersions": "No deploys yet"
   }
 }

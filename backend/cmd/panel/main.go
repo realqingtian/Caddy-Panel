@@ -18,6 +18,7 @@ import (
 	"caddy-panel/backend/internal/config"
 	"caddy-panel/backend/internal/i18n"
 	"caddy-panel/backend/internal/model"
+	"caddy-panel/backend/internal/service"
 	"caddy-panel/backend/internal/store"
 )
 
@@ -85,6 +86,20 @@ func run() error {
 		caddyClient,
 		caddyfilePathFn,
 	)
+
+	// 启动漂移检测(FR-202):结果日志留痕;Dashboard 每次访问都会实时复核。
+	go func() {
+		checker := service.NewDriftChecker(st, pipeline, caddyfilePathFn)
+		report := checker.Check(ctx)
+		switch {
+		case !report.CaddyReachable:
+			slog.Warn("启动漂移检测:Caddy Admin API 不可达,无法确认运行态")
+		case !report.InSync:
+			slog.Warn("启动漂移检测:发现配置漂移,请在仪表盘查看差异来源", "report", report)
+		default:
+			slog.Info("启动漂移检测:DB / 磁盘 / Caddy 运行态一致")
+		}
+	}()
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,

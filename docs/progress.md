@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:M1 编码进行中 —— T7 日志已完成,下一任务 T8(启动漂移检测 + Dashboard)。**
-T8 注意事项:drift 独立模块(service/drift.go):DB 最新 applied 快照 rendered vs 磁盘 Caddyfile vs GET /config 三方对比;Dashboard 聚合(Caddy 存活/站点数/最近下发)复用既有查询。
+**阶段:M1 编码进行中 —— T8 漂移检测/Dashboard 已完成,最后一项 T9(Docker 镜像与 compose 打磨 + README)。**
+T9 注意事项:多阶段构建已存在且经多轮联调;剩 README(部署/开发指引)、CI 决策(待决事项)、全量回归(lint/build/go test/compose)与 M1 收尾核对(PRD ✅ 项对照)。
 
 ## 2. 里程碑
 
@@ -39,7 +39,7 @@ T8 注意事项:drift 独立模块(service/drift.go):DB 最新 applied 快照 re
 | T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ✅ | 2026-10-10 | service 编排(先 Caddy 后 DB)+ 域名查重 + dry_run 预检 + 版本快照(成败都留痕);compose 真 Caddy 联调:创建→反代生效→停用下线→启用恢复→删除,域名冲突 409/非法输入 400/下发失败 422(含 Caddy 原文);前端 Sites 页 Table+动态 Drawer+启停+删除 |
 | T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ✅ | 2026-10-10 | 版本历史/详情/回滚(恢复站点快照+下发,生成新版本)/直编(校验+防护:缺全局 admin 指令直接拒绝)/当前配置双视图;系统设置白名单+值校验(env 默认兜底);前端 Monaco+Caddyfile 高亮+DiffEditor+暗色同步;联调:直编生效/非法 422/回滚恢复反代/设置读写 |
 | T7 | 日志 tail API + Logs 页 | FR-50x | ✅ | 2026-10-10 | 末尾读取(上限 1000 行/2MiB,半行丢弃);文件不存在 exists=false 明确提示;前端 usePolling(3s 可暂停)+ access/error 切换 + 行数选择 |
-| T8 | 启动漂移检测 + Dashboard | FR-202 | ⬜ | | drift.go |
+| T8 | 启动漂移检测 + Dashboard | FR-202 | ✅ | 2026-10-10 | drift 三方对比:DB rendered vs 磁盘(文本)+ 运行态 vs 磁盘(站点指纹语义比较,规避 Caddy JSON 往返噪声);/status 聚合(Caddy 存活/适配器版本/站点计数/最近 5 次下发);启动检查日志留痕;前端 Dashboard 卡片 + 告警;联调:一致态 true、直编不误报 |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ⬜ | | 多阶段构建 |
 
 ## 4. 决策与变更日志
@@ -68,6 +68,7 @@ T8 注意事项:drift 独立模块(service/drift.go):DB 最新 applied 快照 re
 | 2026-10-10 | 站点编排改为"先 Caddy 后 DB":pipeline 成功后才提交站点变更,失败零 DB 变更,消除补偿回滚中间态;Caddy 生效而 DB 提交失败的崩溃窗口由启动漂移检测(T8)兜底。与设计第 3 节"落库→下发"顺序不同,以 3.1 一致性语义为准 | 补偿回滚本身可能失败会产生更难解释的中间态 |
 | 2026-10-10 | 渲染全局块新增 PANEL_CADDY_ADMIN_BIND(默认 localhost:2019):/load 会应用全局块,若绑定与 Panel 实际可达地址不一致,首次下发后 Panel 即失联;compose 中为 caddy:2019 | T5 联调发现的真实故障模式 |
 | 2026-10-10 | Caddyfile 直编强制保留全局 admin 指令(缺失即 400):直编缺全局块会让 /load 后 Caddy 回落默认绑定导致面板失联;全局块属面板管辖,用户从预览载入编辑即可保留 | T6 联调确认的故障模式,防护成本一行正则 |
+| 2026-10-10 | 漂移检测的运行态对比采用站点指纹(host 集合+路由数)语义比较而非字节比较:Caddy /load 存储前对 JSON 做结构往返(键序/默认值),字节级必然误报;深层字段改动由站点操作全量渲染兜底 | T8 联调实测字节比较 100% 误报 |
 
 ## 5. 待决事项
 
