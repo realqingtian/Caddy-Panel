@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"caddy-panel/backend/internal/model"
 )
 
@@ -34,6 +36,17 @@ type SiteInput struct {
 	HealthCheckPath     string `json:"health_check_path"`
 	HealthCheckInterval string `json:"health_check_interval"`
 	HealthCheckExpected int    `json:"health_check_expected"`
+
+	// FR-704 访问控制;BasicAuth 密码为明文(仅请求期存在,落库前 bcrypt)
+	BasicAuth   []BasicAuthUser `json:"basic_auth"`
+	IPAllowlist string          `json:"ip_allowlist"`
+	IPBlocklist string          `json:"ip_blocklist"`
+}
+
+// BasicAuthUser basic auth 条目;Password 明文入参,Hash bcrypt 出参。
+type BasicAuthUser struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // siteTypes / lbPolicies 合法值集合(与 model 常量对应)。
@@ -71,10 +84,79 @@ func (in SiteInput) Validate() error {
 	if in.LBPolicy != "" && !lbPolicies[in.LBPolicy] {
 		return &InvalidInputError{Reason: fmt.Sprintf("负载均衡策略非法: %s", in.LBPolicy)}
 	}
+	if err := in.validateAccessControl(); err != nil {
+		return err
+	}
 	if in.HeadersEnabled {
 		return validateCustomHeaders(in.CustomHeaders)
 	}
 	return nil
+}
+
+// validateAccessControl FR-704:basicauth 条目与 IP 名单格式。
+func (in SiteInput) validateAccessControl() error {
+	seen := map[string]bool{}
+	for _, u := range in.BasicAuth {
+		if strings.TrimSpace(u.Username) == "" {
+			return &InvalidInputError{Reason: "Basic Auth 用户名不能为空"}
+		}
+		if seen[u.Username] {
+			return &InvalidInputError{Reason: fmt.Sprintf("Basic Auth 用户名重复: %s", u.Username)}
+		}
+		seen[u.Username] = true
+		if len(u.Password) < 4 {
+			return &InvalidInputError{Reason: fmt.Sprintf("Basic Auth 密码至少 4 位(用户 %s)", u.Username)}
+		}
+	}
+	for _, cidr := range splitDomains(in.IPAllowlist) {
+		if err := validateIPOrCIDR(cidr); err != nil {
+			return err
+		}
+	}
+	for _, cidr := range splitDomains(in.IPBlocklist) {
+		if err := validateIPOrCIDR(cidr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateIPOrCIDR 接受单个 IP 或 CIDR 网段。
+func validateIPOrCIDR(value string) error {
+	if strings.Contains(value, "/") {
+		if _, _, err := net.ParseCIDR(value); err != nil {
+			return &InvalidInputError{Reason: fmt.Sprintf("IP 网段格式非法: %s", value)}
+		}
+		return nil
+	}
+	if net.ParseIP(value) == nil {
+		return &InvalidInputError{Reason: fmt.Sprintf("IP 地址格式非法: %s", value)}
+	}
+	return nil
+}
+
+// hashBasicAuthUsers 明文密码 bcrypt 哈希,序列化为存储 JSON。
+func (in SiteInput) hashBasicAuthUsers() (string, error) {
+	if len(in.BasicAuth) == 0 {
+		return "", nil
+	}
+	type entry struct {
+		Username     string `json:"username"`
+		PasswordHash string `json:"password_hash"`
+	}
+	entries := make([]entry, 0, len(in.BasicAuth))
+	for _, u := range in.BasicAuth {
+		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return "", fmt.Errorf("哈希 Basic Auth 密码(用户 %s): %w", u.Username, err)
+		}
+		entries = append(entries, entry{Username: strings.TrimSpace(u.Username), PasswordHash: string(hash)})
+	}
+	data, err := json.Marshal(entries)
+	if err != nil {
+		return "", fmt.Errorf("序列化 Basic Auth 用户: %w", err)
+	}
+	return string(data), nil
 }
 
 func (in SiteInput) validateByType() error {
@@ -180,5 +262,7 @@ func (in SiteInput) toSite() *model.Site {
 		HealthCheckPath:     strings.TrimSpace(in.HealthCheckPath),
 		HealthCheckInterval: strings.TrimSpace(in.HealthCheckInterval),
 		HealthCheckExpected: in.HealthCheckExpected,
+		IPAllowlist:         strings.TrimSpace(in.IPAllowlist),
+		IPBlocklist:         strings.TrimSpace(in.IPBlocklist),
 	}
 }

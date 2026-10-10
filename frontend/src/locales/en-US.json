@@ -46,7 +46,8 @@
     "editTitle": "Edit Site",
     "action": {
       "new": "New Site",
-      "addHeader": "Add header"
+      "addHeader": "Add header",
+      "addBasicAuth": "Add user"
     },
     "type": {
       "proxy": "Reverse Proxy",
@@ -69,12 +70,19 @@
       "httpsRedirect": "Force HTTPS redirect",
       "enabled": "Enabled",
       "healthCheck": "Active health check",
-      "healthCheckPath": "Check path (e.g. /healthz)"
+      "healthCheckPath": "Check path (e.g. /healthz)",
+      "basicAuth": "Basic Auth users",
+      "basicAuthUser": "Username",
+      "basicAuthPassword": "Password",
+      "ipAllowlist": "IP allowlist",
+      "ipBlocklist": "IP blocklist"
     },
     "hint": {
       "domains": "Separate multiple domains with commas",
       "upstreams": "Separate multiple upstreams with commas, e.g. 127.0.0.1:8080, 127.0.0.1:8081",
-      "healthCheck": "Caddy actively probes upstreams and ejects unhealthy ones"
+      "healthCheck": "Caddy actively probes upstreams and ejects unhealthy ones",
+      "basicAuth": "Replaced and re-hashed (bcrypt) on every save; re-enter passwords for existing users, empty entries are ignored",
+      "ipList": "Comma separated, single IP or CIDR; allowlist returns 403 to everyone else"
     },
     "lbPolicy": {
       "roundRobin": "Round robin",
@@ -88,7 +96,9 @@
       "upstreams": "Please enter upstreams",
       "rootPath": "Please enter the root path",
       "redirectTo": "Please enter the redirect target",
-      "headerKey": "Please enter the header name"
+      "headerKey": "Please enter the header name",
+      "basicAuthUser": "Please enter the username",
+      "basicAuthPassword": "Please enter the password (min 4 chars)"
     },
     "saved": "Saved and applied",
     "saveFailed": "Save failed",

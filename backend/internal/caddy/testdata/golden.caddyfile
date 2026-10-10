@@ -21,6 +21,11 @@ app.example.com, www.example.com {
 	}
 	header X-Frame-Options "DENY"
 	header X-Served-By "caddy \"panel\""
+	@site_blocked remote_ip 192.168.1.1 10.0.0.0/8
+	respond @site_blocked 403
+	basic_auth {
+		alice $2a$10$abcdefghij
+	}
 }
 api.example.com {
 	log {
@@ -36,6 +41,8 @@ static.example.com {
 	}
 	root * /var/www/static
 	file_server
+	@site_not_allowed not remote_ip 203.0.113.0/24
+	respond @site_not_allowed 403
 }
 http://old.example.com {
 	log {

@@ -110,6 +110,11 @@ func (s *Site) Create(ctx context.Context, in SiteInput, dryRun bool) (*model.Si
 		return nil, nil, err
 	}
 	site := in.toSite()
+	basicAuthJSON, err := in.hashBasicAuthUsers()
+	if err != nil {
+		return nil, nil, err
+	}
+	site.BasicAuthUsers = basicAuthJSON
 	if err := checkDomainConflict(existing, site, site.Domains); err != nil {
 		return nil, nil, err
 	}
@@ -152,6 +157,11 @@ func (s *Site) Update(ctx context.Context, id uint, in SiteInput) (*model.Site, 
 		return nil, nil, err
 	}
 	updated := in.toSite()
+	basicAuthJSON, err := in.hashBasicAuthUsers()
+	if err != nil {
+		return nil, nil, err
+	}
+	updated.BasicAuthUsers = basicAuthJSON
 	updated.ID, updated.CreatedAt = old.ID, old.CreatedAt
 	if err := checkDomainConflict(existing, updated, updated.Domains); err != nil {
 		return nil, nil, err

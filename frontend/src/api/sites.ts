@@ -21,6 +21,9 @@ export interface Site {
   health_check_path: string
   health_check_interval: string
   health_check_expected: number
+  basic_auth_users: string
+  ip_allowlist: string
+  ip_blocklist: string
   created_at: string
   updated_at: string
 }
@@ -44,6 +47,10 @@ export interface SiteInput {
   health_check_path: string
   health_check_interval: string
   health_check_expected: number
+  /** FR-704 密码明文仅存在于请求期,后端 bcrypt 后落库;每次保存全量替换。 */
+  basic_auth: { username: string; password: string }[]
+  ip_allowlist: string
+  ip_blocklist: string
 }
 
 export interface SiteMutationResponse {

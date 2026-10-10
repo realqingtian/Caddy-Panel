@@ -78,6 +78,9 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
           websocket: false,
           headers_enabled: false,
           headers: [],
+          basic_auth: [],
+          ip_allowlist: '',
+          ip_blocklist: '',
         }}
       >
         <Form.Item
@@ -176,6 +179,7 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
           </>
         )}
 
+        <AccessControlFields />
         <Form.Item
           name="https_redirect"
           label={t('sites.field.httpsRedirect')}
@@ -192,8 +196,9 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
 }
 
 /** 表单值:custom_headers 以 Form.List 结构编辑,提交时序列化为 JSON。 */
-interface SiteFormValues extends Omit<SiteInput, 'custom_headers'> {
+interface SiteFormValues extends Omit<SiteInput, 'basic_auth' | 'custom_headers'> {
   headers?: { key: string; value: string }[]
+  basic_auth?: { username: string; password: string }[]
 }
 
 /** 自定义响应头 kv 编辑器;仅在 headers_enabled 开启时渲染。 */
@@ -239,15 +244,20 @@ function siteToValues(site: Site): SiteFormValues {
   } catch {
     headers = []
   }
-  return { ...site, headers }
+  // 已有用户名回显;密码不回显(哈希不可逆),重输即重置密码。
+  const basic_auth = (
+    site.basic_auth_users ? (JSON.parse(site.basic_auth_users) as { username: string }[]) : []
+  ).map((u) => ({ username: u.username, password: '' }))
+  return { ...site, headers, basic_auth }
 }
 
 function valuesToInput(values: SiteFormValues): SiteInput {
-  const { headers, ...rest } = values
+  const { headers, basic_auth, ...rest } = values
   return {
     ...rest,
     custom_headers:
       values.headers_enabled && headers && headers.length > 0 ? JSON.stringify(headers) : '',
+    basic_auth: (basic_auth ?? []).filter((u) => u.username),
   }
 }
 
@@ -269,5 +279,63 @@ function HealthCheckFields({ form }: { form: FormInstance<SiteFormValues> }) {
         <Input type="number" placeholder="200" />
       </Form.Item>
     </div>
+  )
+}
+
+/** 访问控制区块(FR-704):basic auth 用户与 IP 名单,三类站点通用。 */
+function AccessControlFields() {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Form.Item label={t('sites.field.basicAuth')} tooltip={t('sites.hint.basicAuth')}>
+        <Form.List name="basic_auth">
+          {(fields, { add, remove }) => (
+            <div>
+              {fields.map((field) => (
+                <div key={field.key} style={{ display: 'flex', gap: 8 }}>
+                  <Form.Item
+                    name={[field.name, 'username']}
+                    rules={[{ required: true, message: t('sites.required.basicAuthUser') }]}
+                    style={{ flex: 1, marginBottom: 8 }}
+                  >
+                    <Input placeholder={t('sites.field.basicAuthUser')} />
+                  </Form.Item>
+                  <Form.Item
+                    name={[field.name, 'password']}
+                    rules={[{ required: true, message: t('sites.required.basicAuthPassword') }]}
+                    style={{ flex: 1, marginBottom: 8 }}
+                  >
+                    <Input.Password
+                      placeholder={t('sites.field.basicAuthPassword')}
+                      autoComplete="new-password"
+                    />
+                  </Form.Item>
+                  <Button type="text" danger onClick={() => remove(field.name)}>
+                    {t('common.delete')}
+                  </Button>
+                </div>
+              ))}
+              <Button type="dashed" block onClick={() => add({ username: '', password: '' })}>
+                {t('sites.action.addBasicAuth')}
+              </Button>
+            </div>
+          )}
+        </Form.List>
+      </Form.Item>
+      <Form.Item
+        name="ip_allowlist"
+        label={t('sites.field.ipAllowlist')}
+        extra={t('sites.hint.ipList')}
+      >
+        <Input.TextArea rows={2} placeholder="203.0.113.0/24, 10.0.0.5" />
+      </Form.Item>
+      <Form.Item
+        name="ip_blocklist"
+        label={t('sites.field.ipBlocklist')}
+        extra={t('sites.hint.ipList')}
+      >
+        <Input.TextArea rows={2} />
+      </Form.Item>
+    </>
   )
 }

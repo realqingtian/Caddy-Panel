@@ -6,6 +6,7 @@
 {{- end}}
 	root * {{.RootPath}}
 	file_server
+{{- template "access_control" .}}
 {{- if .RawExtra}}
 	{{.RawExtra}}
 {{- end}}

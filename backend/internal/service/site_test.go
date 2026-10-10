@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 
@@ -323,5 +324,52 @@ func TestSiteGet_NotFound(t *testing.T) {
 	svc, _, _ := newSiteFixture(t, nil)
 	if _, err := svc.Get(context.Background(), 999); !errors.Is(err, ErrSiteNotFound) {
 		t.Fatalf("期望 ErrSiteNotFound: %v", err)
+	}
+}
+
+func TestSiteCreate_BasicAuthStoredAsHash(t *testing.T) {
+	svc, repo, _ := newSiteFixture(t, nil)
+
+	in := proxyInput()
+	in.BasicAuth = []BasicAuthUser{{Username: "alice", Password: "secret123"}}
+	in.IPBlocklist = "10.0.0.0/8, 192.168.1.1"
+
+	site, _, err := svc.Create(context.Background(), in, false)
+	if err != nil {
+		t.Fatalf("创建失败: %v", err)
+	}
+
+	stored := repo.sites[site.ID]
+	if stored.BasicAuthUsers == "" || strings.Contains(stored.BasicAuthUsers, "secret123") {
+		t.Fatalf("落库必须是 bcrypt 哈希且不含明文: %s", stored.BasicAuthUsers)
+	}
+	var entries []struct {
+		Username     string `json:"username"`
+		PasswordHash string `json:"password_hash"`
+	}
+	if err := json.Unmarshal([]byte(stored.BasicAuthUsers), &entries); err != nil {
+		t.Fatalf("哈希 JSON 解析失败: %v", err)
+	}
+	if len(entries) != 1 || entries[0].Username != "alice" || !strings.HasPrefix(entries[0].PasswordHash, "$2") {
+		t.Fatalf("哈希条目不符: %+v", entries)
+	}
+	if stored.IPBlocklist != "10.0.0.0/8, 192.168.1.1" {
+		t.Fatalf("IP 黑名单未落库: %q", stored.IPBlocklist)
+	}
+}
+
+func TestSiteInput_BasicAuthValidation(t *testing.T) {
+	in := proxyInput()
+	in.BasicAuth = []BasicAuthUser{{Username: "dup", Password: "aaaa"}, {Username: "dup", Password: "bbbb"}}
+	if err := in.Validate(); err == nil {
+		t.Fatal("重复用户名应被拒绝")
+	}
+	in.BasicAuth = []BasicAuthUser{{Username: "u", Password: "abc"}}
+	if err := in.Validate(); err == nil {
+		t.Fatal("过短密码应被拒绝")
+	}
+	in.IPAllowlist = "not-an-ip"
+	if err := in.Validate(); err == nil {
+		t.Fatal("非法 IP 应被拒绝")
 	}
 }

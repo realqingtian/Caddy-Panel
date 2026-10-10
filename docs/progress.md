@@ -47,7 +47,7 @@
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 | --- | --- | --- | --- | --- | --- |
 | T2.1 | 上游健康可视化 + 健康检查配置 | FR-701 | ✅ | 2026-10-11 | sites 加 health_* 字段(AutoMigrate)+ SiteForm 区块;health_uri/interval/status 渲染进 reverse_proxy 块(golden+离线契约);GET /upstreams 透传 + 前端上游状态页(5s 轮询);间隔格式/状态码范围校验 |
-| T2.2 | 访问控制(basic auth / IP 名单) | FR-704 | ⬜ | | bcrypt panel 侧生成;限流仅表单占位(插件) |
+| T2.2 | 访问控制(basic auth / IP 名单) | FR-704 | ✅ | 2026-10-11 | basic auth 明文仅请求期存在、bcrypt 落库(全量替换语义,前端提示重输密码);IP 名单 CIDR 校验,黑名单命中/白名单未命中 403(命名 matcher);公共模板片段三类站点通用;限流渲染留待插件版 |
 | T2.3 | 导入 Caddyfile | FR-705 | ⬜ | | 预览/应用两段式;不识别片段落 raw_extra |
 | T2.4 | 备份与恢复 | FR-706 | ⬜ | | JSON 导出/导入 |
 | T2.5 | 监控图表 | FR-702 | ⬜ | | metrics 抓取存 SQLite + recharts;抓取配置一键生成 |

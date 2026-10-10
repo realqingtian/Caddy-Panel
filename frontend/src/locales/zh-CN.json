@@ -46,7 +46,8 @@
     "editTitle": "编辑站点",
     "action": {
       "new": "新建站点",
-      "addHeader": "添加响应头"
+      "addHeader": "添加响应头",
+      "addBasicAuth": "添加用户"
     },
     "type": {
       "proxy": "反向代理",
@@ -69,12 +70,19 @@
       "httpsRedirect": "强制 HTTPS 跳转",
       "enabled": "启用",
       "healthCheck": "主动健康检查",
-      "healthCheckPath": "检查路径(如 /healthz)"
+      "healthCheckPath": "检查路径(如 /healthz)",
+      "basicAuth": "Basic Auth 用户",
+      "basicAuthUser": "用户名",
+      "basicAuthPassword": "密码",
+      "ipAllowlist": "IP 白名单",
+      "ipBlocklist": "IP 黑名单"
     },
     "hint": {
       "domains": "多个域名用英文逗号分隔",
       "upstreams": "多个上游用英文逗号分隔,如 127.0.0.1:8080, 127.0.0.1:8081",
-      "healthCheck": "开启后 Caddy 主动探测上游,异常自动摘除"
+      "healthCheck": "开启后 Caddy 主动探测上游,异常自动摘除",
+      "basicAuth": "保存时全量替换并重新哈希(bcrypt);已有用户需重输密码,留空条目将被忽略",
+      "ipList": "逗号分隔,支持单个 IP 或 CIDR 网段;白名单为名单外全部 403"
     },
     "lbPolicy": {
       "roundRobin": "轮询(round_robin)",
@@ -88,7 +96,9 @@
       "upstreams": "请输入上游地址",
       "rootPath": "请输入根目录",
       "redirectTo": "请输入重定向目标",
-      "headerKey": "请输入响应头名称"
+      "headerKey": "请输入响应头名称",
+      "basicAuthUser": "请输入用户名",
+      "basicAuthPassword": "请输入密码(至少 4 位)"
     },
     "saved": "已保存并生效",
     "saveFailed": "保存失败",

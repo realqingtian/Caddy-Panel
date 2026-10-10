@@ -43,6 +43,7 @@ type tmplSite struct {
 	HTTPSRedirect bool
 	RawExtra      string
 	AccessLogPath string
+	AccessLines   []string
 }
 
 // Renderer Caddyfile 渲染器接口;pipeline 依赖抽象以便单测。
@@ -105,6 +106,7 @@ func toTmplSite(site model.Site, global GlobalOptions) tmplSite {
 		RootPath:      site.RootPath,
 		RawExtra:      site.RawExtra, // 逃生舱:原样拼入,不做任何加工
 		AccessLogPath: global.AccessLogPath,
+		AccessLines:   accessLines(site),
 	}
 	switch site.Type {
 	case model.SiteTypeProxy:
@@ -139,6 +141,45 @@ func healthLines(site model.Site) []string {
 		lines = append(lines, `health_uri "/healthz"`, "health_interval 10s")
 	}
 	return lines
+}
+
+// accessLines FR-704 访问控制指令行(三类站点通用,拼在站点体末尾):
+// 黑名单(block)→ 命中即 403;白名单(allow)→ 未命中 403;
+// basic_auth 使用 Caddy 默认 bcrypt 校验,hash 原样输出。
+func accessLines(site model.Site) []string {
+	lines := []string{}
+	if block := splitList(site.IPBlocklist); len(block) > 0 {
+		lines = append(lines, "@site_blocked remote_ip "+strings.Join(block, " "), "respond @site_blocked 403")
+	}
+	if allow := splitList(site.IPAllowlist); len(allow) > 0 {
+		lines = append(lines, "@site_not_allowed not remote_ip "+strings.Join(allow, " "), "respond @site_not_allowed 403")
+	}
+	if users := basicAuthEntries(site.BasicAuthUsers); len(users) > 0 {
+		lines = append(lines, "basic_auth {")
+		for _, u := range users {
+			lines = append(lines, "\t"+u.Username+" "+u.PasswordHash)
+		}
+		lines = append(lines, "}")
+	}
+	return lines
+}
+
+// basicAuthEntry basicauth 存储条目。
+type basicAuthEntry struct {
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+}
+
+// basicAuthEntries 解析存储 JSON;非法数据(理论上不会出现,写入前已校验)静默跳过。
+func basicAuthEntries(raw string) []basicAuthEntry {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var entries []basicAuthEntry
+	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+		return nil
+	}
+	return entries
 }
 
 // splitList 逗号分隔列表 → 去空白、去空的字符串切片。

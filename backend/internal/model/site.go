@@ -50,6 +50,11 @@ type Site struct {
 	HealthCheckInterval string `json:"health_check_interval"` // Go duration,如 10s
 	HealthCheckExpected int    `json:"health_check_expected"` // 预期状态码,默认 200
 
+	// FR-704 访问控制(三类站点通用)
+	BasicAuthUsers string `gorm:"type:text" json:"basic_auth_users"` // JSON [{"username","password_hash"}](bcrypt)
+	IPAllowlist    string `json:"ip_allowlist"`                      // 逗号分隔 CIDR/IP
+	IPBlocklist    string `json:"ip_blocklist"`                      // 逗号分隔 CIDR/IP
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

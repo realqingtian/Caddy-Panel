@@ -33,6 +33,9 @@ func renderFixture() RenderInput {
 				HealthCheckPath:     "/healthz",
 				HealthCheckInterval: "10s",
 				HealthCheckExpected: 200,
+
+				IPBlocklist:    "192.168.1.1, 10.0.0.0/8",
+				BasicAuthUsers: `[{"username":"alice","password_hash":"$2a$10$abcdefghij"}]`,
 			},
 			{
 				Name: "api", Type: model.SiteTypeProxy,
@@ -48,6 +51,7 @@ func renderFixture() RenderInput {
 				RootPath:      "/var/www/static",
 				HTTPSRedirect: true,
 				Enabled:       true,
+				IPAllowlist:   "203.0.113.0/24",
 			},
 			{
 				Name: "old", Type: model.SiteTypeRedirect,
