@@ -54,6 +54,27 @@ func (c *CaddyLocal) Reachable(ctx context.Context) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+// Metrics 抓取本机 Caddy /metrics(Prometheus 文本);agent 定期上报中心。
+func (c *CaddyLocal) Metrics(ctx context.Context) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://caddy/metrics", nil)
+	if err != nil {
+		return "", fmt.Errorf("构造 metrics 请求: %w", err)
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("连接本机 Caddy 失败: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if err != nil {
+		return "", fmt.Errorf("读取 metrics 响应: %w", err)
+	}
+	return string(body), nil
+}
+
 // Load 把 Caddyfile 全文交本机 Caddy 热加载(Content-Type: text/caddyfile,
 // Caddy 原生支持 —— agent 无需内置适配器);失败返回 Caddy 错误原文。
 func (c *CaddyLocal) Load(ctx context.Context, caddyfile string) error {

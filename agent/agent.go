@@ -10,8 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +36,7 @@ var errEnrollRejected = errors.New("enrollment rejected")
 // Agent agent 运行时。
 type Agent struct {
 	centerURL     string // ws(s)://host/api/v1/agent/ws
+	reportURL     string // http(s)://host/api/v1/agent(metrics 上报基址)
 	statePath     string
 	caddyfilePath string
 	caddy         *CaddyLocal
@@ -43,6 +46,7 @@ type Agent struct {
 
 	state   *AgentState
 	writeMu sync.Mutex
+	http    *http.Client // metrics 上报 client(请求级 ctx 控制超时)
 }
 
 // NewAgent 校验参数并构造;state 中已有节点密钥时忽略 enrollToken。
@@ -57,8 +61,13 @@ func NewAgent(centerURL, statePath, caddyfilePath string, caddy *CaddyLocal, loc
 		}
 		state = &AgentState{}
 	}
+	// metrics 上报走同一 host 的 http(s) 协议(WS 地址转 http)。
+	report := "http" + strings.TrimPrefix(centerURL, "ws")
+	report = strings.TrimSuffix(report, "/api/v1/agent/ws") + "/api/v1/agent"
 	return &Agent{
 		centerURL:     centerURL,
+		reportURL:     report,
+		http:          &http.Client{},
 		statePath:     statePath,
 		caddyfilePath: caddyfilePath,
 		caddy:         caddy,
@@ -188,6 +197,7 @@ func (a *Agent) serve(ctx context.Context, ws *websocket.Conn) error {
 			if err := a.write(ws, a.buildHeartbeat()); err != nil {
 				return fmt.Errorf("发送心跳失败: %w", err)
 			}
+			go a.reportMetrics()
 		default:
 		}
 
@@ -259,6 +269,29 @@ func (a *Agent) buildHeartbeat() agentproto.Message {
 		LocalConfig:  a.local,
 	}
 	return agentproto.Message{Type: agentproto.TypeHeartbeat, Heartbeat: &hb}
+}
+
+// reportMetrics 抓取本机 /metrics 并 POST 中心(节点密钥认证;
+// 失败仅日志,下轮重试 —— 中心开关关闭/不可达都不影响主链路)。
+func (a *Agent) reportMetrics() {
+	ctx, cancel := context.WithTimeout(context.Background(), adminTimeout)
+	defer cancel()
+	text, err := a.caddy.Metrics(ctx)
+	if err != nil {
+		return // 本机 Caddy 未开 metrics/不可达:静默跳过
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		strings.TrimSuffix(a.reportURL, "/")+"/metrics", strings.NewReader(text))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+a.state.NodeSecret)
+	resp, err := a.http.Do(req)
+	if err != nil {
+		slog.Warn("上报 metrics 失败", "error", err)
+		return
+	}
+	resp.Body.Close()
 }
 
 // write 串行化 WS 写(心跳与回执并发)。
