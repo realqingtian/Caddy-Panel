@@ -1,0 +1,11 @@
+{
+	admin 0.0.0.0:2019
+	log {
+		output file /data/logs/error.log
+		level INFO
+	}
+}
+
+# 初始为空站点表:全部站点由 Caddy Panel 渲染 Caddyfile 并经 Admin API /load 下发。
+# admin 绑定 0.0.0.0 以便 compose 内 panel 容器可达;该端口未向宿主机映射,
+# 不会暴露到容器网络之外(NFR-101);生产建议改用 unix socket + sidecar。

@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:设计完成,待启动编码(M1-T1 脚手架)。**
-下次会话建议动作:执行 T1(前后端脚手架 + Bun 初始化 + antd MCP/Skill 接入)。
+**阶段:M1 编码进行中 —— T1 脚手架已完成,下一任务 T2(登录/JWT + SQLite 迁移 + 审计/限速中间件)。**
+T2 注意事项:后端错误消息 i18n 已纳入范围(FR-603 扩展,见决策日志与 m1-design 第 5 节);service 层接口先定义再实现(store/caddy 走 mock 可测)。
 
 ## 2. 里程碑
 
@@ -32,7 +32,7 @@
 
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| T1 | 脚手架:前后端骨架可运行、compose 可起;接入 antd MCP/Skill(AGENTS.md) | FR-603/604 | ⬜ | | Bun 初始化前端;Gin 骨架;/healthz;i18n(中/英)与主题(亮/暗/跟随系统)基建 |
+| T1 | 脚手架:前后端骨架可运行、compose 可起;接入 antd MCP/Skill(AGENTS.md) | FR-603/604 | ✅ | 2026-10-10 | 后端 /healthz+Swagger+SPA 托管+优雅停机;前端 i18n 中英、主题三态、AdminLayout+占位页;compose 双容器验证通过。版本:antd 6.6.5 / Vite 8 / TS 6 / ESLint 10 |
 | T2 | 登录/JWT + SQLite 迁移 + 审计/限速中间件 | FR-10x | ⬜ | | |
 | T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ⬜ | | unix socket 支持 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ⬜ | | 渲染单测 golden file |
@@ -61,6 +61,8 @@
 | 2026-10-10 | 登录锁定参数支持 .env 默认 + 设置页运行时调整;JWT 有效期仅 .env 配置、不做运行时修改(用户要求/拍板) | 爆破防护需免重启调整;JWT TTL 变更影响面在全部会话,改 env 重启即可 |
 | 2026-10-10 | 二轮评审(演进视角):预留 raw 片段逃生舱(sites.raw_extra / settings.global_extra)、补 FR-308 证书状态查看、FR-601 加 metrics 开关、明确单实例约束与 Caddy 版本对齐、写明 M2/M3 数据迁移路径 | 全部为低成本预留,扫清 M2/M3 迭代障碍 |
 | 2026-10-10 | AGENTS.md 新增"开发规范"章节:单一职责(文件 ≤300 行/函数 ≤50 行/层间不越界)、可读性、健壮性(错误处理/超时/原子写)、可维护性(接口注入/失败分支必测)(用户要求) | 防止"一个文件做完所有事"的上帝文件,质量约束前置到编码前 |
+| 2026-10-10 | 后端错误消息 i18n 纳入 M1(FR-603 扩展):按请求 `Accept-Language` 返回中/英 `message`(默认 zh-CN),`detail` 原文不翻译;选型 go-i18n,前端 axios 统一携带语言头 | 用户拍板;前端已切语言,后端报错仍是中文会割裂体验 |
+| 2026-10-10 | 前端 lint 维持 ESLint 10 插件生态,Oxlint 暂不引入;M1 完成后再评估(替代/混用/维持) | react-refresh、typescript-eslint 等插件能力是刚需;Oxlint 速度优势明显但生态对等性待比对(见待决事项) |
 
 ## 5. 待决事项
 
@@ -68,3 +70,4 @@
 | --- | --- | --- |
 | M2 范围细化 | ✅ | 已细化为 FR-701~706,见 PRD 第 5 节;M1 验收后复核优先级 |
 | 是否上线 CI(GitHub Actions) | ⬜ | 建议 T9 完成后决定;最少做 lint + go test + build |
+| Oxlint 评估(替代/混用 ESLint) | ⬜ | **M1 MVP 完成后提醒用户评估**:Oxlint 速度优势明显,但 react-refresh/typescript-eslint 等插件能力需逐项比对;届时决定"替代 / 预检+深检混合 / 维持现状" |

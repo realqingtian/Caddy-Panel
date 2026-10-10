@@ -146,4 +146,4 @@ Caddy-Panel/
 - **service 层**:依赖全部走接口(mock store 与 caddy.Client),重点覆盖失败分支(校验失败回滚、load 失败回滚);
 - **handler 层**:httptest + Gin 起真路由,验证鉴权、参数校验、统一错误格式;
 - **caddy/pipeline**:render 单测用快照对比(golden file);validate/load 为集成测试,标记 build tag `integration`,依赖本机 Caddy,CI 缺省跳过;
-- **前端**:Vitest 覆盖 api 层与关键组件;`bun run lint`(ESLint 9 + Prettier)提交前必过。
+- **前端**:Vitest 覆盖 api 层与关键组件;`bun run lint`(ESLint 10 flat config + Prettier)提交前必过;`bun run check:antd`(antd 官方 doctor)检查组件用法与废弃 API。

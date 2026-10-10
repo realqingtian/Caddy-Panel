@@ -15,16 +15,17 @@
 | 配置管理 | spf13/viper(env + yaml,主流标配) | v1 |
 | 日志 | slog(Go 1.21+ 标准库,当前官方推荐) | stdlib |
 | CORS | gin-contrib/cors(Gin 官方贡献库) | latest |
+| 后端错误消息 i18n | nicksnyder/go-i18n(按 `Accept-Language` 返回中/英,文案集中语言包;默认 zh-CN) | v2 |
 | API 文档 | swaggo/gin-swagger(注解生成 OpenAPI,Swagger UI 托管在 `/swagger`,前后端契约同源) | **M1 引入** |
-| 前端框架 | React + TypeScript | React 19、TS 5.x |
-| 前端构建 | Vite | 7.x(初始化时取最新稳定版) |
+| 前端框架 | React + TypeScript | React 19、TS 6(typescript-eslint 当前兼容上限) |
+| 前端构建 | Vite | 8.x(2026-10 脚手架初始化时最新稳定版) |
 | 组件库(UI 框架) | **Ant Design** | **v6**(2025 正式发布;原生支持 React 19、语义化 DOM,无需 v5 时代的 patch 包) |
 | **包管理器** | **Bun**(本机 1.4.2) | `bun install` / `bun add` / `bun run`,锁文件 `bun.lock`;仅作依赖与脚本管理,构建仍走 Vite |
 | 前端路由 | React Router | v7(库模式) |
 | 服务端状态 | TanStack Query | v5 |
 | 本地状态 | Zustand | v5 |
 | HTTP 客户端 | axios | v1 |
-| 前端工程化 | ESLint 9(flat config)+ Prettier;测试 Vitest | 当前主流 |
+| 前端工程化 | ESLint 10(flat config)+ Prettier;测试 Vitest | 当前主流(2026-10 初始化版本) |
 | 国际化 | react-i18next(i18next),M1 即内置中/英 | React 生态事实标准;antd locale 经 ConfigProvider 同步切换 |
 | 主题 | antd 6 theme algorithm(亮/暗/跟随系统),偏好持久化 | 组件库原生能力,零额外依赖 |
 | 配置编辑器 | @monaco-editor/react | VS Code 同源内核,自定义 Caddyfile 语法高亮 |
@@ -68,6 +69,7 @@ go get github.com/gin-gonic/gin github.com/gin-contrib/cors
 go get gorm.io/gorm github.com/glebarez/sqlite
 go get github.com/golang-jwt/jwt/v5 golang.org/x/crypto
 go get github.com/spf13/viper github.com/go-playground/validator/v10
+go get github.com/nicksnyder/go-i18n/v2  # 后端错误消息中/英(FR-603),T2 起使用
 go get github.com/caddyserver/caddy/v2   # 离线 adapt;体积大,M1 第 4 步才引入
 
 # API 文档(handler 写 swaggo 注解 → swag init 生成,UI 挂 /swagger)

@@ -104,6 +104,8 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint、锁�
 
 错误约定:统一 `{ "code": "...", "message": "...", "detail": ... }`;校验失败返回 422 + Caddy 错误原文。全部接口编写 swaggo 注解,`swag init` 生成 OpenAPI,开发态 Swagger UI 挂载在 `/swagger`。
 
+**错误消息国际化**:后端按请求头 `Accept-Language` 选择错误 `message` 的语言(支持 `zh-CN`/`en-US`,默认 `zh-CN`,与前端语言偏好联动);`code` 是稳定的机器可读标识,前端可据此做精细处理;`detail`(Caddy 错误原文、上游响应等)保持原样不翻译。消息文案集中于语言包文件维护,业务代码中不硬编码。
+
 ## 6. 前端设计(React 19 + TypeScript + Ant Design 6)
 
 - 构建:Vite;**依赖与脚本管理:Bun**(`bun install` / `bun run dev`,本机已装 bun 1.4.2);路由:React Router;服务端状态:TanStack Query;本地状态:Zustand(登录态/主题);请求:axios(拦截器统一带 JWT、401 跳登录)。

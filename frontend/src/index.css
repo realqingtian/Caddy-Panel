@@ -1,0 +1,41 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-card {
+  width: 360px;
+}
+
+.layout-logo {
+  height: 32px;
+  margin: 16px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline: 24px;
+}
+
+.layout-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

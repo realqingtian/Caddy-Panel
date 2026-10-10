@@ -1,0 +1,44 @@
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile.initial:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      # 访问/错误日志卷,与 panel 共享以支撑日志 tail(FR-501)
+      - caddy_logs:/data/logs
+
+  panel:
+    build:
+      context: ..
+      dockerfile: deploy/panel.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - caddy
+    environment:
+      PANEL_LISTEN: ":8080"
+      PANEL_MODE: release
+      # M1 经 compose 内网访问 Admin API;生产建议 sidecar 共享 netns + unix socket,
+      # 届时改为 PANEL_ADMIN_URL=unix:///run/caddy/admin.sock(client 已按协议区分)。
+      # 不映射宿主机端口,Admin API 不会暴露到容器网络之外(NFR-101)。
+      PANEL_ADMIN_URL: "http://caddy:2019"
+      PANEL_DB_PATH: "/data/panel.db"
+      PANEL_CADDYFILE_PATH: "/data/Caddyfile"
+      PANEL_LOG_ACCESS_PATH: "/data/logs/access.log"
+      PANEL_LOG_ERROR_PATH: "/data/logs/error.log"
+    ports:
+      - "8080:8080"
+    volumes:
+      - panel_data:/data
+      - caddy_logs:/data/logs
+
+volumes:
+  caddy_data:
+  caddy_config:
+  caddy_logs:
+  panel_data:

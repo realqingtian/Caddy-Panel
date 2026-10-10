@@ -24,3 +24,7 @@ frontend/dist/
 .env
 .env.*
 *.pem
+
+# 前端构建产物写入后端 embed 目录(vite outDir);仅保留 .gitkeep 保证 go:embed 可编译
+backend/internal/web/dist/*
+!backend/internal/web/dist/.gitkeep
