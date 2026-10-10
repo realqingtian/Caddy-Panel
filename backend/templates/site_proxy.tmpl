@@ -4,6 +4,7 @@
 		output file {{.AccessLogPath}}
 	}
 {{- end}}
+{{- if or .LBPolicyLines .Websocket}}
 	reverse_proxy {{join .Upstreams " "}} {
 {{- range .LBPolicyLines}}
 		{{.}}
@@ -12,6 +13,9 @@
 		flush_interval -1
 {{- end}}
 	}
+{{- else}}
+	reverse_proxy {{join .Upstreams " "}}
+{{- end}}
 {{- range .HeaderLines}}
 	{{.}}
 {{- end}}

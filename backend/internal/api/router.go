@@ -14,6 +14,7 @@ import (
 	"caddy-panel/backend/internal/api/handler"
 	"caddy-panel/backend/internal/api/middleware"
 	"caddy-panel/backend/internal/apierr"
+	"caddy-panel/backend/internal/caddy"
 	"caddy-panel/backend/internal/config"
 	"caddy-panel/backend/internal/i18n"
 	"caddy-panel/backend/internal/service"
@@ -26,9 +27,10 @@ const apiPrefix = "/api/"
 
 // Deps router 的全部依赖;main 装配,测试可注入 fake。
 type Deps struct {
-	Cfg    *config.Config
-	Store  *store.Store
-	Bundle *i18n.Bundle
+	Cfg      *config.Config
+	Store    *store.Store
+	Bundle   *i18n.Bundle
+	Pipeline *caddy.Pipeline
 }
 
 // New 构造 Gin 引擎:健康检查、Swagger 文档、/api/v1 业务路由与前端静态托管。
@@ -66,7 +68,27 @@ func New(deps Deps) *gin.Engine {
 	authorized := apiV1.Group("", middleware.JWTAuth(jwtSecret, unauthorized))
 	authorized.GET("/me", authHandler.Me())
 
-	// M1 后续任务的业务接口挂载点:站点/配置/日志路由自 T5 起注册到这里。
+	// 站点管理:渲染参数 settings 优先、env 默认兜底(FR-601)。
+	siteSvc := service.NewSite(service.SiteDeps{
+		Repo:     deps.Store,
+		Pipeline: deps.Pipeline,
+		Defaults: service.SiteDefaults{
+			AdminBind:      deps.Cfg.CaddyAdminBind,
+			ErrorLogPath:   deps.Cfg.LogErrorPath,
+			AccessLogPath:  deps.Cfg.LogAccessPath,
+			MetricsEnabled: false, // metrics 默认关(FR-601),设置页可开
+		},
+	})
+	sites := handler.NewSite(siteSvc)
+	authorized.POST("/sites", sites.Create())
+	authorized.GET("/sites", sites.List())
+	authorized.GET("/sites/:id", sites.Get())
+	authorized.PUT("/sites/:id", sites.Update())
+	authorized.DELETE("/sites/:id", sites.Delete())
+	authorized.POST("/sites/:id/enable", sites.Enable())
+	authorized.POST("/sites/:id/disable", sites.Disable())
+
+	// M1 后续任务的业务接口挂载点:配置中心/日志路由自 T6/T7 起注册到这里。
 
 	mountFrontend(r, deps.Bundle)
 

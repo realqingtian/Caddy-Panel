@@ -5,5 +5,8 @@
   "error.bad_request": "请求参数不正确:{{.reason}}",
   "error.not_found": "接口不存在",
   "error.internal": "服务器内部错误,请稍后再试",
-  "error.forbidden": "没有权限执行该操作"
+  "error.forbidden": "没有权限执行该操作",
+  "error.site_not_found": "站点不存在或已被删除",
+  "error.site_domain_conflict": "域名 {{.domain}} 已被其他站点占用",
+  "error.site_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail"
 }

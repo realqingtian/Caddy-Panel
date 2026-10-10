@@ -23,10 +23,15 @@ services:
     environment:
       PANEL_LISTEN: ":8080"
       PANEL_MODE: release
+      # 首次启动管理员密码;未设置时由面板随机生成并打印到启动日志(FR-103)。
+      PANEL_ADMIN_PASSWORD: "${PANEL_ADMIN_PASSWORD:-}"
       # M1 经 compose 内网访问 Admin API;生产建议 sidecar 共享 netns + unix socket,
       # 届时改为 PANEL_ADMIN_URL=unix:///run/caddy/admin.sock(client 已按协议区分)。
       # 不映射宿主机端口,Admin API 不会暴露到容器网络之外(NFR-101)。
       PANEL_ADMIN_URL: "http://caddy:2019"
+      # 渲染全局块的 Caddy admin 绑定:必须与 caddy 容器可达地址一致,
+      # 否则 /load 后 Panel 将失去与 Admin API 的连接。
+      PANEL_CADDY_ADMIN_BIND: "caddy:2019"
       PANEL_DB_PATH: "/data/panel.db"
       PANEL_CADDYFILE_PATH: "/data/Caddyfile"
       PANEL_LOG_ACCESS_PATH: "/data/logs/access.log"

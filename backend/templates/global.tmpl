@@ -1,9 +1,11 @@
 {{define "global"}}{
 	admin {{.AdminBind}}
+{{- if .ErrorLogPath}}
 	log {
 		output file {{.ErrorLogPath}}
 		level INFO
 	}
+{{- end}}
 {{- if .MetricsEnabled}}
 	metrics
 {{- end}}

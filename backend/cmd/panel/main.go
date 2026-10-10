@@ -14,6 +14,7 @@ import (
 
 	_ "caddy-panel/backend/docs_swag" // swag init 生成的 OpenAPI 文档,注册 /swagger 所需
 	"caddy-panel/backend/internal/api"
+	"caddy-panel/backend/internal/caddy"
 	"caddy-panel/backend/internal/config"
 	"caddy-panel/backend/internal/i18n"
 	"caddy-panel/backend/internal/model"
@@ -66,9 +67,26 @@ func run() error {
 		return err
 	}
 
+	// Caddy 基础设施:client 唯一通信出口;pipeline 单例持有全局单写者锁。
+	caddyClient, err := caddy.NewClient(cfg.AdminURL)
+	if err != nil {
+		return err
+	}
+	pipeline := caddy.NewPipeline(
+		caddy.NewRenderer(),
+		caddy.NewValidator(caddyClient),
+		caddyClient,
+		func() string {
+			if v, ok, err := st.GetSetting(ctx, model.SettingKeyCaddyfilePath); err == nil && ok && v != "" {
+				return v
+			}
+			return cfg.CaddyfilePath
+		},
+	)
+
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle}),
+		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

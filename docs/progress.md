@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:M1 编码进行中 —— T4 渲染引擎/校验/pipeline 已完成,下一任务 T5(站点 CRUD API + 前端 Sites 页)。**
-T5 注意事项:service/site.go 编排落库+pipeline;handler 复用 apierr 统一错误;前端 Sites 页(Table+Drawer 动态表单)首接真实业务 API;T5 联调起 compose 真 Caddy 验证完整下发链路(含 integration 语义)。
+**阶段:M1 编码进行中 —— T5 站点 CRUD 已完成,下一任务 T6(配置中心:版本/diff/回滚/直编/系统设置 + ConfigEditor/Settings 页,Monaco + Caddyfile 高亮)。**
+T6 注意事项:store 已有 CreateConfigVersion;前端首次引入 Monaco(@monaco-editor/react);回滚复用 service 层"下发→落库"编排;FR-601 设置页含登录锁定参数(立即生效)与 metrics/global_extra 等。
 
 ## 2. 里程碑
 
@@ -36,7 +36,7 @@ T5 注意事项:service/site.go 编排落库+pipeline;handler 复用 apierr 统�
 | T2 | 登录/JWT + SQLite 迁移 + 审计/限速中间件 | FR-10x | ✅ | 2026-10-10 | GORM 5 表 AutoMigrate;首启 seed(PANEL_ADMIN_PASSWORD/随机);JWT+bcrypt;LoginGuard 来源锁定(settings 运行时可调);审计唯一写入方;后端错误消息 i18n(Accept-Language);前端接真实登录 |
 | T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ✅ | 2026-10-10 | http(s):// 与 unix:// 双协议;请求超时 10s、响应上限 32MiB;If-Match 并发防护;Caddy 错误原文以 HTTPError 透传;Ping 读 /config 判活 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ✅ | 2026-10-10 | 模板嵌入 templates 包(转换层厚/模板薄);离线适配 modules/standard 全注册;golden 渲染测试 + "产物必过离线校验"契约测试;pipeline 单写者锁 + tmp+rename 原子写 + Deploy 开关(Caddy 未运行可保存);新增 PANEL_CADDY_ADMIN_BIND;真机 /load 集成验证随 T5 联调 |
-| T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ⬜ | | |
+| T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ✅ | 2026-10-10 | service 编排(先 Caddy 后 DB)+ 域名查重 + dry_run 预检 + 版本快照(成败都留痕);compose 真 Caddy 联调:创建→反代生效→停用下线→启用恢复→删除,域名冲突 409/非法输入 400/下发失败 422(含 Caddy 原文);前端 Sites 页 Table+动态 Drawer+启停+删除 |
 | T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ⬜ | | Monaco + Caddyfile 高亮 |
 | T7 | 日志 tail API + Logs 页 | FR-50x | ⬜ | | 轮询 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ⬜ | | drift.go |
@@ -65,6 +65,8 @@ T5 注意事项:service/site.go 编排落库+pipeline;handler 复用 apierr 统�
 | 2026-10-10 | 前端 lint 维持 ESLint 10 插件生态,Oxlint 暂不引入;M1 完成后再评估(替代/混用/维持) | react-refresh、typescript-eslint 等插件能力是刚需;Oxlint 速度优势明显但生态对等性待比对(见待决事项) |
 | 2026-10-10 | 登录失败锁定实现为 service.LoginGuard(进程内存),未按初版规划放 middleware/limiter.go —— 锁定是业务规则且参数每次从 settings 读取(运行时可调立即生效),service 层可注入 mock 单测;middleware 只留协议层(Language/JWTAuth/Audit) | 分层正确性优先于文档既有命名,progress 留痕 |
 | 2026-10-10 | JWT 密钥首启生成后持久化到 settings 表,重启沿用库内密钥 | 避免随机密钥导致每次重启踢掉全部会话(FR-103 会话连续性) |
+| 2026-10-10 | 站点编排改为"先 Caddy 后 DB":pipeline 成功后才提交站点变更,失败零 DB 变更,消除补偿回滚中间态;Caddy 生效而 DB 提交失败的崩溃窗口由启动漂移检测(T8)兜底。与设计第 3 节"落库→下发"顺序不同,以 3.1 一致性语义为准 | 补偿回滚本身可能失败会产生更难解释的中间态 |
+| 2026-10-10 | 渲染全局块新增 PANEL_CADDY_ADMIN_BIND(默认 localhost:2019):/load 会应用全局块,若绑定与 Panel 实际可达地址不一致,首次下发后 Panel 即失联;compose 中为 caddy:2019 | T5 联调发现的真实故障模式 |
 
 ## 5. 待决事项
 

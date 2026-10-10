@@ -16,6 +16,9 @@ const (
 	CodeUnauthorized       = "AUTH_UNAUTHORIZED"
 	CodeBadRequest         = "BAD_REQUEST"
 	CodeInternal           = "INTERNAL_ERROR"
+	CodeSiteNotFound       = "SITE_NOT_FOUND"
+	CodeSiteDomainConflict = "SITE_DOMAIN_CONFLICT"
+	CodeSiteDeployFailed   = "SITE_DEPLOY_FAILED"
 )
 
 // gin context 键:injectI18n 写入翻译包。

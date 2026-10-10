@@ -11,6 +11,9 @@ const (
 	MsgNotFound           = "error.not_found"
 	MsgInternal           = "error.internal"
 	MsgForbidden          = "error.forbidden"
+	MsgSiteNotFound       = "error.site_not_found"
+	MsgSiteDomainConflict = "error.site_domain_conflict"
+	MsgSiteDeployFailed   = "error.site_deploy_failed"
 )
 
 // FallbackText 各消息的中文兜底文案;英文文案只存在于语言包中。
@@ -22,4 +25,7 @@ var FallbackText = map[string]string{
 	MsgNotFound:           "接口不存在",
 	MsgInternal:           "服务器内部错误,请稍后再试",
 	MsgForbidden:          "没有权限执行该操作",
+	MsgSiteNotFound:       "站点不存在",
+	MsgSiteDomainConflict: "域名已被其他站点占用",
+	MsgSiteDeployFailed:   "配置校验或下发失败,未做任何变更",
 }

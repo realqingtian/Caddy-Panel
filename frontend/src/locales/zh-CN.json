@@ -31,14 +31,70 @@
     "failed": "登录失败,请稍后再试",
     "firstRunHint": "首次启动:管理员账号 admin,随机密码见面板启动日志"
   },
+  "common": {
+    "save": "保存",
+    "edit": "编辑",
+    "delete": "删除",
+    "actions": "操作"
+  },
+  "sites": {
+    "title": "站点管理",
+    "newTitle": "新建站点",
+    "editTitle": "编辑站点",
+    "action": {
+      "new": "新建站点",
+      "addHeader": "添加响应头"
+    },
+    "type": {
+      "proxy": "反向代理",
+      "static": "静态站点",
+      "redirect": "重定向"
+    },
+    "field": {
+      "name": "站点名称",
+      "type": "类型",
+      "domains": "域名",
+      "upstreams": "上游地址",
+      "lbPolicy": "负载均衡",
+      "websocket": "WebSocket 支持",
+      "headersEnabled": "自定义响应头",
+      "headerKey": "响应头名称",
+      "headerValue": "响应头值",
+      "rootPath": "根目录",
+      "redirectTo": "重定向目标",
+      "redirectPermanent": "永久重定向(301)",
+      "httpsRedirect": "强制 HTTPS 跳转",
+      "enabled": "启用"
+    },
+    "hint": {
+      "domains": "多个域名用英文逗号分隔",
+      "upstreams": "多个上游用英文逗号分隔,如 127.0.0.1:8080, 127.0.0.1:8081"
+    },
+    "lbPolicy": {
+      "roundRobin": "轮询(round_robin)",
+      "leastConn": "最少连接(least_conn)",
+      "ipHash": "IP 哈希(ip_hash)",
+      "first": "固定首个(first)"
+    },
+    "required": {
+      "name": "请输入站点名称",
+      "domains": "请输入域名",
+      "upstreams": "请输入上游地址",
+      "rootPath": "请输入根目录",
+      "redirectTo": "请输入重定向目标",
+      "headerKey": "请输入响应头名称"
+    },
+    "saved": "已保存并生效",
+    "saveFailed": "保存失败",
+    "enabledSuccess": "站点已启用",
+    "disabledSuccess": "站点已停用",
+    "deletedSuccess": "站点已删除",
+    "deleteConfirm": "确认删除该站点?删除后域名立即下线,可通过版本历史回滚"
+  },
   "pages": {
     "dashboard": {
       "title": "仪表盘",
       "placeholder": "Caddy 运行状态与最近下发记录将在 T8(Dashboard)实现"
-    },
-    "sites": {
-      "title": "站点管理",
-      "placeholder": "站点增删改查与表单将在 T5(站点管理)实现"
     },
     "config": {
       "title": "配置中心",

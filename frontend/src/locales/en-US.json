@@ -31,14 +31,70 @@
     "failed": "Sign-in failed, please try again later",
     "firstRunHint": "First run: admin account, random password is printed in the panel startup log"
   },
+  "common": {
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions"
+  },
+  "sites": {
+    "title": "Sites",
+    "newTitle": "New Site",
+    "editTitle": "Edit Site",
+    "action": {
+      "new": "New Site",
+      "addHeader": "Add header"
+    },
+    "type": {
+      "proxy": "Reverse Proxy",
+      "static": "Static Site",
+      "redirect": "Redirect"
+    },
+    "field": {
+      "name": "Name",
+      "type": "Type",
+      "domains": "Domains",
+      "upstreams": "Upstreams",
+      "lbPolicy": "Load Balancing",
+      "websocket": "WebSocket support",
+      "headersEnabled": "Custom headers",
+      "headerKey": "Header name",
+      "headerValue": "Header value",
+      "rootPath": "Root path",
+      "redirectTo": "Redirect target",
+      "redirectPermanent": "Permanent redirect (301)",
+      "httpsRedirect": "Force HTTPS redirect",
+      "enabled": "Enabled"
+    },
+    "hint": {
+      "domains": "Separate multiple domains with commas",
+      "upstreams": "Separate multiple upstreams with commas, e.g. 127.0.0.1:8080, 127.0.0.1:8081"
+    },
+    "lbPolicy": {
+      "roundRobin": "Round robin",
+      "leastConn": "Least connections",
+      "ipHash": "IP hash",
+      "first": "First available"
+    },
+    "required": {
+      "name": "Please enter the site name",
+      "domains": "Please enter domains",
+      "upstreams": "Please enter upstreams",
+      "rootPath": "Please enter the root path",
+      "redirectTo": "Please enter the redirect target",
+      "headerKey": "Please enter the header name"
+    },
+    "saved": "Saved and applied",
+    "saveFailed": "Save failed",
+    "enabledSuccess": "Site enabled",
+    "disabledSuccess": "Site disabled",
+    "deletedSuccess": "Site deleted",
+    "deleteConfirm": "Delete this site? The domain goes offline immediately; rollback is available via version history"
+  },
   "pages": {
     "dashboard": {
       "title": "Dashboard",
       "placeholder": "Caddy status and recent deploys arrive with T8 (Dashboard)"
-    },
-    "sites": {
-      "title": "Sites",
-      "placeholder": "Site CRUD and forms arrive with T5 (Sites)"
     },
     "config": {
       "title": "Config Center",

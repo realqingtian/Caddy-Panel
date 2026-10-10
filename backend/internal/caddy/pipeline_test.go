@@ -107,14 +107,14 @@ func newTestPipeline(t *testing.T, rendered string) (*Pipeline, *recorder, *fake
 	validator := &fakeValidator{rec: rec}
 	client := &fakeClient{rec: rec}
 	path := filepath.Join(t.TempDir(), "Caddyfile")
-	pipeline := NewPipeline(renderer, validator, client, path)
+	pipeline := NewPipeline(renderer, validator, client, func() string { return path })
 	return pipeline, rec, renderer, validator, client
 }
 
 func TestExecute_HappyPath_Deploys(t *testing.T) {
 	pipeline, rec, _, _, _ := newTestPipeline(t, "rendered-config")
 
-	result, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: true})
+	result, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpDeploy})
 	if err != nil {
 		t.Fatalf("下发失败: %v", err)
 	}
@@ -135,9 +135,9 @@ func TestExecute_WritesRenderedContent(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "Caddyfile")
 	rec := &recorder{}
 	pipeline := NewPipeline(&fakeRenderer{rec: rec, out: "the-caddyfile-content"},
-		&fakeValidator{rec: rec}, &fakeClient{rec: rec}, path)
+		&fakeValidator{rec: rec}, &fakeClient{rec: rec}, func() string { return path })
 
-	if _, err := pipeline.Execute(context.Background(), RenderInput{}, Options{}); err != nil {
+	if _, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpPersist}); err != nil {
 		t.Fatalf("执行失败: %v", err)
 	}
 	data, err := os.ReadFile(path)
@@ -153,7 +153,7 @@ func TestExecute_ValidateFails_StopsBeforeLoad(t *testing.T) {
 	pipeline, rec, _, validator, _ := newTestPipeline(t, "bad")
 	validator.err = errors.New("Caddy 校验失败: unknown directive")
 
-	_, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: true})
+	_, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpDeploy})
 	if err == nil {
 		t.Fatal("校验失败应返回错误")
 	}
@@ -171,7 +171,7 @@ func TestExecute_LoadFails_NoFileWrite(t *testing.T) {
 	pipeline, _, _, _, client := newTestPipeline(t, "ok")
 	client.loadErr = errors.New(`HTTP 400: {"error":"adjusting structure"}`)
 
-	_, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: true})
+	_, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpDeploy})
 	if err == nil {
 		t.Fatal("load 失败应返回错误")
 	}
@@ -183,7 +183,7 @@ func TestExecute_LoadFails_NoFileWrite(t *testing.T) {
 func TestExecute_NoDeploy_WritesWithoutLoad(t *testing.T) {
 	pipeline, rec, _, _, _ := newTestPipeline(t, "saved-only")
 
-	result, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: false})
+	result, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpPersist})
 	if err != nil {
 		t.Fatalf("保存不下发应成功: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestExecute_GetConfigFails_StopsBeforeLoad(t *testing.T) {
 	pipeline, rec, _, _, client := newTestPipeline(t, "ok")
 	client.getErr = errors.New("connection refused")
 
-	if _, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: true}); err == nil {
+	if _, err := pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpDeploy}); err == nil {
 		t.Fatal("Caddy 不可达应返回错误")
 	}
 	for _, step := range rec.all() {
@@ -215,7 +215,7 @@ func TestExecute_ConcurrentCallsAreSerialized(t *testing.T) {
 	rec := &recorder{}
 	client := &fakeClient{rec: rec}
 	pipeline := NewPipeline(&fakeRenderer{rec: rec, out: "x"}, &fakeValidator{rec: rec}, client,
-		filepath.Join(t.TempDir(), "Caddyfile"))
+		func() string { return filepath.Join(t.TempDir(), "Caddyfile") })
 
 	const n = 10
 	var wg sync.WaitGroup
@@ -223,7 +223,7 @@ func TestExecute_ConcurrentCallsAreSerialized(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, _ = pipeline.Execute(context.Background(), RenderInput{}, Options{Deploy: true})
+			_, _ = pipeline.Execute(context.Background(), RenderInput{}, Options{Mode: OpDeploy})
 		}()
 	}
 	wg.Wait()
