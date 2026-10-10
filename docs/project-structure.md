@@ -42,7 +42,7 @@ Caddy-Panel/
 │   │   └── site_redirect.tmpl     #   重定向站点块
 │   └── internal/
 │       ├── config/config.go       # 环境变量/启动参数:监听地址、Caddy admin 地址、Caddyfile 路径、JWT 密钥
-│       ├── model/                 # GORM 模型(与 M1 设计 §3 数据模型一一对应)
+│       ├── model/                 # GORM 模型(与 M1 设计第 3 节数据模型一一对应)
 │       │   ├── user.go  site.go  config_version.go  audit_log.go  setting.go
 │       ├── store/
 │       │   ├── store.go           # 打开 SQLite、AutoMigrate(M1;后续引入 goose/golang-migrate 版本化迁移)、事务助手

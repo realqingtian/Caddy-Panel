@@ -76,7 +76,7 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 | 编号 | 需求 | 验收标准 |
 |---|---|---|
 | NFR-101 ✅ | 安全 — Admin API 不暴露 | Caddy Admin API 仅经 Panel 访问(unix socket 或 localhost);Panel 登录接口限速;密码 bcrypt 存储 |
-| NFR-102 ✅ | 安全 — 变更安全 | 任意时刻 DB、磁盘 Caddyfile、Caddy 运行态三者一致(见设计 §3.1);并发操作串行化,不允许静默互相覆盖 |
+| NFR-102 ✅ | 安全 — 变更安全 | 任意时刻 DB、磁盘 Caddyfile、Caddy 运行态三者一致(见设计第 3.1 节);并发操作串行化,不允许静默互相覆盖 |
 | NFR-103 ✅ | 兼容 — 零侵入 | 不要求重新编译 Caddy、不要求安装插件即可运行(M1 全部功能基于官方内置能力) |
 | NFR-104 ✅ | 部署 — 双形态 | Docker Compose 一条命令起完整环境;同时支持单二进制(内嵌前端)部署 |
 | NFR-105 ✅ | 性能 | 面板接口 P95 < 200ms(不含 Caddy 下发);下发全流程 < 3s(常规配置) |
@@ -89,4 +89,4 @@ M3:多节点 Agent 管理、Web 终端、TCP/UDP 转发(l4 插件)、RBAC 与审
 
 ## 6. 追溯矩阵(简版)
 
-需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./m1-design.md)章节(§3 数据模型 / §5 API / §6 前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,NFR-104→T9。
+需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,NFR-104→T9。

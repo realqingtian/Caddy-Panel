@@ -95,4 +95,4 @@ go get github.com/swaggo/swag/cmd/swag github.com/swaggo/gin-swagger github.com/
 
 - 前端:函数组件 + hooks;页面级目录自包含(pages/Sites/ 下放私有组件);API 层按域拆分文件,类型集中 `api/types.ts`;提交前 `bun run lint`(ESLint + Prettier)。
 - 后端:标准 Go 布局(cmd/internal),三层结构 **handler(协议转换)→ service(业务逻辑)→ store / caddy(数据与基础设施)**;handler 不写业务,业务全部落在 service;日志用 `slog`;错误统一 `{code,message,detail}`。
-- 两者接口契约:REST + JSON,见 [M1 设计 §5](./m1-design.md)。
+- 两者接口契约:REST + JSON,见 [M1 设计第 5 节](./m1-design.md)。
