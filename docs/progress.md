@@ -96,6 +96,7 @@
 | 2026-10-11 | 插件支持落地:compose 默认构建带插件 Caddy(caddy-rate-limit + caddy-dns/cloudflare),面板渲染限流(rate_limit,按 IP)与 DNS challenge(tls { dns ... {env.X} },凭据 {env.X} 占位不落库) | 用户拍板;凭据不落库原则延续 |
 | 2026-10-11 | SMTP 通知渠道落地:settings 可视化配置(host/port/username/password/from/to),密码脱敏(GET 不回显、PUT 空值保留);到期提醒 Webhook/SMTP 双渠道并存 | 用户拍板;渠道配置必须可视化而非 .env |
 | 2026-10-11 | M3 设计定稿与任务拆解(T3.1 API Token+RBAC → T3.2 Web 终端 → T3.3 多节点 Agent → T3.4 l4),见 m3-design.md;Agent 采用反向连接,Token 只存哈希,RBAC 先行 admin/viewer 两级 | 认证层增强(鉴权/token)是多节点与终端的前置依赖,故列首位 |
+| 2026-10-11 | M3 四项关键决策拍板:①节点接入用 Enrollment Token(一次性注册令牌,注册后签发节点密钥);②Agent 安装由面板生成安装命令(systemd);③l4 仅 TCP/UDP 透传不做 TLS 终结;④T3.3 先于 T3.4 | 用户确认(均选推荐项);已固化进 m3-design §3.1 |
 
 ## 5. 待决事项
 
