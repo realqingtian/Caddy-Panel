@@ -98,7 +98,7 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint 等
 | GET | `/config/versions/{id}` | 版本详情(含 Caddyfile 全文,供前端 diff) |
 | POST | `/config/versions/{id}/rollback` | 回滚:取快照 → 校验 → load |
 | POST | `/config/caddyfile` | 直接编辑 Caddyfile:校验通过才落盘生效(进阶模式) |
-| GET/PUT | `/settings` | 系统设置 KV(Caddyfile 路径、日志路径、Admin API 地址);env 提供默认值,此处修改持久化覆盖 |
+| GET/PUT | `/settings` | 系统设置 KV(Caddyfile 路径、日志路径、Admin API 地址、JWT 有效期、登录锁定阈值/时长);env 提供默认值,此处修改持久化覆盖 |
 | GET | `/logs?type=access\|error&tail=200` | 日志 tail(轮询,M1 不做 WebSocket) |
 
 错误约定:统一 `{ "code": "...", "message": "...", "detail": ... }`;校验失败返回 422 + Caddy 错误原文。全部接口编写 swaggo 注解,`swag init` 生成 OpenAPI,开发态 Swagger UI 挂载在 `/swagger`。
