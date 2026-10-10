@@ -44,6 +44,12 @@ type Site struct {
 	Enabled       bool   `json:"enabled"`                    // 停用站点不渲染
 	RawExtra      string `gorm:"type:text" json:"raw_extra"` // 自定义片段原样拼入站点块尾部(逃生舱)
 
+	// FR-701 主动健康检查(proxy);渲染进 reverse_proxy 块
+	HealthCheckEnabled  bool   `json:"health_check_enabled"`
+	HealthCheckPath     string `json:"health_check_path"`     // 如 /healthz
+	HealthCheckInterval string `json:"health_check_interval"` // Go duration,如 10s
+	HealthCheckExpected int    `json:"health_check_expected"` // 预期状态码,默认 200
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -7,7 +7,8 @@
     "sites": "Sites",
     "config": "Config",
     "logs": "Logs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "upstreams": "Upstreams"
   },
   "layout": {
     "theme": "Theme",
@@ -66,11 +67,14 @@
       "redirectTo": "Redirect target",
       "redirectPermanent": "Permanent redirect (301)",
       "httpsRedirect": "Force HTTPS redirect",
-      "enabled": "Enabled"
+      "enabled": "Enabled",
+      "healthCheck": "Active health check",
+      "healthCheckPath": "Check path (e.g. /healthz)"
     },
     "hint": {
       "domains": "Separate multiple domains with commas",
-      "upstreams": "Separate multiple upstreams with commas, e.g. 127.0.0.1:8080, 127.0.0.1:8081"
+      "upstreams": "Separate multiple upstreams with commas, e.g. 127.0.0.1:8080, 127.0.0.1:8081",
+      "healthCheck": "Caddy actively probes upstreams and ejects unhealthy ones"
     },
     "lbPolicy": {
       "roundRobin": "Round robin",
@@ -200,5 +204,14 @@
     },
     "recentTitle": "Recent deploys",
     "noVersions": "No deploys yet"
+  },
+  "upstreams": {
+    "title": "Upstreams",
+    "column": {
+      "dial": "Upstream",
+      "requests": "Total requests",
+      "fails": "Failures"
+    },
+    "empty": "No reverse-proxy upstreams yet; they appear here once a proxy site is created and enabled"
   }
 }

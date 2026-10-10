@@ -46,6 +46,10 @@ func (f *unreachClient) Load(context.Context, json.RawMessage, string) error { r
 func (f *unreachClient) Adapt(_ context.Context, cf string) (json.RawMessage, error) {
 	return caddy.AdaptToJSON(cf)
 }
+func (f *unreachClient) Upstreams(context.Context) (json.RawMessage, error) {
+	return json.RawMessage(`{}`), nil
+}
+
 func (f *unreachClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err
@@ -90,6 +94,10 @@ func (f *staticClient) Load(context.Context, json.RawMessage, string) error { re
 func (f *staticClient) Adapt(context.Context, string) (json.RawMessage, error) {
 	return nil, errors.New("unused")
 }
+func (f *staticClient) Upstreams(context.Context) (json.RawMessage, error) {
+	return json.RawMessage(`{}`), nil
+}
+
 func (f *staticClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err

@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"caddy-panel/backend/internal/model"
 )
@@ -27,6 +28,12 @@ type SiteInput struct {
 	RedirectPermanent bool   `json:"redirect_permanent"`
 	HTTPSRedirect     bool   `json:"https_redirect"`
 	Enabled           bool   `json:"enabled"`
+
+	// FR-701 主动健康检查(proxy)
+	HealthCheckEnabled  bool   `json:"health_check_enabled"`
+	HealthCheckPath     string `json:"health_check_path"`
+	HealthCheckInterval string `json:"health_check_interval"`
+	HealthCheckExpected int    `json:"health_check_expected"`
 }
 
 // siteTypes / lbPolicies 合法值集合(与 model 常量对应)。
@@ -73,6 +80,16 @@ func (in SiteInput) Validate() error {
 func (in SiteInput) validateByType() error {
 	switch in.Type {
 	case model.SiteTypeProxy:
+		if in.HealthCheckEnabled {
+			if in.HealthCheckInterval != "" {
+				if _, err := time.ParseDuration(in.HealthCheckInterval); err != nil {
+					return &InvalidInputError{Reason: fmt.Sprintf("健康检查间隔格式非法(Go duration,如 10s): %s", in.HealthCheckInterval)}
+				}
+			}
+			if in.HealthCheckExpected < 0 || in.HealthCheckExpected > 599 {
+				return &InvalidInputError{Reason: "健康检查预期状态码应在 0-599(0 表示使用默认 200)"}
+			}
+		}
 		upstreams := splitDomains(in.Upstreams)
 		if len(upstreams) == 0 {
 			return &InvalidInputError{Reason: "反向代理至少需要一个上游地址"}
@@ -146,18 +163,22 @@ func (in SiteInput) toSite() *model.Site {
 		policy = model.LBPolicyRoundRobin
 	}
 	return &model.Site{
-		Name:              strings.TrimSpace(in.Name),
-		Type:              in.Type,
-		Domains:           in.Domains,
-		Upstreams:         in.Upstreams,
-		LBPolicy:          policy,
-		Websocket:         in.Websocket,
-		HeadersEnabled:    in.HeadersEnabled,
-		CustomHeaders:     in.CustomHeaders,
-		RootPath:          in.RootPath,
-		RedirectTo:        in.RedirectTo,
-		RedirectPermanent: in.RedirectPermanent,
-		HTTPSRedirect:     in.HTTPSRedirect,
-		Enabled:           in.Enabled,
+		Name:                strings.TrimSpace(in.Name),
+		Type:                in.Type,
+		Domains:             in.Domains,
+		Upstreams:           in.Upstreams,
+		LBPolicy:            policy,
+		Websocket:           in.Websocket,
+		HeadersEnabled:      in.HeadersEnabled,
+		CustomHeaders:       in.CustomHeaders,
+		RootPath:            in.RootPath,
+		RedirectTo:          in.RedirectTo,
+		RedirectPermanent:   in.RedirectPermanent,
+		HTTPSRedirect:       in.HTTPSRedirect,
+		Enabled:             in.Enabled,
+		HealthCheckEnabled:  in.HealthCheckEnabled,
+		HealthCheckPath:     strings.TrimSpace(in.HealthCheckPath),
+		HealthCheckInterval: strings.TrimSpace(in.HealthCheckInterval),
+		HealthCheckExpected: in.HealthCheckExpected,
 	}
 }

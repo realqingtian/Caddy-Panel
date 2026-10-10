@@ -17,6 +17,10 @@ export interface Site {
   https_redirect: boolean
   enabled: boolean
   raw_extra: string
+  health_check_enabled: boolean
+  health_check_path: string
+  health_check_interval: string
+  health_check_expected: number
   created_at: string
   updated_at: string
 }
@@ -36,6 +40,10 @@ export interface SiteInput {
   redirect_permanent: boolean
   https_redirect: boolean
   enabled: boolean
+  health_check_enabled: boolean
+  health_check_path: string
+  health_check_interval: string
+  health_check_expected: number
 }
 
 export interface SiteMutationResponse {

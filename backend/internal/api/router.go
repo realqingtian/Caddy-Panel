@@ -34,6 +34,7 @@ type Deps struct {
 	Store           *store.Store
 	Bundle          *i18n.Bundle
 	Pipeline        *caddy.Pipeline
+	Client          caddy.Client  // Admin API 通信出口(透传类接口使用)
 	CaddyfilePathFn func() string // 落盘路径解析(与 Pipeline 同源)
 }
 
@@ -147,6 +148,9 @@ func New(deps Deps) *gin.Engine {
 	driftChecker := service.NewDriftChecker(deps.Store, deps.Pipeline, deps.CaddyfilePathFn)
 	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Drift: driftChecker})
 	authorized.GET("/status", handler.NewDashboard(dashboardSvc).Status())
+
+	// 上游状态透传(FR-701)。
+	authorized.GET("/upstreams", handler.NewUpstreams(deps.Client).List())
 
 	mountFrontend(r, deps.Bundle)
 

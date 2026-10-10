@@ -133,6 +133,10 @@ func (f *recordingClient) Adapt(context.Context, string) (json.RawMessage, error
 	return nil, nil
 }
 
+func (f *recordingClient) Upstreams(context.Context) (json.RawMessage, error) {
+	return json.RawMessage(`{}`), nil
+}
+
 func (f *recordingClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err

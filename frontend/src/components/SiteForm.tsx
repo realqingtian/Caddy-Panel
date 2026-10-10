@@ -125,6 +125,14 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
                 ]}
               />
             </Form.Item>
+            <Form.Item
+              name="health_check_enabled"
+              label={t('sites.field.healthCheck')}
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+            <HealthCheckFields form={form} />
             <Form.Item name="websocket" label={t('sites.field.websocket')} valuePropName="checked">
               <Switch />
             </Form.Item>
@@ -241,4 +249,25 @@ function valuesToInput(values: SiteFormValues): SiteInput {
     custom_headers:
       values.headers_enabled && headers && headers.length > 0 ? JSON.stringify(headers) : '',
   }
+}
+
+/** 健康检查参数;仅在开关打开时渲染(FR-701)。 */
+function HealthCheckFields({ form }: { form: FormInstance<SiteFormValues> }) {
+  const { t } = useTranslation()
+  const enabled = Form.useWatch('health_check_enabled', form)
+  if (!enabled) return null
+
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <Form.Item name="health_check_path" style={{ flex: 2 }}>
+        <Input placeholder={t('sites.field.healthCheckPath')} />
+      </Form.Item>
+      <Form.Item name="health_check_interval" style={{ flex: 1 }}>
+        <Input placeholder="10s" />
+      </Form.Item>
+      <Form.Item name="health_check_expected" style={{ flex: 1 }}>
+        <Input type="number" placeholder="200" />
+      </Form.Item>
+    </div>
+  )
 }

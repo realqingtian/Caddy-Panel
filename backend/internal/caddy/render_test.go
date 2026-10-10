@@ -28,6 +28,11 @@ func renderFixture() RenderInput {
 				CustomHeaders:  `[{"key":"X-Frame-Options","value":"DENY"},{"key":"X-Served-By","value":"caddy \"panel\""}]`,
 				HTTPSRedirect:  true,
 				Enabled:        true,
+
+				HealthCheckEnabled:  true,
+				HealthCheckPath:     "/healthz",
+				HealthCheckInterval: "10s",
+				HealthCheckExpected: 200,
 			},
 			{
 				Name: "api", Type: model.SiteTypeProxy,

@@ -94,6 +94,10 @@ func (f *fakeClient) Adapt(context.Context, string) (json.RawMessage, error) {
 	return nil, errors.New("fake client 未实现 Adapt")
 }
 
+func (f *fakeClient) Upstreams(context.Context) (json.RawMessage, error) {
+	return json.RawMessage(`{}`), nil
+}
+
 func (f *fakeClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err

@@ -4,8 +4,11 @@
 		output file {{.AccessLogPath}}
 	}
 {{- end}}
-{{- if or .LBPolicyLines .Websocket}}
+{{- if or .LBPolicyLines .Websocket .HealthLines}}
 	reverse_proxy {{join .Upstreams " "}} {
+{{- range .HealthLines}}
+		{{.}}
+{{- end}}
 {{- range .LBPolicyLines}}
 		{{.}}
 {{- end}}

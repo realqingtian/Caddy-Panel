@@ -37,6 +37,7 @@ type tmplSite struct {
 	LBPolicyLines []string
 	Websocket     bool
 	HeaderLines   []string
+	HealthLines   []string
 	RootPath      string
 	RedirectLines []string
 	HTTPSRedirect bool
@@ -110,10 +111,34 @@ func toTmplSite(site model.Site, global GlobalOptions) tmplSite {
 		out.Upstreams = splitList(site.Upstreams)
 		out.LBPolicyLines = lbPolicyLines(site.LBPolicy)
 		out.HeaderLines = headerLines(site.CustomHeaders)
+		out.HealthLines = healthLines(site)
 	case model.SiteTypeRedirect:
 		out.RedirectLines = redirectLines(site.RedirectTo, site.RedirectPermanent)
 	}
 	return out
+}
+
+// healthLines 主动健康检查指令行(FR-701);关闭时不输出。
+// Caddy:health_uri(路径)、health_interval(duration)、health_status(预期码)。
+func healthLines(site model.Site) []string {
+	if !site.HealthCheckEnabled {
+		return nil
+	}
+	lines := []string{}
+	if path := strings.TrimSpace(site.HealthCheckPath); path != "" {
+		lines = append(lines, "health_uri "+strconv.Quote(path))
+	}
+	if interval := strings.TrimSpace(site.HealthCheckInterval); interval != "" {
+		lines = append(lines, "health_interval "+interval)
+	}
+	if expected := site.HealthCheckExpected; expected > 0 {
+		lines = append(lines, fmt.Sprintf("health_status %d", expected))
+	}
+	if len(lines) == 0 {
+		// 开关打开但未填任何参数:至少给默认路径与间隔,避免出现空 reverse_proxy 块。
+		lines = append(lines, `health_uri "/healthz"`, "health_interval 10s")
+	}
+	return lines
 }
 
 // splitList 逗号分隔列表 → 去空白、去空的字符串切片。

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 
 import {
+  ApiOutlined,
   ControlOutlined,
   DashboardOutlined,
   DesktopOutlined,
@@ -37,6 +38,7 @@ export function AdminLayout() {
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
     { key: '/sites', icon: <GlobalOutlined />, label: t('menu.sites') },
+    { key: '/upstreams', icon: <ApiOutlined />, label: t('menu.upstreams') },
     { key: '/config', icon: <ControlOutlined />, label: t('menu.config') },
     { key: '/logs', icon: <FileTextOutlined />, label: t('menu.logs') },
     { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },

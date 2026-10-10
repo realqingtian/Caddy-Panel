@@ -30,6 +30,8 @@ type Client interface {
 	Load(ctx context.Context, configJSON json.RawMessage, ifMatch string) error
 	// GetConfig 读取当前生效配置,返回 JSON 与 ETag(供 Load 的 If-Match)。
 	GetConfig(ctx context.Context) (json.RawMessage, string, error)
+	// Upstreams 读取反代上游实时状态(GET /reverse_proxy/upstreams,FR-701)。
+	Upstreams(ctx context.Context) (json.RawMessage, error)
 }
 
 // HTTPError Admin API 返回非 2xx;Body 保留 Caddy 错误原文,上层必须原样透传。
@@ -76,6 +78,19 @@ func NewClient(adminURL string) (Client, error) {
 	default:
 		return nil, fmt.Errorf("不支持的 PANEL_ADMIN_URL %q:仅接受 http(s):// 或 unix://", adminURL)
 	}
+}
+
+// Upstreams 实现 Client:GET /reverse_proxy/upstreams,透传原始 JSON。
+func (c *adminClient) Upstreams(ctx context.Context) (json.RawMessage, error) {
+	req, err := c.newRequest(ctx, http.MethodGet, "/reverse_proxy/upstreams", nil)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(body), nil
 }
 
 // Ping 实现 Client。

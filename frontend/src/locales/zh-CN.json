@@ -7,7 +7,8 @@
     "sites": "站点管理",
     "config": "配置中心",
     "logs": "日志",
-    "settings": "设置"
+    "settings": "设置",
+    "upstreams": "上游状态"
   },
   "layout": {
     "theme": "主题",
@@ -66,11 +67,14 @@
       "redirectTo": "重定向目标",
       "redirectPermanent": "永久重定向(301)",
       "httpsRedirect": "强制 HTTPS 跳转",
-      "enabled": "启用"
+      "enabled": "启用",
+      "healthCheck": "主动健康检查",
+      "healthCheckPath": "检查路径(如 /healthz)"
     },
     "hint": {
       "domains": "多个域名用英文逗号分隔",
-      "upstreams": "多个上游用英文逗号分隔,如 127.0.0.1:8080, 127.0.0.1:8081"
+      "upstreams": "多个上游用英文逗号分隔,如 127.0.0.1:8080, 127.0.0.1:8081",
+      "healthCheck": "开启后 Caddy 主动探测上游,异常自动摘除"
     },
     "lbPolicy": {
       "roundRobin": "轮询(round_robin)",
@@ -200,5 +204,14 @@
     },
     "recentTitle": "最近下发",
     "noVersions": "暂无下发记录"
+  },
+  "upstreams": {
+    "title": "上游状态",
+    "column": {
+      "dial": "上游地址",
+      "requests": "总请求数",
+      "fails": "失败数"
+    },
+    "empty": "暂无反代上游;创建反向代理站点并启用后此处显示实时状态"
   }
 }

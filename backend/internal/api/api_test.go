@@ -35,6 +35,10 @@ func (fakeDeployClient) GetConfig(context.Context) (json.RawMessage, string, err
 	return json.RawMessage(`{}`), `"etag"`, nil
 }
 
+func (fakeDeployClient) Upstreams(context.Context) (json.RawMessage, error) {
+	return json.RawMessage(`{}`), nil
+}
+
 // newTestServer 起真实路由 + 临时 SQLite,覆盖 handler→service→store 全链路。
 func newTestServer(t *testing.T) (*gin.Engine, *store.Store) {
 	t.Helper()
@@ -78,6 +82,7 @@ func newTestServer(t *testing.T) (*gin.Engine, *store.Store) {
 			fakeDeployClient{},
 			func() string { return filepath.Join(t.TempDir(), "Caddyfile") },
 		),
+		Client: fakeDeployClient{},
 	})
 	return engine, st
 }
