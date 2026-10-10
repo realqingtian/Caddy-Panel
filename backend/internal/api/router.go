@@ -34,7 +34,8 @@ type Deps struct {
 	Store           *store.Store
 	Bundle          *i18n.Bundle
 	Pipeline        *caddy.Pipeline
-	Client          caddy.Client  // Admin API 通信出口(透传类接口使用)
+	Client          caddy.Client // Admin API 通信出口(透传类接口使用)
+	Collector       *service.MetricsCollector
 	CaddyfilePathFn func() string // 落盘路径解析(与 Pipeline 同源)
 }
 
@@ -131,6 +132,10 @@ func New(deps Deps) *gin.Engine {
 	backupHandler := handler.NewBackup(service.NewBackup(deps.Store, settingSvc))
 	authorized.GET("/backup", backupHandler.Export())
 	authorized.POST("/restore", backupHandler.Restore())
+
+	// 监控查询(FR-702);抓取循环在 main 启动,此处仅查询。
+	authorized.GET("/metrics/summary", handler.NewMetrics(deps.Collector).Summary())
+	authorized.GET("/metrics/prometheus-config", handler.NewMetrics(deps.Collector).PrometheusConfig())
 
 	// 日志查看:路径解析与渲染参数同源(settings 优先,FR-502)。
 	logPathFn := func(kind string) string {

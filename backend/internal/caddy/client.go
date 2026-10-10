@@ -32,6 +32,8 @@ type Client interface {
 	GetConfig(ctx context.Context) (json.RawMessage, string, error)
 	// Upstreams 读取反代上游实时状态(GET /reverse_proxy/upstreams,FR-701)。
 	Upstreams(ctx context.Context) (json.RawMessage, error)
+	// Metrics 拉取 Prometheus 文本指标(GET /metrics,需启用 metrics 指令,FR-702)。
+	Metrics(ctx context.Context) (string, error)
 }
 
 // HTTPError Admin API 返回非 2xx;Body 保留 Caddy 错误原文,上层必须原样透传。

@@ -98,6 +98,10 @@ func (f *fakeClient) Upstreams(context.Context) (json.RawMessage, error) {
 	return json.RawMessage(`{}`), nil
 }
 
+func (f *fakeClient) Metrics(context.Context) (string, error) {
+	return "", nil
+}
+
 func (f *fakeClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err

@@ -39,6 +39,10 @@ func (fakeDeployClient) Upstreams(context.Context) (json.RawMessage, error) {
 	return json.RawMessage(`{}`), nil
 }
 
+func (fakeDeployClient) Metrics(context.Context) (string, error) {
+	return "", nil
+}
+
 // newTestServer 起真实路由 + 临时 SQLite,覆盖 handler→service→store 全链路。
 func newTestServer(t *testing.T) (*gin.Engine, *store.Store) {
 	t.Helper()

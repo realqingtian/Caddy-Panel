@@ -8,7 +8,8 @@
     "config": "Config",
     "logs": "Logs",
     "settings": "Settings",
-    "upstreams": "Upstreams"
+    "upstreams": "Upstreams",
+    "metrics": "Metrics"
   },
   "layout": {
     "theme": "Theme",
@@ -249,5 +250,15 @@
       "fails": "Failures"
     },
     "empty": "No reverse-proxy upstreams yet; they appear here once a proxy site is created and enabled"
+  },
+  "metrics": {
+    "title": "Metrics",
+    "promConfig": "Prometheus config",
+    "promConfigTitle": "Prometheus scrape config example",
+    "emptyTitle": "No metrics yet",
+    "emptyHint": "Enable the metrics endpoint in Settings; the panel scrapes Caddy every 15s and keeps 24h of data",
+    "noSeries": "No data for this metric in the selected window",
+    "counterHint": "Counters are cumulative; curves appear after ~15 minutes of scraping",
+    "loadFailed": "Load failed"
   }
 }

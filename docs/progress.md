@@ -50,7 +50,7 @@
 | T2.2 | 访问控制(basic auth / IP 名单) | FR-704 | ✅ | 2026-10-11 | basic auth 明文仅请求期存在、bcrypt 落库(全量替换语义,前端提示重输密码);IP 名单 CIDR 校验,黑名单命中/白名单未命中 403(命名 matcher);公共模板片段三类站点通用;限流渲染留待插件版 |
 | T2.3 | 导入 Caddyfile | FR-705 | ✅ | 2026-10-11 | 自研 Tokenize 块解析(caddyfile.Parse 会丢子指令行,实测弃用);白名单指令映射(反代/静态/重定向/健康检查/basicauth 哈希保留),未识别落 raw_extra/global_extra;两段式预览/应用,落库一律停用,域名冲突跳过;前端 Sites 页导入向导 |
 | T2.4 | 备份与恢复 | FR-706 | ✅ | 2026-10-11 | GET /backup(JSON 下载:站点+版本历史+设置生效值)/ POST /restore(事务全量替换,轻校验+白名单设置逐项校验,空值跳过交回 env 默认);不自动下发,前端提示恢复后需启用/重下发;Settings 页备份卡片 |
-| T2.5 | 监控图表 | FR-702 | ⬜ | | metrics 抓取存 SQLite + recharts;抓取配置一键生成 |
+| T2.5 | 监控图表 | FR-702 | ✅ | 2026-10-11 | metrics 抓取循环(15s,FR-601 开关每轮检查,样本保留 24h 自清理);自研 Prometheus 文本解析(引号内逗号/前缀过滤);Summary 60 点降采样(bucket key 含桶时间,首版曾跨桶覆盖);GET /metrics/summary + prometheus-config 生成;前端 recharts 折线(按 host 分序列)+ 监控菜单页 |
 | T2.6 | 证书管理 | FR-703 | ⬜ | | 上传/ACME 邮箱/到期通知;DNS challenge 占位(插件) |
 
 ## 4. 决策与变更日志

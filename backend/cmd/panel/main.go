@@ -87,6 +87,12 @@ func run() error {
 		caddyfilePathFn,
 	)
 
+	// metrics 抓取循环(FR-702):随停机取消;每轮检查 FR-601 开关。
+	collector := service.NewMetricsCollector(caddyClient, st, st)
+	collectorCtx, cancelCollector := context.WithCancel(context.Background())
+	defer cancelCollector()
+	go collector.Run(collectorCtx)
+
 	// 启动漂移检测(FR-202):结果日志留痕;Dashboard 每次访问都会实时复核。
 	go func() {
 		checker := service.NewDriftChecker(st, pipeline, caddyfilePathFn)
@@ -103,7 +109,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline, Client: caddyClient, CaddyfilePathFn: caddyfilePathFn}),
+		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline, Client: caddyClient, Collector: collector, CaddyfilePathFn: caddyfilePathFn}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

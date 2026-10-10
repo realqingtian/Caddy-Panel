@@ -8,7 +8,8 @@
     "config": "配置中心",
     "logs": "日志",
     "settings": "设置",
-    "upstreams": "上游状态"
+    "upstreams": "上游状态",
+    "metrics": "监控"
   },
   "layout": {
     "theme": "主题",
@@ -249,5 +250,15 @@
       "fails": "失败数"
     },
     "empty": "暂无反代上游;创建反向代理站点并启用后此处显示实时状态"
+  },
+  "metrics": {
+    "title": "监控",
+    "promConfig": "生成 Prometheus 配置",
+    "promConfigTitle": "Prometheus 抓取配置示例",
+    "emptyTitle": "暂无监控数据",
+    "emptyHint": "在设置页开启 metrics 端点后,面板每 15 秒抓取一次 Caddy 指标,数据保留 24 小时",
+    "noSeries": "当前指标在所选窗口内无数据",
+    "counterHint": "counter 类型指标为累计值;开启抓取约 15 分钟后曲线可见",
+    "loadFailed": "加载失败"
   }
 }

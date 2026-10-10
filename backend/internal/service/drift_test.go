@@ -50,6 +50,10 @@ func (f *unreachClient) Upstreams(context.Context) (json.RawMessage, error) {
 	return json.RawMessage(`{}`), nil
 }
 
+func (unreachClient) Metrics(context.Context) (string, error) {
+	return "", nil
+}
+
 func (f *unreachClient) Ping(ctx context.Context) error {
 	_, _, err := f.GetConfig(ctx)
 	return err
@@ -96,6 +100,10 @@ func (f *staticClient) Adapt(context.Context, string) (json.RawMessage, error) {
 }
 func (f *staticClient) Upstreams(context.Context) (json.RawMessage, error) {
 	return json.RawMessage(`{}`), nil
+}
+
+func (f *staticClient) Metrics(context.Context) (string, error) {
+	return "", nil
 }
 
 func (f *staticClient) Ping(ctx context.Context) error {

@@ -6,6 +6,7 @@ import ConfigEditorPage from '@/pages/ConfigEditor'
 import DashboardPage from '@/pages/Dashboard'
 import LoginPage from '@/pages/Login'
 import LogsPage from '@/pages/Logs'
+import MetricsPage from '@/pages/Metrics'
 import SettingsPage from '@/pages/Settings'
 import SitesPage from '@/pages/Sites'
 import UpstreamsPage from '@/pages/Upstreams'
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
           { path: 'upstreams', element: <UpstreamsPage /> },
           { path: 'config', element: <ConfigEditorPage /> },
           { path: 'logs', element: <LogsPage /> },
+          { path: 'metrics', element: <MetricsPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
