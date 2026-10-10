@@ -98,9 +98,16 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 | FR-705 🕐 | 导入现有 Caddyfile | 解析已部署的 Caddyfile,可识别部分映射为领域模型,不可识别部分保留为"自定义片段"原样输出 |
 | FR-706 🕐 | 备份与恢复 | 站点配置与版本历史一键导出/导入,用于迁移与灾备 |
 
-### M3(占位,M2 后细化)
+### M3(平台化;设计见 docs/m3-design.md)
 
-多节点 Agent 管理、Web 终端、TCP/UDP 转发(l4 插件)、RBAC 与审计增强、开放 API Token。
+| 编号 | 需求 | 验收标准 | 状态 |
+| --- | --- | --- | --- |
+| FR-801 ✅ | 开放 API Token + RBAC | Bearer cpt_* 与 JWT 双轨认证;scope 路由级校验(读/写),不足 403 本地化;token 仅存哈希、明文一次性展示、可过期/撤销;管理仅限 JWT+admin | ✅ T3.1 |
+| FR-802 ✅ | Web 终端 | xterm.js + WebSocket + PTY;仅 admin;进程用户执行(非 root);打开事件入审计 | ✅ T3.2 |
+| FR-803 🕐 | 多节点 Agent 管理 | 节点经 Enrollment Token 注册、反向连接中心;面板按节点下发配置/展示状态与漂移;站点创建时绑定节点(不可迁移);路径类本地配置由 agent 自管 | 🕐 T3.3 |
+| FR-804 🕐 | TCP/UDP 转发(l4) | 站点类型扩展 l4(监听地址端口/上游),仅透传不做 l4 TLS 终结;需 caddy-l4 插件镜像 | 🕐 T3.4 |
+
+多节点本地性语义(路径/证书/终端/导入限 local;漂移与 metrics 由 agent 上报)见 [m3-design §3.2](./m3-design.md)。
 
 ## 6. 追溯矩阵(简版)
 
