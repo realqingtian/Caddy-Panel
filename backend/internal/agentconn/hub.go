@@ -20,10 +20,11 @@ import (
 	"caddy-panel/backend/internal/agentproto"
 )
 
-// 指令等待与 WS 写的超时上限。
+// 指令等待与 WS 写的超时上限;PingInterval 与 agent 心跳周期一致(30s)。
 const (
 	CommandTimeout = 30 * time.Second
 	WriteTimeout   = 10 * time.Second
+	PingInterval   = 30 * time.Second // 与 agent 心跳同拍
 	sendBuffer     = 16
 )
 
@@ -44,7 +45,7 @@ type Conn struct {
 	done      chan struct{}
 }
 
-// NewConn 构造连接并启动 writer goroutine;读循环由 WS handler 负责。
+// NewConn 构造连接并启动 writer 与 ping goroutine;读循环由 WS handler 负责。
 func NewConn(nodeID, name string, ws *websocket.Conn) *Conn {
 	c := &Conn{
 		nodeID:  nodeID,
@@ -55,7 +56,26 @@ func NewConn(nodeID, name string, ws *websocket.Conn) *Conn {
 		done:    make(chan struct{}),
 	}
 	go c.writerLoop()
+	go c.pingLoop()
 	return c
+}
+
+// pingLoop 周期发 WS ping 保活:agent 的读死线(3 倍心跳)靠收到 ping 重置,
+// 防止长静默连接被 agent 侧判死反复重连。
+func (c *Conn) pingLoop() {
+	ticker := time.NewTicker(PingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.done:
+			return
+		case <-ticker.C:
+			if err := c.ws.WriteControl(websocket.PingMessage, nil,
+				time.Now().Add(WriteTimeout)); err != nil {
+				return
+			}
+		}
+	}
 }
 
 // NodeID / NodeName 节点标识与展示名。

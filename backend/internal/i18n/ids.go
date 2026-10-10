@@ -17,6 +17,7 @@ const (
 	MsgConfigDeployFailed   = "error.config_deploy_failed"
 	MsgVersionNotApplicable = "error.version_not_applicable"
 	MsgCaddyUnreachable     = "error.caddy_unreachable"
+	MsgListenConflict       = "error.listen_conflict"
 	MsgNodeNotFound         = "error.node_not_found"
 	MsgNodeHasSites         = "error.node_has_sites"
 )
@@ -36,6 +37,7 @@ var FallbackText = map[string]string{
 	MsgConfigDeployFailed:   "配置校验或下发失败,未做任何变更;原因见 detail",
 	MsgVersionNotApplicable: "只能回滚到下发成功的版本",
 	MsgCaddyUnreachable:     "Caddy Admin API 不可达,请检查 Caddy 是否运行",
+	MsgListenConflict:       "监听地址已被该节点上的其他 l4 站点占用",
 	MsgNodeNotFound:         "节点不存在",
 	MsgNodeHasSites:         "节点名下仍有站点,请先删除站点",
 }

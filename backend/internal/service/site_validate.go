@@ -93,8 +93,11 @@ func (in SiteInput) Validate() error {
 	if !siteTypes[in.Type] {
 		return &InvalidInputError{Reason: fmt.Sprintf("站点类型非法: %s", in.Type)}
 	}
-	if domains := splitDomains(in.Domains); len(domains) == 0 {
-		return &InvalidInputError{Reason: "至少需要填写一个域名"}
+	// l4 站点无域名概念(监听地址端口),域名必填仅约束 http 类型。
+	if in.Type != model.SiteTypeL4 {
+		if domains := splitDomains(in.Domains); len(domains) == 0 {
+			return &InvalidInputError{Reason: "至少需要填写一个域名"}
+		}
 	}
 	if err := in.validateByType(); err != nil {
 		return err

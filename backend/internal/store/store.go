@@ -32,6 +32,7 @@ func allModels() []any {
 		model.ConfigVersion{},
 		model.AuditLog{},
 		model.Setting{},
+		model.MetricsSample{}, // M2 遗留修复:曾漏登记导致监控样本静默写失败(T3.3 验收发现)
 	}
 }
 

@@ -115,6 +115,11 @@ func (a *Agent) connectAndServe(ctx context.Context) error {
 		return fmt.Errorf("连接中心失败: %w", err)
 	}
 	defer ws.Close()
+	// 优雅退出:阻塞中的 ReadJSON 不感知 ctx,收到退出信号主动断开使读立即返回。
+	go func() {
+		<-ctx.Done()
+		_ = ws.Close()
+	}()
 
 	hello := agentproto.Message{Type: agentproto.TypeClientHello, ClientHello: &agentproto.ClientHello{
 		Protocol:     agentproto.ProtocolVersion,
@@ -160,7 +165,12 @@ func (a *Agent) connectAndServe(ctx context.Context) error {
 // serve 已握手阶段:读循环(主 goroutine)+ 独立心跳写 goroutine ——
 // WS 读会长时间阻塞,心跳必须由独立 goroutine 发送(writeMu 保证写互斥)。
 func (a *Agent) serve(ctx context.Context, ws *websocket.Conn) error {
-	ws.SetPingHandler(func(string) error { return nil })
+	// WS ping 保活:回 pong 并重置读死线(中心 30s 一 ping,读死线 3 倍心跳;
+	// 长静默期连接靠 ping 保持,不再每 90s 假死重连)。
+	ws.SetPingHandler(func(string) error {
+		ws.SetReadDeadline(time.Now().Add(3 * heartbeatInterval))
+		return ws.WriteControl(websocket.PongMessage, nil, time.Now().Add(writeTimeout))
+	})
 
 	done := make(chan struct{})
 	defer close(done)

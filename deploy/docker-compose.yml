@@ -10,6 +10,9 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+      # l4 透传站点示例端口(T3.4);业务端口按需追加
+      - "8433:8433"
+      - "15353:15353/udp"
     volumes:
       - ./caddy/Caddyfile.initial:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

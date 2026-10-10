@@ -13,5 +13,6 @@
   "error.version_not_applicable": "Only successfully applied versions can be rolled back to",
   "error.caddy_unreachable": "Caddy Admin API is unreachable, please check whether Caddy is running",
   "error.node_not_found": "Node not found or already deleted",
-  "error.node_has_sites": "The node still has sites; delete them before deleting the node"
+  "error.node_has_sites": "The node still has sites; delete them before deleting the node",
+  "error.listen_conflict": "Listen address {{.listen}} is already used by another L4 site on this node"
 }

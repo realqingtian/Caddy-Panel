@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"caddy-panel/backend/internal/caddy"
 	"caddy-panel/backend/internal/model"
@@ -125,7 +126,7 @@ func (s *Site) Create(ctx context.Context, in SiteInput, dryRun bool) (*model.Si
 			return nil, nil, &InvalidInputError{Reason: fmt.Sprintf("节点不存在: %s", site.NodeID)}
 		}
 	}
-	if err := checkDomainConflict(sitesOfNode(existing, site.NodeID), site, site.Domains); err != nil {
+	if err := checkSiteConflict(sitesOfNode(existing, site.NodeID), site); err != nil {
 		return nil, nil, err
 	}
 
@@ -176,7 +177,7 @@ func (s *Site) Update(ctx context.Context, id uint, in SiteInput) (*model.Site, 
 	updated.BasicAuthUsers = basicAuthJSON
 	updated.ID, updated.CreatedAt = old.ID, old.CreatedAt
 	updated.NodeID = old.NodeID
-	if err := checkDomainConflict(sitesOfNode(existing, updated.NodeID), updated, updated.Domains); err != nil {
+	if err := checkSiteConflict(sitesOfNode(existing, updated.NodeID), updated); err != nil {
 		return nil, nil, err
 	}
 
@@ -304,6 +305,29 @@ func (s *Site) recordVersion(ctx context.Context, nodeID string, sites []model.S
 	if err := s.repo.CreateConfigVersion(ctx, version); err != nil {
 		slog.Error("写入配置版本快照失败", "error", err)
 	}
+}
+
+// checkSiteConflict 节点内资源冲突查重:http 站点按域名,l4 站点按监听地址
+// (l4 无域名概念,同监听地址重复注册会渲染出冲突的 layer4 server)。
+func checkSiteConflict(existing []model.Site, candidate *model.Site) error {
+	if candidate.Type == model.SiteTypeL4 {
+		listen := strings.TrimSpace(candidate.L4Listen)
+		for _, site := range existing {
+			if site.ID != candidate.ID && site.Type == model.SiteTypeL4 &&
+				strings.TrimSpace(site.L4Listen) == listen {
+				return &ListenConflictError{Listen: listen}
+			}
+		}
+		return nil
+	}
+	return checkDomainConflict(existing, candidate, candidate.Domains)
+}
+
+// ListenConflictError l4 监听地址已被同节点其他站点占用。
+type ListenConflictError struct{ Listen string }
+
+func (e *ListenConflictError) Error() string {
+	return fmt.Sprintf("监听地址 %s 已被该节点上的其他 l4 站点占用", e.Listen)
 }
 
 // checkDomainConflict 域名查重:与同节点站点(含停用)逐一比对,excludeID 为 0 表示新建。

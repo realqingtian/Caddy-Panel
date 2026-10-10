@@ -246,6 +246,7 @@ func parseID(c *gin.Context) (uint, bool) {
 func respondSiteError(c *gin.Context, err error) {
 	var invalid *service.InvalidInputError
 	var conflict *service.DomainConflictError
+	var listenConflict *service.ListenConflictError
 	var deploy *service.DeployError
 	switch {
 	case errors.As(err, &invalid):
@@ -254,6 +255,9 @@ func respondSiteError(c *gin.Context, err error) {
 	case errors.As(err, &conflict):
 		apierr.RespondError(c, http.StatusConflict, apierr.CodeSiteDomainConflict, i18n.MsgSiteDomainConflict,
 			map[string]any{"domain": conflict.Domain}, nil)
+	case errors.As(err, &listenConflict):
+		apierr.RespondError(c, http.StatusConflict, apierr.CodeSiteDomainConflict, i18n.MsgListenConflict,
+			map[string]any{"listen": listenConflict.Listen}, nil)
 	case errors.As(err, &deploy):
 		apierr.RespondError(c, http.StatusUnprocessableEntity, apierr.CodeSiteDeployFailed, i18n.MsgSiteDeployFailed,
 			nil, deploy.Error())
