@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Button, Card, Form, Input, Switch } from 'antd'
+import { App, Alert, Button, Card, Form, Input, Space, Switch, Upload } from 'antd'
 import { useEffect } from 'react'
+import type { UploadFile } from 'antd'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '@/api/auth'
 import { getSettings, updateSettings, type Settings } from '@/api/config'
+import { Typography } from 'antd'
+import { exportBackup, restoreBackup } from '@/api/backup'
 
 interface SettingsFormValues {
   admin_url: string
@@ -71,81 +74,108 @@ export default function SettingsPage() {
     onError: (error) => message.error(apiErrorMessage(error, t('settings.saveFailed'))),
   })
 
+  const restoreFile = async (file: UploadFile) => {
+    try {
+      const result = await restoreBackup(file.originFileObj ?? (file as unknown as File))
+      void message.success(
+        t('settings.backup.restored', { sites: result.sites, versions: result.versions }),
+      )
+      void queryClient.invalidateQueries({ queryKey: ['settings'] })
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('settings.backup.restoreFailed')))
+    }
+    return false
+  }
+
   return (
-    <Card title={t('settings.title')}>
-      <Form<SettingsFormValues>
-        form={form}
-        layout="vertical"
-        style={{ maxWidth: 640 }}
-        onFinish={(values) => saveMutation.mutate(values)}
-      >
-        <Form.Item
-          name="admin_url"
-          label={t('settings.field.adminUrl')}
-          extra={t('settings.hint.adminUrl')}
+    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      <Card title={t('settings.title')}>
+        <Form<SettingsFormValues>
+          form={form}
+          layout="vertical"
+          style={{ maxWidth: 640 }}
+          onFinish={(values) => saveMutation.mutate(values)}
         >
-          <Input placeholder="http://localhost:2019" />
-        </Form.Item>
-        <Form.Item
-          name="caddy_admin_bind"
-          label={t('settings.field.adminBind')}
-          extra={t('settings.hint.adminBind')}
-        >
-          <Input placeholder="localhost:2019" />
-        </Form.Item>
-        <Form.Item
-          name="caddyfile_path"
-          label={t('settings.field.caddyfilePath')}
-          extra={t('settings.hint.nextOp')}
-        >
-          <Input placeholder="/etc/caddy/Caddyfile" />
-        </Form.Item>
-        <Form.Item
-          name="log_access_path"
-          label={t('settings.field.logAccess')}
-          extra={t('settings.hint.nextOp')}
-        >
-          <Input placeholder="/data/logs/access.log" />
-        </Form.Item>
-        <Form.Item
-          name="log_error_path"
-          label={t('settings.field.logError')}
-          extra={t('settings.hint.nextOp')}
-        >
-          <Input placeholder="/data/logs/error.log" />
-        </Form.Item>
-        <Form.Item
-          name="login_max_fails"
-          label={t('settings.field.loginMaxFails')}
-          extra={t('settings.hint.immediate')}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item
-          name="login_lock_window"
-          label={t('settings.field.loginLockWindow')}
-          extra={t('settings.hint.immediate')}
-        >
-          <Input placeholder="1m" />
-        </Form.Item>
-        <Form.Item
-          name="metrics_enabled"
-          label={t('settings.field.metrics')}
-          valuePropName="checked"
-        >
-          <Switch />
-        </Form.Item>
-        <Form.Item
-          name="global_extra"
-          label={t('settings.field.globalExtra')}
-          extra={t('settings.hint.globalExtra')}
-        >
-          <Input.TextArea rows={4} placeholder={'servers {\n\tprotocols h1 h2\n}'} />
-        </Form.Item>
-        <Button type="primary" htmlType="submit" loading={saveMutation.isPending}>
-          {t('common.save')}
-        </Button>
-      </Form>
-    </Card>
+          <Form.Item
+            name="admin_url"
+            label={t('settings.field.adminUrl')}
+            extra={t('settings.hint.adminUrl')}
+          >
+            <Input placeholder="http://localhost:2019" />
+          </Form.Item>
+          <Form.Item
+            name="caddy_admin_bind"
+            label={t('settings.field.adminBind')}
+            extra={t('settings.hint.adminBind')}
+          >
+            <Input placeholder="localhost:2019" />
+          </Form.Item>
+          <Form.Item
+            name="caddyfile_path"
+            label={t('settings.field.caddyfilePath')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/etc/caddy/Caddyfile" />
+          </Form.Item>
+          <Form.Item
+            name="log_access_path"
+            label={t('settings.field.logAccess')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/data/logs/access.log" />
+          </Form.Item>
+          <Form.Item
+            name="log_error_path"
+            label={t('settings.field.logError')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/data/logs/error.log" />
+          </Form.Item>
+          <Form.Item
+            name="login_max_fails"
+            label={t('settings.field.loginMaxFails')}
+            extra={t('settings.hint.immediate')}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="login_lock_window"
+            label={t('settings.field.loginLockWindow')}
+            extra={t('settings.hint.immediate')}
+          >
+            <Input placeholder="1m" />
+          </Form.Item>
+          <Form.Item
+            name="metrics_enabled"
+            label={t('settings.field.metrics')}
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            name="global_extra"
+            label={t('settings.field.globalExtra')}
+            extra={t('settings.hint.globalExtra')}
+          >
+            <Input.TextArea rows={4} placeholder={'servers {\n\tprotocols h1 h2\n}'} />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={saveMutation.isPending}>
+            {t('common.save')}
+          </Button>
+        </Form>
+      </Card>
+      <Card title={t('settings.backup.title')}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Alert type="warning" showIcon message={t('settings.backup.warning')} />
+          <Space>
+            <Button onClick={() => void exportBackup()}>{t('settings.backup.export')}</Button>
+            <Upload accept=".json" showUploadList={false} beforeUpload={restoreFile}>
+              <Button danger>{t('settings.backup.restore')}</Button>
+            </Upload>
+          </Space>
+          <Typography.Text type="secondary">{t('settings.backup.hint')}</Typography.Text>
+        </Space>
+      </Card>
+    </Space>
   )
 }

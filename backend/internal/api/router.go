@@ -127,6 +127,11 @@ func New(deps Deps) *gin.Engine {
 	authorized.GET("/settings", settingsHandler.Get())
 	authorized.PUT("/settings", settingsHandler.Update())
 
+	// 备份与恢复(FR-706):复用 settings service(env 默认 + 白名单校验)。
+	backupHandler := handler.NewBackup(service.NewBackup(deps.Store, settingSvc))
+	authorized.GET("/backup", backupHandler.Export())
+	authorized.POST("/restore", backupHandler.Restore())
+
 	// 日志查看:路径解析与渲染参数同源(settings 优先,FR-502)。
 	logPathFn := func(kind string) string {
 		key := model.SettingKeyLogAccessPath

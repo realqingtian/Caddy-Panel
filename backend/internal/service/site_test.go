@@ -98,6 +98,16 @@ func (f *fakeSiteRepo) SetSetting(_ context.Context, key, value string) error {
 	return nil
 }
 
+func (f *fakeSiteRepo) ReplaceSettings(_ context.Context, settings []model.Setting) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.settings = map[string]string{}
+	for _, s := range settings {
+		f.settings[s.Key] = s.Value
+	}
+	return nil
+}
+
 // fakeRenderInput 捕获 pipeline 收到的渲染输入,供断言全量语义。
 var lastRenderInput caddy.RenderInput
 

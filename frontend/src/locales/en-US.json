@@ -195,7 +195,16 @@
       "globalExtra": "Appended verbatim into the global block; syntax is on you, the whole file is validated before saving"
     },
     "saved": "Settings saved",
-    "saveFailed": "Failed to save settings"
+    "saveFailed": "Failed to save settings",
+    "backup": {
+      "title": "Backup & Restore",
+      "export": "Export backup (JSON)",
+      "restore": "Import & restore",
+      "restored": "Restored: {{sites}} sites, {{versions}} version records",
+      "restoreFailed": "Restore failed",
+      "warning": "Importing replaces all sites, version history and settings, and never auto-deploys",
+      "hint": "After restoring, review and enable sites, or redeploy from the Config Center"
+    }
   },
   "logs": {
     "title": "Logs",

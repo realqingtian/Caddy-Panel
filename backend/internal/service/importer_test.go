@@ -117,3 +117,44 @@ func TestImportApply_SkipsDomainConflicts(t *testing.T) {
 func containsStr(haystack, needle string) bool {
 	return strings.Contains(haystack, needle)
 }
+
+func TestBackupExportAndRestore(t *testing.T) {
+	repo := newFakeSiteRepo()
+	svc := NewBackup(repo, NewSetting(repo, map[string]string{model.SettingKeyLoginMaxFails: "5"}))
+	ctx := context.Background()
+
+	if err := repo.CreateSite(ctx, &model.Site{Name: "app", Type: "proxy", Domains: "a.com", Upstreams: "127.0.0.1:80"}); err != nil {
+		t.Fatalf("准备站点: %v", err)
+	}
+	repo.recordVersionForTest("rendered", model.VersionStatusApplied, "[]")
+	_ = repo.SetSetting(ctx, model.SettingKeyLoginMaxFails, "7")
+
+	file, err := svc.Export(ctx)
+	if err != nil {
+		t.Fatalf("导出失败: %v", err)
+	}
+	if file.Version != backupFormatVersion || len(file.Sites) != 1 || file.Settings[model.SettingKeyLoginMaxFails] != "7" {
+		t.Fatalf("备份内容不符: %+v", file.Settings)
+	}
+
+	// 清空后恢复。
+	_ = repo.ReplaceSites(ctx, nil)
+	_ = repo.ReplaceConfigVersions(ctx, nil)
+	result, err := svc.Restore(ctx, file)
+	if err != nil {
+		t.Fatalf("恢复失败: %v", err)
+	}
+	if result.Sites != 1 || result.Versions != 1 {
+		t.Fatalf("恢复计数不符: %+v", result)
+	}
+	if v, _, _ := repo.GetSetting(ctx, model.SettingKeyLoginMaxFails); v != "7" {
+		t.Fatalf("设置应恢复为 7,实际 %q", v)
+	}
+
+	// 版本不兼容拒绝。
+	bad := *file
+	bad.Version = 99
+	if _, err := svc.Restore(ctx, &bad); err == nil {
+		t.Fatal("未知版本应拒绝")
+	}
+}

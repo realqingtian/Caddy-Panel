@@ -44,6 +44,20 @@ func (f *fakeSiteRepo) GetConfigVersion(_ context.Context, id uint) (*model.Conf
 	return nil, store.ErrNotFound
 }
 
+func (f *fakeSiteRepo) ReplaceConfigVersions(_ context.Context, versions []model.ConfigVersion) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.versions = nil
+	versionSeq = 0
+	for i := range versions {
+		cp := versions[i]
+		versionSeq++
+		cp.ID = versionSeq
+		f.versions = append(f.versions, cp)
+	}
+	return nil
+}
+
 func (f *fakeSiteRepo) ReplaceSites(_ context.Context, sites []model.Site) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

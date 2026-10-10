@@ -195,7 +195,16 @@
       "globalExtra": "原样拼入全局块;语法由使用者负责,保存前会整体校验"
     },
     "saved": "设置已保存",
-    "saveFailed": "设置保存失败"
+    "saveFailed": "设置保存失败",
+    "backup": {
+      "title": "备份与恢复",
+      "export": "导出备份(JSON)",
+      "restore": "导入恢复",
+      "restored": "已恢复:{{sites}} 个站点、{{versions}} 条版本记录",
+      "restoreFailed": "恢复失败",
+      "warning": "导入将替换当前全部站点、版本历史与设置,且不自动下发",
+      "hint": "恢复后请在站点页核对并启用,或在配置中心重新下发使配置生效"
+    }
   },
   "logs": {
     "title": "日志",
