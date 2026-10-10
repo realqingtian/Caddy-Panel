@@ -37,7 +37,7 @@
 | T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ⬜ | | unix socket 支持 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ⬜ | | 渲染单测 golden file |
 | T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ⬜ | | |
-| T6 | 配置中心(版本/diff/回滚/直编)+ ConfigEditor 页 | FR-40x | ⬜ | | Monaco + Caddyfile 高亮 |
+| T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ⬜ | | Monaco + Caddyfile 高亮 |
 | T7 | 日志 tail API + Logs 页 | FR-50x | ⬜ | | 轮询 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ⬜ | | drift.go |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ⬜ | | 多阶段构建 |

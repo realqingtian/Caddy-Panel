@@ -80,7 +80,7 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint 等
    - 在线兜底:`POST /adapt`(Content-Type: `text/caddyfile`)。
 3. **下发**:`POST /load`(JSON,`Content-Type: application/json`),Caddy 零停机热加载;失败 Caddy 自动回滚,Panel 返回错误并标记 `config_versions.status=failed`。
 4. **落盘**:渲染的 Caddyfile 写入目标路径(默认 `/etc/caddy/Caddyfile`,本机开发可配),**原子写**(临时文件 + rename)。写成功后才更新 `config_versions.status=applied`。
-5. **启动一致性检查**:Panel 启动时对比 DB 最新成功版本与磁盘 Caddyfile + `GET /config`,不一致则在 Dashboard 告警(防"面板外手改/重启回退")。
+5. **启动漂移检测**:Panel 启动时对比 DB 最新成功版本与磁盘 Caddyfile + `GET /config`,不一致则在 Dashboard 告警(防"面板外手改/重启回退")。
 6. **并发与失败语义**:pipeline 内置全局单写者锁,所有下发串行执行(全量渲染下并发写会互相覆盖);校验失败 → DB 事务回滚不下发;`/load` 失败 → 回滚 DB(Caddy 侧已自动回滚),保证 DB / Caddyfile / 运行态三者一致;下发携带 `If-Match` 防面板外并发改动。
 
 ## 5. 后端 API 设计(REST,`/api/v1`)
@@ -98,6 +98,7 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint 等
 | GET | `/config/versions/{id}` | 版本详情(含 Caddyfile 全文,供前端 diff) |
 | POST | `/config/versions/{id}/rollback` | 回滚:取快照 → 校验 → load |
 | POST | `/config/caddyfile` | 直接编辑 Caddyfile:校验通过才落盘生效(进阶模式) |
+| GET/PUT | `/settings` | 系统设置 KV(Caddyfile 路径、日志路径、Admin API 地址);env 提供默认值,此处修改持久化覆盖 |
 | GET | `/logs?type=access\|error&tail=200` | 日志 tail(轮询,M1 不做 WebSocket) |
 
 错误约定:统一 `{ "code": "...", "message": "...", "detail": ... }`;校验失败返回 422 + Caddy 错误原文。全部接口编写 swaggo 注解,`swag init` 生成 OpenAPI,开发态 Swagger UI 挂载在 `/swagger`。
@@ -142,11 +143,11 @@ Caddy-Panel/
 > 任务**状态**统一在 [进度看板](./progress.md) 维护,此处只保留定义;需求验收标准见 [PRD](./requirements.md)。
 
 1. 脚手架:前后端骨架可运行、compose 可起;接入 antd 官方 AI 协作资源(MCP/Skill,配置见 AGENTS.md)
-2. 登录/JWT + SQLite 迁移 + 审计中间件
+2. 登录/JWT + SQLite 迁移 + 审计/限速中间件
 3. Caddy Admin client(/adapt、/load、/config、/status)
-4. Caddyfile 渲染引擎(站点模板 + 全局模板)+ 离线校验
+4. Caddyfile 渲染引擎(站点模板 + 全局模板)+ 离线校验 + pipeline 编排(单写者/原子落盘)
 5. 站点 CRUD API + 前端 Sites 页
-6. 配置中心(版本/回滚/diff)+ ConfigEditor 页
+6. 配置中心(版本/回滚/diff/系统设置)+ ConfigEditor/Settings 页
 7. 日志 tail API + Logs 页
-8. 启动一致性检查 + Dashboard
+8. 启动漂移检测 + Dashboard
 9. Docker 镜像与 compose 打磨、README

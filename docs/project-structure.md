@@ -46,7 +46,7 @@ Caddy-Panel/
 │       │   ├── user.go  site.go  config_version.go  audit_log.go  setting.go
 │       ├── store/
 │       │   ├── store.go           # 打开 SQLite、AutoMigrate(M1;后续引入 goose/golang-migrate 版本化迁移)、事务助手
-│       │   └── seed.go            # 首次启动创建管理员:密码取 PANEL_ADMIN_PASSWORD,未设置则随机生成并打印到日志(仅一次)
+│       │   └── seed.go            # 首次启动创建管理员(用户名默认 admin):密码取 PANEL_ADMIN_PASSWORD,未设置则随机生成并打印到日志(仅一次)
 │       ├── caddy/
 │       │   ├── client.go          # Admin API client:Load/Adapt/GetConfig/Upstreams/Stop
 │       │   ├── render.go          # 模板渲染引擎:sites[] → Caddyfile
@@ -126,6 +126,8 @@ Caddy-Panel/
 | `PANEL_CADDYFILE_PATH` | `./data/Caddyfile`(生产 `/etc/caddy/Caddyfile`) | 渲染产物落盘位置 |
 | `PANEL_JWT_SECRET` | 启动时生成并持久化到 settings | JWT 签名密钥 |
 | `PANEL_LOG_ACCESS_PATH` / `PANEL_LOG_ERROR_PATH` | `./data/access.log` / `./data/error.log` | 日志 tail 读取目标 |
+
+> 优先级:env 提供**默认值**;路径类配置可在设置页(FR-601)修改并持久化到 `settings` 表,运行时以 settings 为准。
 
 ## 5. 测试与质量约定
 

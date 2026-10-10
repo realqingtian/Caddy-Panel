@@ -89,4 +89,4 @@ M3:多节点 Agent 管理、Web 终端、TCP/UDP 转发(l4 插件)、RBAC 与审
 
 ## 6. 追溯矩阵(简版)
 
-需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,NFR-104→T9。
+需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,FR-60x→T6(接口文档 FR-602 随各 handler 注解),NFR-104→T9。
