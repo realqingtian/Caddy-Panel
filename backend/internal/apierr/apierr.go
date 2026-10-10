@@ -11,14 +11,19 @@ import (
 
 // 业务错误码:机器可读、稳定,前端可据此做精细处理(FR-603)。
 const (
-	CodeInvalidCredentials = "AUTH_INVALID_CREDENTIALS"
-	CodeAccountLocked      = "AUTH_ACCOUNT_LOCKED"
-	CodeUnauthorized       = "AUTH_UNAUTHORIZED"
-	CodeBadRequest         = "BAD_REQUEST"
-	CodeInternal           = "INTERNAL_ERROR"
-	CodeSiteNotFound       = "SITE_NOT_FOUND"
-	CodeSiteDomainConflict = "SITE_DOMAIN_CONFLICT"
-	CodeSiteDeployFailed   = "SITE_DEPLOY_FAILED"
+	CodeInvalidCredentials         = "AUTH_INVALID_CREDENTIALS"
+	CodeAccountLocked              = "AUTH_ACCOUNT_LOCKED"
+	CodeUnauthorized               = "AUTH_UNAUTHORIZED"
+	CodeBadRequest                 = "BAD_REQUEST"
+	CodeInternal                   = "INTERNAL_ERROR"
+	CodeSiteNotFound               = "SITE_NOT_FOUND"
+	CodeSiteDomainConflict         = "SITE_DOMAIN_CONFLICT"
+	CodeSiteDeployFailed           = "SITE_DEPLOY_FAILED"
+	CodeConfigDeployFailed         = "CONFIG_DEPLOY_FAILED"
+	CodeConfigVersionNotApplicable = "CONFIG_VERSION_NOT_APPLICABLE"
+	CodeCaddyUnreachable           = "CADDY_UNREACHABLE"
+	CodeNotFound                   = "NOT_FOUND"
+	CodeSettingInvalid             = "SETTING_INVALID"
 )
 
 // gin context 键:injectI18n 写入翻译包。

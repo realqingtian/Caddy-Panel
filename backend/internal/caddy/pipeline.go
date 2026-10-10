@@ -59,22 +59,42 @@ func NewPipeline(renderer Renderer, validator Validator, client Client, caddyfil
 	}
 }
 
-// Execute 串行执行渲染→校验→(按模式)热加载/落盘。
-// 失败顺序语义:渲染/校验失败不触 Caddy 不落盘;/load 失败时 Caddy 侧已自动
-// 回滚运行态、此处不落盘,由调用方回滚 DB —— 保证三者一致;
-// 落盘失败(运行态已生效)返回错误,由启动漂移检测暴露差异。
+// Execute 渲染输入并按模式执行(常规站点操作入口)。
 func (p *Pipeline) Execute(ctx context.Context, input RenderInput, opts Options) (*ExecuteResult, error) {
 	p.writeMu.Lock()
 	defer p.writeMu.Unlock()
 
-	targetPath := p.caddyfilePath()
-	if targetPath == "" {
-		return nil, fmt.Errorf("Caddyfile 落盘路径未配置(检查 PANEL_CADDYFILE_PATH / 设置页)")
-	}
-
 	rendered, err := p.renderer.Render(input)
 	if err != nil {
 		return nil, fmt.Errorf("渲染 Caddyfile: %w", err)
+	}
+	return p.deployRenderedLocked(ctx, rendered, opts.Mode)
+}
+
+// DeployRendered 下发既有渲染产物(回滚、Caddyfile 直编复用):校验→按模式执行。
+func (p *Pipeline) DeployRendered(ctx context.Context, rendered string, mode OpMode) (*ExecuteResult, error) {
+	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
+	return p.deployRenderedLocked(ctx, rendered, mode)
+}
+
+// CurrentConfig 读取 Caddy 当前生效 JSON(GET /config 透传)。
+func (p *Pipeline) CurrentConfig(ctx context.Context) (json.RawMessage, error) {
+	if p.client == nil {
+		return nil, fmt.Errorf("Caddy Admin API 未配置")
+	}
+	config, _, err := p.client.GetConfig(ctx)
+	return config, err
+}
+
+// deployRenderedLocked 执行已渲染产物的校验与下发;调用方必须已持写锁。
+// 失败顺序语义:渲染/校验失败不触 Caddy 不落盘;/load 失败时 Caddy 侧已自动
+// 回滚运行态、此处不落盘,由调用方回滚 DB —— 保证三者一致;
+// 落盘失败(运行态已生效)返回错误,由启动漂移检测暴露差异。
+func (p *Pipeline) deployRenderedLocked(ctx context.Context, rendered string, mode OpMode) (*ExecuteResult, error) {
+	targetPath := p.caddyfilePath()
+	if targetPath == "" {
+		return nil, fmt.Errorf("Caddyfile 落盘路径未配置(检查 PANEL_CADDYFILE_PATH / 设置页)")
 	}
 
 	config, err := p.validator.Validate(ctx, rendered)
@@ -83,7 +103,7 @@ func (p *Pipeline) Execute(ctx context.Context, input RenderInput, opts Options)
 	}
 
 	applied := false
-	if opts.Mode == OpDeploy {
+	if mode == OpDeploy {
 		// 先取 ETag(同时预检 Caddy 可达)再下发,If-Match 防面板外并发改动覆盖。
 		_, etag, err := p.client.GetConfig(ctx)
 		if err != nil {
@@ -95,7 +115,7 @@ func (p *Pipeline) Execute(ctx context.Context, input RenderInput, opts Options)
 		applied = true
 	}
 
-	if opts.Mode == OpValidateOnly {
+	if mode == OpValidateOnly {
 		return &ExecuteResult{Rendered: rendered, Config: config}, nil
 	}
 

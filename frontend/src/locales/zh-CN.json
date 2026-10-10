@@ -35,7 +35,9 @@
     "save": "保存",
     "edit": "编辑",
     "delete": "删除",
-    "actions": "操作"
+    "actions": "操作",
+    "reset": "还原",
+    "loading": "加载中…"
   },
   "sites": {
     "title": "站点管理",
@@ -108,5 +110,52 @@
       "title": "设置",
       "placeholder": "系统设置将在 T6(配置中心)实现;语言与主题切换已可用"
     }
+  },
+  "config": {
+    "editorTitle": "Caddyfile",
+    "versionsTitle": "版本历史",
+    "mode": {
+      "preview": "预览",
+      "edit": "直接编辑"
+    },
+    "action": {
+      "saveApply": "校验并生效",
+      "diff": "对比当前",
+      "rollback": "回滚到此版"
+    },
+    "status": {
+      "applied": "已生效",
+      "failed": "失败"
+    },
+    "noVersions": "暂无版本记录;站点保存或直编后将自动留痕",
+    "saved": "配置已校验并生效",
+    "saveFailed": "配置保存失败",
+    "saveConfirm": "确认保存?校验通过后立即热加载生效",
+    "rollbackSuccess": "已回滚并生成新版本记录",
+    "rollbackFailed": "回滚失败",
+    "rollbackConfirm": "确认回滚到此版本?线上配置将恢复为该版本内容"
+  },
+  "settings": {
+    "title": "系统设置",
+    "field": {
+      "adminUrl": "Admin API 地址",
+      "adminBind": "Caddy admin 监听地址(渲染全局块)",
+      "caddyfilePath": "Caddyfile 落盘路径",
+      "logAccess": "访问日志路径",
+      "logError": "错误日志路径",
+      "loginMaxFails": "登录失败锁定阈值(次)",
+      "loginLockWindow": "登录锁定时长",
+      "metrics": "启用 metrics 端点",
+      "globalExtra": "全局自定义片段(global_extra)"
+    },
+    "hint": {
+      "adminUrl": "面板连接 Caddy Admin API 的地址",
+      "adminBind": "写入渲染产物的全局 admin 指令;Caddy 重启恢复依赖它,须与面板可达地址一致",
+      "nextOp": "修改后在下次操作时生效",
+      "immediate": "修改后立即生效",
+      "globalExtra": "原样拼入全局块;语法由使用者负责,保存前会整体校验"
+    },
+    "saved": "设置已保存",
+    "saveFailed": "设置保存失败"
   }
 }

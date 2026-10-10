@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,7 @@ import (
 	"caddy-panel/backend/internal/caddy"
 	"caddy-panel/backend/internal/config"
 	"caddy-panel/backend/internal/i18n"
+	"caddy-panel/backend/internal/model"
 	"caddy-panel/backend/internal/service"
 	"caddy-panel/backend/internal/store"
 	"caddy-panel/backend/internal/web"
@@ -27,10 +29,11 @@ const apiPrefix = "/api/"
 
 // Deps router 的全部依赖;main 装配,测试可注入 fake。
 type Deps struct {
-	Cfg      *config.Config
-	Store    *store.Store
-	Bundle   *i18n.Bundle
-	Pipeline *caddy.Pipeline
+	Cfg             *config.Config
+	Store           *store.Store
+	Bundle          *i18n.Bundle
+	Pipeline        *caddy.Pipeline
+	CaddyfilePathFn func() string // 落盘路径解析(与 Pipeline 同源)
 }
 
 // New 构造 Gin 引擎:健康检查、Swagger 文档、/api/v1 业务路由与前端静态托管。
@@ -88,7 +91,35 @@ func New(deps Deps) *gin.Engine {
 	authorized.POST("/sites/:id/enable", sites.Enable())
 	authorized.POST("/sites/:id/disable", sites.Disable())
 
-	// M1 后续任务的业务接口挂载点:配置中心/日志路由自 T6/T7 起注册到这里。
+	// 配置中心:版本历史/回滚/直编/当前配置(FR-40x)。
+	configSvc := service.NewConfig(service.ConfigDeps{
+		Repo:            deps.Store,
+		Pipeline:        deps.Pipeline,
+		CaddyfilePathFn: deps.CaddyfilePathFn,
+	})
+	configHandler := handler.NewConfig(configSvc)
+	authorized.GET("/config/versions", configHandler.ListVersions())
+	authorized.GET("/config/versions/:id", configHandler.GetVersion())
+	authorized.POST("/config/versions/:id/rollback", configHandler.Rollback())
+	authorized.GET("/config/caddyfile", configHandler.CurrentCaddyfile())
+	authorized.POST("/config/caddyfile", configHandler.SaveCaddyfile())
+	authorized.GET("/config/current", configHandler.CurrentJSON())
+
+	// 系统设置:env 默认 + settings 表覆盖(FR-601)。
+	settingSvc := service.NewSetting(deps.Store, map[string]string{
+		model.SettingKeyAdminURL:        deps.Cfg.AdminURL,
+		model.SettingKeyCaddyAdminBind:  deps.Cfg.CaddyAdminBind,
+		model.SettingKeyCaddyfilePath:   deps.Cfg.CaddyfilePath,
+		model.SettingKeyLogAccessPath:   deps.Cfg.LogAccessPath,
+		model.SettingKeyLogErrorPath:    deps.Cfg.LogErrorPath,
+		model.SettingKeyLoginMaxFails:   strconv.Itoa(deps.Cfg.LoginMaxFails),
+		model.SettingKeyLoginLockWindow: deps.Cfg.LoginLockWindow.String(),
+		model.SettingKeyMetricsEnabled:  "false",
+		model.SettingKeyGlobalExtra:     "",
+	})
+	settingsHandler := handler.NewSettings(settingSvc)
+	authorized.GET("/settings", settingsHandler.Get())
+	authorized.PUT("/settings", settingsHandler.Update())
 
 	mountFrontend(r, deps.Bundle)
 

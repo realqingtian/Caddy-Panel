@@ -90,6 +90,13 @@ func (f *fakeSiteRepo) GetSetting(_ context.Context, key string) (string, bool, 
 	return v, ok, nil
 }
 
+func (f *fakeSiteRepo) SetSetting(_ context.Context, key, value string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.settings[key] = value
+	return nil
+}
+
 // fakeRenderInput 捕获 pipeline 收到的渲染输入,供断言全量语义。
 var lastRenderInput caddy.RenderInput
 

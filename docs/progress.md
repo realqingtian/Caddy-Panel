@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:M1 编码进行中 —— T5 站点 CRUD 已完成,下一任务 T6(配置中心:版本/diff/回滚/直编/系统设置 + ConfigEditor/Settings 页,Monaco + Caddyfile 高亮)。**
-T6 注意事项:store 已有 CreateConfigVersion;前端首次引入 Monaco(@monaco-editor/react);回滚复用 service 层"下发→落库"编排;FR-601 设置页含登录锁定参数(立即生效)与 metrics/global_extra 等。
+**阶段:M1 编码进行中 —— T6 配置中心已完成,下一任务 T7(日志 tail API + Logs 页,轮询)。**
+T7 注意事项:tail 强制上限(超大文件);日志文件不存在返回明确提示而非报错(FR-502);前端 usePolling hook 可复用。
 
 ## 2. 里程碑
 
@@ -37,7 +37,7 @@ T6 注意事项:store 已有 CreateConfigVersion;前端首次引入 Monaco(@mona
 | T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ✅ | 2026-10-10 | http(s):// 与 unix:// 双协议;请求超时 10s、响应上限 32MiB;If-Match 并发防护;Caddy 错误原文以 HTTPError 透传;Ping 读 /config 判活 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ✅ | 2026-10-10 | 模板嵌入 templates 包(转换层厚/模板薄);离线适配 modules/standard 全注册;golden 渲染测试 + "产物必过离线校验"契约测试;pipeline 单写者锁 + tmp+rename 原子写 + Deploy 开关(Caddy 未运行可保存);新增 PANEL_CADDY_ADMIN_BIND;真机 /load 集成验证随 T5 联调 |
 | T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ✅ | 2026-10-10 | service 编排(先 Caddy 后 DB)+ 域名查重 + dry_run 预检 + 版本快照(成败都留痕);compose 真 Caddy 联调:创建→反代生效→停用下线→启用恢复→删除,域名冲突 409/非法输入 400/下发失败 422(含 Caddy 原文);前端 Sites 页 Table+动态 Drawer+启停+删除 |
-| T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ⬜ | | Monaco + Caddyfile 高亮 |
+| T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ✅ | 2026-10-10 | 版本历史/详情/回滚(恢复站点快照+下发,生成新版本)/直编(校验+防护:缺全局 admin 指令直接拒绝)/当前配置双视图;系统设置白名单+值校验(env 默认兜底);前端 Monaco+Caddyfile 高亮+DiffEditor+暗色同步;联调:直编生效/非法 422/回滚恢复反代/设置读写 |
 | T7 | 日志 tail API + Logs 页 | FR-50x | ⬜ | | 轮询 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ⬜ | | drift.go |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ⬜ | | 多阶段构建 |
@@ -67,6 +67,7 @@ T6 注意事项:store 已有 CreateConfigVersion;前端首次引入 Monaco(@mona
 | 2026-10-10 | JWT 密钥首启生成后持久化到 settings 表,重启沿用库内密钥 | 避免随机密钥导致每次重启踢掉全部会话(FR-103 会话连续性) |
 | 2026-10-10 | 站点编排改为"先 Caddy 后 DB":pipeline 成功后才提交站点变更,失败零 DB 变更,消除补偿回滚中间态;Caddy 生效而 DB 提交失败的崩溃窗口由启动漂移检测(T8)兜底。与设计第 3 节"落库→下发"顺序不同,以 3.1 一致性语义为准 | 补偿回滚本身可能失败会产生更难解释的中间态 |
 | 2026-10-10 | 渲染全局块新增 PANEL_CADDY_ADMIN_BIND(默认 localhost:2019):/load 会应用全局块,若绑定与 Panel 实际可达地址不一致,首次下发后 Panel 即失联;compose 中为 caddy:2019 | T5 联调发现的真实故障模式 |
+| 2026-10-10 | Caddyfile 直编强制保留全局 admin 指令(缺失即 400):直编缺全局块会让 /load 后 Caddy 回落默认绑定导致面板失联;全局块属面板管辖,用户从预览载入编辑即可保留 | T6 联调确认的故障模式,防护成本一行正则 |
 
 ## 5. 待决事项
 

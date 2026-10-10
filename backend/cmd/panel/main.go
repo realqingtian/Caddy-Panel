@@ -72,21 +72,23 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// 落盘路径统一解析:settings 表优先,env 默认兜底(设置页修改"下次操作生效")。
+	caddyfilePathFn := func() string {
+		if v, ok, err := st.GetSetting(ctx, model.SettingKeyCaddyfilePath); err == nil && ok && v != "" {
+			return v
+		}
+		return cfg.CaddyfilePath
+	}
 	pipeline := caddy.NewPipeline(
 		caddy.NewRenderer(),
 		caddy.NewValidator(caddyClient),
 		caddyClient,
-		func() string {
-			if v, ok, err := st.GetSetting(ctx, model.SettingKeyCaddyfilePath); err == nil && ok && v != "" {
-				return v
-			}
-			return cfg.CaddyfilePath
-		},
+		caddyfilePathFn,
 	)
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline}),
+		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline, CaddyfilePathFn: caddyfilePathFn}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

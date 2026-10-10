@@ -8,5 +8,8 @@
   "error.forbidden": "没有权限执行该操作",
   "error.site_not_found": "站点不存在或已被删除",
   "error.site_domain_conflict": "域名 {{.domain}} 已被其他站点占用",
-  "error.site_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail"
+  "error.site_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail",
+  "error.config_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail",
+  "error.version_not_applicable": "只能回滚到下发成功的版本",
+  "error.caddy_unreachable": "Caddy Admin API 不可达,请检查 Caddy 是否运行"
 }
