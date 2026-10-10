@@ -20,11 +20,13 @@ const adminTimeout = 10 * time.Second
 // CaddyLocal 本机 Caddy Admin API 客户端;支持 http(s):// 与 unix:// 地址。
 type CaddyLocal struct {
 	client *http.Client
+	base   string // 请求基址;unix:// 时用占位 host(实际连接走自定义 DialContext)
 }
 
 // NewCaddyLocal 构造本机客户端;unix:// 走自定义 DialContext。
 func NewCaddyLocal(adminURL string) (*CaddyLocal, error) {
 	transport := &http.Transport{}
+	base := adminURL
 	switch {
 	case strings.HasPrefix(adminURL, "unix://"):
 		sock := strings.TrimPrefix(adminURL, "unix://")
@@ -32,17 +34,18 @@ func NewCaddyLocal(adminURL string) (*CaddyLocal, error) {
 			var d net.Dialer
 			return d.DialContext(ctx, "unix", sock)
 		}
+		base = "http://caddy" // 占位 host,连接目标由 DialContext 决定
 	case strings.HasPrefix(adminURL, "http://"), strings.HasPrefix(adminURL, "https://"):
-		// 默认传输即可
+		base = strings.TrimSuffix(adminURL, "/")
 	default:
 		return nil, fmt.Errorf("Caddy Admin 地址格式非法(应为 http(s):// 或 unix://): %s", adminURL)
 	}
-	return &CaddyLocal{client: &http.Client{Timeout: adminTimeout, Transport: transport}}, nil
+	return &CaddyLocal{client: &http.Client{Timeout: adminTimeout, Transport: transport}, base: base}, nil
 }
 
 // Reachable 探测本机 Caddy(GET /config/ 即判活)。
 func (c *CaddyLocal) Reachable(ctx context.Context) bool {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://caddy/config/", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+"/config/", nil)
 	if err != nil {
 		return false
 	}
@@ -56,7 +59,7 @@ func (c *CaddyLocal) Reachable(ctx context.Context) bool {
 
 // Metrics 抓取本机 Caddy /metrics(Prometheus 文本);agent 定期上报中心。
 func (c *CaddyLocal) Metrics(ctx context.Context) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://caddy/metrics", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+"/metrics", nil)
 	if err != nil {
 		return "", fmt.Errorf("构造 metrics 请求: %w", err)
 	}
@@ -78,7 +81,7 @@ func (c *CaddyLocal) Metrics(ctx context.Context) (string, error) {
 // Load 把 Caddyfile 全文交本机 Caddy 热加载(Content-Type: text/caddyfile,
 // Caddy 原生支持 —— agent 无需内置适配器);失败返回 Caddy 错误原文。
 func (c *CaddyLocal) Load(ctx context.Context, caddyfile string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://caddy/load",
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.base+"/load",
 		bytes.NewBufferString(caddyfile))
 	if err != nil {
 		return fmt.Errorf("构造 load 请求: %w", err)

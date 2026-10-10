@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 	"sync"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -157,21 +157,24 @@ func (a *Agent) connectAndServe(ctx context.Context) error {
 	return a.serve(ctx, ws)
 }
 
-// serve 已握手阶段:心跳定时器 + 指令读循环,任一退出即断开。
+// serve 已握手阶段:读循环(主 goroutine)+ 独立心跳写 goroutine ——
+// WS 读会长时间阻塞,心跳必须由独立 goroutine 发送(writeMu 保证写互斥)。
 func (a *Agent) serve(ctx context.Context, ws *websocket.Conn) error {
 	ws.SetPingHandler(func(string) error { return nil })
 
-	heartbeat := make(chan struct{}, 1)
 	done := make(chan struct{})
-	var once sync.Once
-	stop := func() { once.Do(func() { close(done) }) }
-	defer stop()
+	defer close(done)
 
 	go func() {
 		ticker := time.NewTicker(heartbeatInterval)
 		defer ticker.Stop()
-		// 首帧立即上报,中心尽快可见。
-		heartbeat <- struct{}{}
+		sendHeartbeat := func() {
+			if err := a.write(ws, a.buildHeartbeat()); err != nil {
+				slog.Warn("发送心跳失败,连接将被重连", "error", err)
+			}
+			go a.reportMetrics()
+		}
+		sendHeartbeat() // 首帧立即上报,中心尽快可见
 		for {
 			select {
 			case <-done:
@@ -179,34 +182,19 @@ func (a *Agent) serve(ctx context.Context, ws *websocket.Conn) error {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				select {
-				case heartbeat <- struct{}{}:
-				default:
-				}
+				sendHeartbeat()
 			}
 		}
 	}()
 
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-done:
-			return nil
-		case <-heartbeat:
-			if err := a.write(ws, a.buildHeartbeat()); err != nil {
-				return fmt.Errorf("发送心跳失败: %w", err)
-			}
-			go a.reportMetrics()
-		default:
-		}
-
 		var msg agentproto.Message
+		// 90s 读死线 = 3 倍心跳:期间心跳 goroutine 持续保活,
+		// 超时视为半开连接,主动断开走重连。
 		ws.SetReadDeadline(time.Now().Add(3 * heartbeatInterval))
 		if err := ws.ReadJSON(&msg); err != nil {
 			return fmt.Errorf("读取中心消息失败: %w", err)
 		}
-		ws.SetReadDeadline(time.Time{})
 
 		switch msg.Type {
 		case agentproto.TypeCommand:

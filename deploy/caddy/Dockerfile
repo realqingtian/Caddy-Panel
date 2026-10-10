@@ -4,7 +4,7 @@
 # 不需要插件时 compose 可直接用官方 caddy:2 镜像。
 FROM caddy:2-builder AS builder
 RUN xcaddy build \
-  --with github.com/mholt/caddy-rate-limit \
+  --with github.com/mholt/caddy-ratelimit \
   --with github.com/caddy-dns/cloudflare \
   --with github.com/mholt/caddy-l4
 
