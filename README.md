@@ -65,8 +65,23 @@ cd frontend && bun install && bun run dev
 | `PANEL_LOGIN_MAX_FAILS` / `PANEL_LOGIN_LOCK_WINDOW` | `5` / `1m` | 登录锁定(设置页可改,立即生效) |
 | `PANEL_LOG_ACCESS_PATH` / `PANEL_LOG_ERROR_PATH` | `./data/*.log` | 日志 tail 目标 |
 | `PANEL_CERT_STORAGE_PATH` | `/data/caddy` | Caddy 证书存储(只读,证书状态查看) |
+| `PANEL_PUBLIC_URL` | 空 | 面板对外可达地址(生成 agent 安装命令用,设置页可改) |
 
 以上路径/地址类均可在面板"设置"页覆盖(写入 SQLite,下次操作生效);JWT 相关仅 env 管理。
+
+## 多节点 Agent(T3.3)
+
+远程节点经反向 WebSocket 连接面板(免暴露被管机端口):面板"节点管理"页签发接入令牌并生成安装命令,目标机(Linux amd64/arm64 + systemd)粘贴执行即完成接入;agent 收到渲染产物后在本机落盘并热加载本机 Caddy(渲染与校验始终在面板完成)。
+
+```bash
+# 构建 agent(独立 Go module)
+cd agent
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.version=$(git describe --tags --always)" -o caddy-panel-agent-linux-amd64 .
+GOOS=darwin GOARCH=arm64 go build -o caddy-panel-agent-darwin-arm64 .   # 本机开发调试
+./caddy-panel-agent-darwin-arm64 -center ws://localhost:8080/api/v1/agent/ws -token cen_xxx   -caddy-admin http://localhost:2020 -caddyfile ./data/Caddyfile -state ./agent-state.json
+```
+
+节点语义:站点归属节点在创建时确定(不可迁移);渲染按节点分组、每节点串行下发;接入令牌一次性(24h 过期、可撤销);心跳 30s、90s 无心跳判离线;指令 30s 超时,节点离线直接失败不排队。
 
 ## 工程命令
 

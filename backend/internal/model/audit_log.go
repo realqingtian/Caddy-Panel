@@ -7,6 +7,7 @@ import "time"
 type AuditLog struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	UserID    *uint     `json:"user_id"`                        // 未认证请求(如登录失败)为空
+	NodeID    string    `gorm:"size:64;default:local" json:"node_id"` // 目标资源所属节点(handler 经 context 提供)
 	Action    string    `gorm:"size:64;not null" json:"action"` // 如 auth.login、sites.create
 	Target    string    `gorm:"size:255" json:"target"`         // 目标资源标识,由 handler 通过 context 提供
 	Detail    string    `gorm:"type:text" json:"detail"`        // JSON 字符串

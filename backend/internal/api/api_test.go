@@ -85,8 +85,10 @@ func newTestServer(t *testing.T) (*gin.Engine, *store.Store) {
 		Pipeline: caddy.NewPipeline(
 			caddy.NewRenderer(),
 			caddy.NewValidator(fakeDeployClient{}),
-			fakeDeployClient{},
-			func() string { return filepath.Join(t.TempDir(), "Caddyfile") },
+			func(string) (caddy.Applier, error) {
+				return caddy.NewLocalApplier(fakeDeployClient{},
+					func() string { return filepath.Join(t.TempDir(), "Caddyfile") }), nil
+			},
 		),
 		Client:       fakeDeployClient{},
 		TokenService: service.NewTokenService(st),

@@ -61,8 +61,8 @@ func (f *unreachClient) Ping(ctx context.Context) error {
 
 func newDriftFixture(t *testing.T, repo *fakeDriftRepo, client *unreachClient) *DriftChecker {
 	t.Helper()
-	pipeline := caddy.NewPipeline(&captureRenderer{out: ""}, &passValidator{}, client,
-		func() string { return filepath.Join(t.TempDir(), "Caddyfile") })
+	pipeline := caddy.NewPipeline(&captureRenderer{out: ""}, &passValidator{}, localApplierForWith(client,
+		func() string { return filepath.Join(t.TempDir(), "Caddyfile") }))
 	return NewDriftChecker(repo, pipeline, func() string { return filepath.Join(t.TempDir(), "Caddyfile") })
 }
 
@@ -79,7 +79,7 @@ func TestDrift_AllInSync(t *testing.T) {
 		t.Fatalf("写磁盘: %v", err)
 	}
 	pipeline := caddy.NewPipeline(&captureRenderer{out: ""}, &passValidator{},
-		&staticClient{config: diskJSON}, func() string { return path })
+		localApplierForWith(&staticClient{config: diskJSON}, func() string { return path }))
 	checker := NewDriftChecker(repo, pipeline, func() string { return path })
 
 	report := checker.Check(context.Background())

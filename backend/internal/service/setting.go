@@ -27,6 +27,7 @@ var editableSettingKeys = []string{
 	model.SettingKeyLoginMaxFails,
 	model.SettingKeyLoginLockWindow,
 	model.SettingKeyMetricsEnabled,
+	model.SettingKeyPanelPublicURL,
 	model.SettingKeyGlobalExtra,
 }
 

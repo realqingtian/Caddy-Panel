@@ -24,7 +24,14 @@ export default function LogsPage() {
 
   return (
     <Card
-      title={t('logs.title')}
+      title={
+        <Space>
+          {t('logs.title')}
+          <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>
+            {t('common.localOnly')}
+          </Typography.Text>
+        </Space>
+      }
       extra={
         <Space>
           <Segmented

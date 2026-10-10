@@ -163,9 +163,10 @@ func newSiteFixture(t *testing.T, validatorErr error) (*Site, *fakeSiteRepo, *re
 	repo := newFakeSiteRepo()
 	client := &recordingClient{}
 	pipeline := caddy.NewPipeline(&captureRenderer{out: "rendered"},
-		&passValidator{err: validatorErr}, client, func() string { return "/tmp/unused-Caddyfile" })
+		&passValidator{err: validatorErr}, localApplierFor(client))
 	svc := NewSite(SiteDeps{
 		Repo:     repo,
+		Nodes:    fakeNodeGetter{},
 		Pipeline: pipeline,
 		Defaults: SiteDefaults{AdminBind: "localhost:2019", ErrorLogPath: "/e.log", AccessLogPath: "/a.log"},
 	})
@@ -320,7 +321,7 @@ func TestSiteDelete_RemovesSite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建失败: %v", err)
 	}
-	if _, err := svc.Delete(ctx, site.ID); err != nil {
+	if _, _, err := svc.Delete(ctx, site.ID); err != nil {
 		t.Fatalf("删除失败: %v", err)
 	}
 	if len(repo.sites) != 0 {

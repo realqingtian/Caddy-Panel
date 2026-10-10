@@ -1,8 +1,9 @@
 // Package service — 站点业务:输入校验、下发编排与版本快照。
 //
-// 编排顺序为"先 Caddy 后 DB":pipeline 成功后才提交站点变更,
+// 编排顺序为"先 Caddy 后 DB":下发成功后才提交站点变更,
 // 失败时不产生任何 DB 变更,消除补偿回滚的中间态;
 // Caddy 生效而 DB 提交失败的崩溃窗口由启动漂移检测(T8)兜底。
+// 多节点(T3.3):每次编排只影响站点归属节点,渲染输入 = 该节点全部站点。
 package service
 
 import (
@@ -23,11 +24,11 @@ var (
 	ErrSiteNotFound = errors.New("site not found")
 )
 
-// DomainConflictError 域名已被其他站点占用(FR-304)。
+// DomainConflictError 域名已被同节点其他站点占用(域名唯一性按节点判定)。
 type DomainConflictError struct{ Domain string }
 
 func (e *DomainConflictError) Error() string {
-	return fmt.Sprintf("域名 %s 已被其他站点占用", e.Domain)
+	return fmt.Sprintf("域名 %s 已被该节点上的其他站点占用", e.Domain)
 }
 
 // InvalidInputError 输入校验失败;Reason 为具体原因(detail,不做 i18n)。
@@ -54,7 +55,7 @@ type SiteRepo interface {
 	GetSetting(ctx context.Context, key string) (string, bool, error)
 }
 
-// SiteDefaults 渲染参数的 env 默认值(启动配置注入;settings 表可覆盖)。
+// SiteDefaults 渲染参数的 env 默认值(local 节点;启动配置注入,settings 表可覆盖)。
 type SiteDefaults struct {
 	AdminBind      string
 	ErrorLogPath   string
@@ -65,20 +66,22 @@ type SiteDefaults struct {
 // SiteDeps site service 依赖。
 type SiteDeps struct {
 	Repo     SiteRepo
+	Nodes    NodeGetter
 	Pipeline *caddy.Pipeline
 	Defaults SiteDefaults
 }
 
 // Site 站点业务服务。
 type Site struct {
-	repo     SiteRepo
-	pipeline *caddy.Pipeline
-	defaults SiteDefaults
+	repo      SiteRepo
+	nodes     NodeGetter
+	pipeline  *caddy.Pipeline
+	defaults  SiteDefaults
 }
 
 // NewSite 构造站点服务。
 func NewSite(d SiteDeps) *Site {
-	return &Site{repo: d.Repo, pipeline: d.Pipeline, defaults: d.Defaults}
+	return &Site{repo: d.Repo, nodes: d.Nodes, pipeline: d.Pipeline, defaults: d.Defaults}
 }
 
 // Get 查询单个站点(纯读,无下发)。
@@ -93,29 +96,36 @@ func (s *Site) Get(ctx context.Context, id uint) (*model.Site, error) {
 	return site, nil
 }
 
-// List 查询全部站点(纯读,无下发)。
+// List 查询全部站点(纯读,无下发;node_id 随响应返回)。
 func (s *Site) List(ctx context.Context) ([]model.Site, error) {
 	return s.repo.ListSites(ctx)
 }
 
 // Create 新建站点:校验→查重→(dry run?)→下发→落库→快照。
-// dryRun 时仅渲染校验(OpValidateOnly),不落库不落盘不触 Caddy。
+// dryRun 时仅渲染校验(OpValidateOnly),不落库不落盘不触节点。
 func (s *Site) Create(ctx context.Context, in SiteInput, dryRun bool) (*model.Site, *caddy.ExecuteResult, error) {
 	if err := in.Validate(); err != nil {
 		return nil, nil, err
 	}
 
-	existing, err := s.repo.ListSites(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
 	site := in.toSite()
 	basicAuthJSON, err := in.hashBasicAuthUsers()
 	if err != nil {
 		return nil, nil, err
 	}
 	site.BasicAuthUsers = basicAuthJSON
-	if err := checkDomainConflict(existing, site, site.Domains); err != nil {
+
+	existing, err := s.repo.ListSites(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	// 节点存在性(local 为内置,不入库);域名唯一性按节点判定。
+	if site.NodeID != model.NodeIDLocal {
+		if _, err := s.nodes.GetNodeByNodeID(ctx, site.NodeID); err != nil {
+			return nil, nil, &InvalidInputError{Reason: fmt.Sprintf("节点不存在: %s", site.NodeID)}
+		}
+	}
+	if err := checkDomainConflict(sitesOfNode(existing, site.NodeID), site, site.Domains); err != nil {
 		return nil, nil, err
 	}
 
@@ -123,9 +133,10 @@ func (s *Site) Create(ctx context.Context, in SiteInput, dryRun bool) (*model.Si
 	if dryRun {
 		mode = caddy.OpValidateOnly
 	}
-	result, err := s.pipeline.Execute(ctx, s.renderInput(ctx, append(existing, *site)), caddy.Options{Mode: mode})
+	nodeSites := append(sitesOfNode(existing, site.NodeID), *site)
+	result, err := s.deploy(ctx, site.NodeID, nodeSites, mode)
 	if err != nil {
-		s.recordVersion(ctx, existing, "", false, err.Error())
+		s.recordVersion(ctx, site.NodeID, sitesOfNode(existing, site.NodeID), "", false, err.Error())
 		return nil, nil, &DeployError{Err: err}
 	}
 	if dryRun {
@@ -135,11 +146,12 @@ func (s *Site) Create(ctx context.Context, in SiteInput, dryRun bool) (*model.Si
 	if err := s.repo.CreateSite(ctx, site); err != nil {
 		return nil, nil, err
 	}
-	s.recordVersion(ctx, append(existing, *site), result.Rendered, result.Applied, "")
+	s.recordVersion(ctx, site.NodeID, nodeSites, result.Rendered, result.Applied, "")
 	return site, result, nil
 }
 
-// Update 更新站点:校验→查重(排除自身)→下发(全量含新配置)→更新库→快照。
+// Update 更新站点:校验→查重(排除自身)→下发(该节点全量含新配置)→更新库→快照。
+// 归属节点不可迁移:忽略输入中的 node_id 变更,始终沿用原值。
 func (s *Site) Update(ctx context.Context, id uint, in SiteInput) (*model.Site, *caddy.ExecuteResult, error) {
 	if err := in.Validate(); err != nil {
 		return nil, nil, err
@@ -163,23 +175,25 @@ func (s *Site) Update(ctx context.Context, id uint, in SiteInput) (*model.Site, 
 	}
 	updated.BasicAuthUsers = basicAuthJSON
 	updated.ID, updated.CreatedAt = old.ID, old.CreatedAt
-	if err := checkDomainConflict(existing, updated, updated.Domains); err != nil {
+	updated.NodeID = old.NodeID
+	if err := checkDomainConflict(sitesOfNode(existing, updated.NodeID), updated, updated.Domains); err != nil {
 		return nil, nil, err
 	}
 
-	result, err := s.pipeline.Execute(ctx, s.renderInput(ctx, replaceSite(existing, *updated)), caddy.Options{Mode: caddy.OpDeploy})
+	nodeSites := replaceSite(sitesOfNode(existing, updated.NodeID), *updated)
+	result, err := s.deploy(ctx, updated.NodeID, nodeSites, caddy.OpDeploy)
 	if err != nil {
-		s.recordVersion(ctx, existing, "", false, err.Error())
+		s.recordVersion(ctx, updated.NodeID, sitesOfNode(existing, updated.NodeID), "", false, err.Error())
 		return nil, nil, &DeployError{Err: err}
 	}
 	if err := s.repo.UpdateSite(ctx, updated); err != nil {
 		return nil, nil, err
 	}
-	s.recordVersion(ctx, replaceSite(existing, *updated), result.Rendered, result.Applied, "")
+	s.recordVersion(ctx, updated.NodeID, nodeSites, result.Rendered, result.Applied, "")
 	return updated, result, nil
 }
 
-// SetEnabled 启停站点;停用站点从渲染产物中消失(域名随之下线,FR-305)。
+// SetEnabled 启停站点;停用站点从该节点渲染产物中消失(域名随之下线,FR-305)。
 func (s *Site) SetEnabled(ctx context.Context, id uint, enabled bool) (*model.Site, *caddy.ExecuteResult, error) {
 	old, err := s.repo.GetSite(ctx, id)
 	if err != nil {
@@ -196,61 +210,56 @@ func (s *Site) SetEnabled(ctx context.Context, id uint, enabled bool) (*model.Si
 	updated := *old
 	updated.Enabled = enabled
 
-	result, err := s.pipeline.Execute(ctx, s.renderInput(ctx, replaceSite(existing, updated)), caddy.Options{Mode: caddy.OpDeploy})
+	nodeSites := replaceSite(sitesOfNode(existing, updated.NodeID), updated)
+	result, err := s.deploy(ctx, updated.NodeID, nodeSites, caddy.OpDeploy)
 	if err != nil {
-		s.recordVersion(ctx, existing, "", false, err.Error())
+		s.recordVersion(ctx, updated.NodeID, sitesOfNode(existing, updated.NodeID), "", false, err.Error())
 		return nil, nil, &DeployError{Err: err}
 	}
 	if err := s.repo.UpdateSite(ctx, &updated); err != nil {
 		return nil, nil, err
 	}
-	s.recordVersion(ctx, replaceSite(existing, updated), result.Rendered, result.Applied, "")
+	s.recordVersion(ctx, updated.NodeID, nodeSites, result.Rendered, result.Applied, "")
 	return &updated, result, nil
 }
 
-// Delete 删除站点:下发"不含该站"的全量配置,成功后删库(FR-305)。
-func (s *Site) Delete(ctx context.Context, id uint) (*caddy.ExecuteResult, error) {
+// Delete 删除站点:下发"不含该站"的节点全量配置,成功后删库(FR-305)。
+// 返回被删站点(审计记录归属节点用)。
+func (s *Site) Delete(ctx context.Context, id uint) (*model.Site, *caddy.ExecuteResult, error) {
 	old, err := s.repo.GetSite(ctx, id)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return nil, ErrSiteNotFound
+			return nil, nil, ErrSiteNotFound
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
 	existing, err := s.repo.ListSites(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	remaining := removeSite(existing, old.ID)
+	nodeID := siteNodeID(*old)
+	remaining := removeSite(sitesOfNode(existing, nodeID), old.ID)
 
-	result, err := s.pipeline.Execute(ctx, s.renderInput(ctx, remaining), caddy.Options{Mode: caddy.OpDeploy})
+	result, err := s.deploy(ctx, nodeID, remaining, caddy.OpDeploy)
 	if err != nil {
-		s.recordVersion(ctx, existing, "", false, err.Error())
-		return nil, &DeployError{Err: err}
+		s.recordVersion(ctx, nodeID, sitesOfNode(existing, nodeID), "", false, err.Error())
+		return nil, nil, &DeployError{Err: err}
 	}
 	if err := s.repo.DeleteSite(ctx, id); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	s.recordVersion(ctx, remaining, result.Rendered, result.Applied, "")
-	return result, nil
+	s.recordVersion(ctx, nodeID, remaining, result.Rendered, result.Applied, "")
+	return old, result, nil
 }
 
-// renderInput 组装渲染输入:渲染参数 settings 表优先、env 默认兜底(每次操作时读取,
-// 设置页修改"下次操作生效",FR-601)。
-func (s *Site) renderInput(ctx context.Context, sites []model.Site) caddy.RenderInput {
-	global := caddy.GlobalOptions{
-		AdminBind:      s.settingOr(ctx, model.SettingKeyCaddyAdminBind, s.defaults.AdminBind),
-		ErrorLogPath:   s.settingOr(ctx, model.SettingKeyLogErrorPath, s.defaults.ErrorLogPath),
-		AccessLogPath:  s.settingOr(ctx, model.SettingKeyLogAccessPath, s.defaults.AccessLogPath),
-		AcmeEmail:      s.settingOr(ctx, model.SettingKeyAcmeEmail, ""),
-		MetricsEnabled: s.settingBool(ctx, model.SettingKeyMetricsEnabled, s.defaults.MetricsEnabled),
-		GlobalExtra:    s.settingOr(ctx, model.SettingKeyGlobalExtra, ""),
+// deploy 组装节点渲染输入并经管道执行。
+func (s *Site) deploy(ctx context.Context, nodeID string, sites []model.Site, mode caddy.OpMode) (*caddy.ExecuteResult, error) {
+	input, err := s.renderInputFor(ctx, nodeID, sites)
+	if err != nil {
+		return nil, err
 	}
-	if global.AdminBind == "" {
-		global.AdminBind = "localhost:2019" // 渲染 "admin " 空地址是语法错误,兜底默认
-	}
-	return caddy.RenderInput{Sites: sites, Global: global}
+	return s.pipeline.ExecuteOn(ctx, nodeID, input, caddy.Options{Mode: mode})
 }
 
 func (s *Site) settingOr(ctx context.Context, key, def string) string {
@@ -273,8 +282,9 @@ func (s *Site) settingBool(ctx context.Context, key string, def bool) bool {
 	return v == "true" || v == "1"
 }
 
-// recordVersion 写版本快照;快照失败不影响业务结果,仅日志(痕迹缺失由漂移检测兜底)。
-func (s *Site) recordVersion(ctx context.Context, sites []model.Site, rendered string, applied bool, errMsg string) {
+// recordVersion 写版本快照(节点范围);快照失败不影响业务结果,仅日志
+// (痕迹缺失由漂移检测兜底)。
+func (s *Site) recordVersion(ctx context.Context, nodeID string, sites []model.Site, rendered string, applied bool, errMsg string) {
 	snapshot, err := json.Marshal(sites)
 	if err != nil {
 		slog.Error("序列化站点快照失败", "error", err)
@@ -285,6 +295,7 @@ func (s *Site) recordVersion(ctx context.Context, sites []model.Site, rendered s
 		status = model.VersionStatusFailed
 	}
 	version := &model.ConfigVersion{
+		NodeID:            nodeID,
 		SitesSnapshot:     string(snapshot),
 		RenderedCaddyfile: rendered,
 		Status:            status,
@@ -295,7 +306,7 @@ func (s *Site) recordVersion(ctx context.Context, sites []model.Site, rendered s
 	}
 }
 
-// checkDomainConflict 域名查重:与全量站点(含停用)逐一比对,excludeID 为 0 表示新建。
+// checkDomainConflict 域名查重:与同节点站点(含停用)逐一比对,excludeID 为 0 表示新建。
 func checkDomainConflict(existing []model.Site, candidate *model.Site, rawDomains string) error {
 	wanted := splitDomains(rawDomains)
 	for _, site := range existing {

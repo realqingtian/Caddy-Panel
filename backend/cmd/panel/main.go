@@ -13,6 +13,7 @@ import (
 	"time"
 
 	_ "caddy-panel/backend/docs_swag" // swag init 生成的 OpenAPI 文档,注册 /swagger 所需
+	"caddy-panel/backend/internal/agentconn"
 	"caddy-panel/backend/internal/api"
 	"caddy-panel/backend/internal/caddy"
 	"caddy-panel/backend/internal/config"
@@ -20,6 +21,7 @@ import (
 	"caddy-panel/backend/internal/model"
 	"caddy-panel/backend/internal/service"
 	"caddy-panel/backend/internal/store"
+	"caddy-panel/backend/internal/version"
 )
 
 // @title Caddy Panel API
@@ -68,7 +70,7 @@ func run() error {
 		return err
 	}
 
-	// Caddy 基础设施:client 唯一通信出口;pipeline 单例持有全局单写者锁。
+	// Caddy 基础设施:client 唯一通信出口(local);pipeline 单写者锁 per-node。
 	caddyClient, err := caddy.NewClient(cfg.AdminURL)
 	if err != nil {
 		return err
@@ -80,12 +82,31 @@ func run() error {
 		}
 		return cfg.CaddyfilePath
 	}
+
+	// agent 连接注册表与节点路由(T3.3):local 走本机 Admin API,
+	// 远程节点经 WS 指令由 agent 在目标机写盘+load(离线即失败)。
+	hub := agentconn.NewHub()
+	defer hub.CloseAll()
+	localApplier := caddy.NewLocalApplier(caddyClient, caddyfilePathFn)
+	applierFor := func(nodeID string) (caddy.Applier, error) {
+		if nodeID == "" || nodeID == model.NodeIDLocal {
+			return localApplier, nil
+		}
+		node, err := st.GetNodeByNodeID(ctx, nodeID)
+		if err != nil {
+			return nil, fmt.Errorf("节点 %s 不存在或已删除", nodeID)
+		}
+		return agentconn.NewApplier(hub, nodeID, node.Name), nil
+	}
 	pipeline := caddy.NewPipeline(
 		caddy.NewRenderer(),
 		caddy.NewValidator(caddyClient),
-		caddyClient,
-		caddyfilePathFn,
+		applierFor,
 	)
+
+	// 节点管理服务(T3.3):心跳落库 + 离线扫描循环。
+	nodeSvc := service.NewNode(service.NodeDeps{Repo: st, Hub: hub, PanelVer: version.Version})
+	go nodeSvc.WatchStale(ctx)
 
 	// metrics 抓取循环(FR-702):随停机取消;每轮检查 FR-601 开关。
 	collector := service.NewMetricsCollector(caddyClient, st, st)
@@ -119,7 +140,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              cfg.Listen,
-		Handler:           api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline, Client: caddyClient, Collector: collector, TokenService: service.NewTokenService(st), CaddyfilePathFn: caddyfilePathFn}),
+		Handler: api.New(api.Deps{Cfg: cfg, Store: st, Bundle: bundle, Pipeline: pipeline, Client: caddyClient, Collector: collector, TokenService: service.NewTokenService(st), Nodes: nodeSvc, Hub: hub, CaddyfilePathFn: caddyfilePathFn}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

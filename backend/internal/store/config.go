@@ -36,11 +36,27 @@ func (s *Store) GetConfigVersion(ctx context.Context, id uint) (*model.ConfigVer
 	return &version, nil
 }
 
-// ReplaceSites 事务内全量替换站点表(回滚恢复快照用;保留原 ID)。
-func (s *Store) ReplaceSites(ctx context.Context, sites []model.Site) error {
+// ReplaceAllSites 事务内全量替换站点表(备份恢复用;多节点下为全中心语义)。
+func (s *Store) ReplaceAllSites(ctx context.Context, sites []model.Site) error {
 	return s.Transaction(ctx, func(tx *gorm.DB) error {
 		if err := tx.Where("1 = 1").Delete(&model.Site{}).Error; err != nil {
 			return fmt.Errorf("清空站点表: %w", err)
+		}
+		for i := range sites {
+			if err := tx.Create(&sites[i]).Error; err != nil {
+				return fmt.Errorf("恢复站点 %s: %w", sites[i].Name, err)
+			}
+		}
+		return nil
+	})
+}
+
+// ReplaceNodeSites 事务内替换指定节点的站点集(节点级回滚恢复快照用;
+// 快照行保留原 ID,其他节点站点不受影响)。
+func (s *Store) ReplaceNodeSites(ctx context.Context, nodeID string, sites []model.Site) error {
+	return s.Transaction(ctx, func(tx *gorm.DB) error {
+		if err := tx.Where("node_id = ?", nodeID).Delete(&model.Site{}).Error; err != nil {
+			return fmt.Errorf("清空节点 %s 站点: %w", nodeID, err)
 		}
 		for i := range sites {
 			if err := tx.Create(&sites[i]).Error; err != nil {

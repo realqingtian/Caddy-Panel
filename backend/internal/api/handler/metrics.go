@@ -9,6 +9,7 @@ import (
 
 	"caddy-panel/backend/internal/apierr"
 	"caddy-panel/backend/internal/i18n"
+	"caddy-panel/backend/internal/model"
 	"caddy-panel/backend/internal/service"
 )
 
@@ -31,11 +32,12 @@ var allowedWindows = map[string]time.Duration{
 
 // Summary godoc
 // @Summary 指标时间序列
-// @Description 返回窗口内抓取样本的降采样序列(60 个点);metrics 开关关闭时为空(FR-702)
+// @Description 返回指定节点窗口内样本的降采样序列(60 个点);node_id 缺省为 local(FR-702)
 // @Tags metrics
 // @Produce json
 // @Security BearerAuth
 // @Param window query string false "窗口" Enums(1h,6h,24h)
+// @Param node_id query string false "节点标识" default(local)
 // @Success 200 {object} service.MetricsSummary
 // @Failure 401 {object} apierr.ErrorResponse
 // @Router /api/v1/metrics/summary [get]
@@ -45,7 +47,8 @@ func (h *MetricsHandler) Summary() gin.HandlerFunc {
 		if !ok {
 			window = time.Hour
 		}
-		summary, err := h.collector.Summary(c.Request.Context(), window)
+		nodeID := c.DefaultQuery("node_id", model.NodeIDLocal)
+		summary, err := h.collector.Summary(c.Request.Context(), nodeID, window)
 		if err != nil {
 			apierr.RespondError(c, http.StatusInternalServerError, apierr.CodeInternal, i18n.MsgInternal, nil, nil)
 			return

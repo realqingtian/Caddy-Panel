@@ -135,6 +135,13 @@ export default function SitesPage() {
     },
     { title: t('sites.field.domains'), dataIndex: 'domains', key: 'domains', ellipsis: true },
     {
+      title: t('sites.field.node'),
+      dataIndex: 'node_id',
+      key: 'node',
+      width: 120,
+      render: (v: string) => <Tag>{v || 'local'}</Tag>,
+    },
+    {
       title: t('sites.field.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',

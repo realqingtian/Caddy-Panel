@@ -20,11 +20,11 @@ func (s *Store) InsertSamples(ctx context.Context, samples []model.MetricsSample
 	return nil
 }
 
-// QuerySamples 查询时间窗内指定前缀的全部原始样本(时间升序)。
-func (s *Store) QuerySamples(ctx context.Context, namePrefix string, since time.Time) ([]model.MetricsSample, error) {
+// QuerySamples 查询指定节点时间窗内指定前缀的全部原始样本(时间升序)。
+func (s *Store) QuerySamples(ctx context.Context, nodeID, namePrefix string, since time.Time) ([]model.MetricsSample, error) {
 	var raws []model.MetricsSample
 	if err := s.db.WithContext(ctx).
-		Where("name LIKE ? AND ts >= ?", namePrefix+"%", since).
+		Where("node_id = ? AND name LIKE ? AND ts >= ?", nodeID, namePrefix+"%", since).
 		Order("ts ASC").Find(&raws).Error; err != nil {
 		return nil, fmt.Errorf("查询 metrics 样本: %w", err)
 	}

@@ -10,7 +10,8 @@
     "settings": "设置",
     "upstreams": "上游状态",
     "metrics": "监控",
-    "terminal": "终端"
+    "terminal": "终端",
+    "nodes": "节点管理"
   },
   "layout": {
     "theme": "主题",
@@ -41,7 +42,9 @@
     "actions": "操作",
     "reset": "还原",
     "loading": "加载中…",
-    "close": "关闭"
+    "close": "关闭",
+    "localOnly": "仅本机(local 节点)",
+    "done": "完成"
   },
   "sites": {
     "title": "站点管理",
@@ -83,7 +86,8 @@
       "rateLimitEvents": "窗口内最大次数",
       "dnsProvider": "DNS challenge 供应商",
       "dnsProviderPlaceholder": "不使用(自动 HTTPS)",
-      "dnsTokenEnv": "凭据环境变量名"
+      "dnsTokenEnv": "凭据环境变量名",
+      "node": "归属节点"
     },
     "hint": {
       "domains": "多个域名用英文逗号分隔",
@@ -93,7 +97,9 @@
       "ipList": "逗号分隔,支持单个 IP 或 CIDR 网段;白名单为名单外全部 403",
       "rateLimit": "按客户端 IP 限流;需要带 caddy-rate-limit 插件的 Caddy(compose 默认已含)",
       "dnsProvider": "使用 DNS challenge 签发证书;需要带对应 caddy-dns 插件的 Caddy(compose 默认含 cloudflare)",
-      "dnsTokenEnv": "凭据不落库:填环境变量名,Caddy 从自身环境读取,如 CF_API_TOKEN"
+      "dnsTokenEnv": "凭据不落库:填环境变量名,Caddy 从自身环境读取,如 CF_API_TOKEN",
+      "node": "站点归属节点在创建时确定,不可迁移(换节点=删除重建)",
+      "nodeLocked": "归属节点不可迁移"
     },
     "lbPolicy": {
       "roundRobin": "轮询(round_robin)",
@@ -146,6 +152,9 @@
       "disabledHint": "导入的站点均为停用状态,请核对后逐个启用(启用即下发生效)",
       "parseFailed": "Caddyfile 解析失败",
       "failed": "导入失败"
+    },
+    "node": {
+      "local": "local(面板本机)"
     }
   },
   "pages": {
@@ -285,7 +294,8 @@
       "caddyVsDisk": "Caddy 运行态 vs 磁盘 Caddyfile"
     },
     "recentTitle": "最近下发",
-    "noVersions": "暂无下发记录"
+    "noVersions": "暂无下发记录",
+    "nodesTitle": "远程节点"
   },
   "upstreams": {
     "title": "上游状态",
@@ -313,5 +323,47 @@
     "connectionFailed": "终端连接失败",
     "closed": "连接已关闭",
     "closedBanner": "—— 会话已结束,刷新页面重新打开 ——"
+  },
+  "nodes": {
+    "title": "远程节点",
+    "enroll": {
+      "tokens": "接入令牌",
+      "nodeName": "节点名",
+      "nodeNameHint": "安装命令按此名注册,注册后不可更改",
+      "plainToken": "接入令牌(一次性)",
+      "plainTokenHint": "仅本次展示;注册成功即作废,请立即用于安装命令",
+      "installCommand": "安装命令",
+      "installHint": "在目标机(Linux systemd)粘贴执行即完成接入;前提:设置页已配置面板对外地址(panel_public_url)",
+      "generate": "生成令牌与命令",
+      "createFailed": "签发接入令牌失败",
+      "prefix": "令牌前缀",
+      "state": "状态",
+      "used": "已使用",
+      "revoked": "已撤销",
+      "expired": "已过期",
+      "pending": "待使用",
+      "revoke": "撤销",
+      "expiresAt": "过期时间"
+    },
+    "uninstall": "卸载命令",
+    "uninstallHint": "在目标机执行以停止并清理 agent(节点记录需在面板删除)",
+    "field": {
+      "name": "名称",
+      "status": "连接状态",
+      "health": "健康度",
+      "sites": "站点数",
+      "version": "Agent 版本",
+      "platform": "平台",
+      "lastSeen": "最近心跳"
+    },
+    "status": {
+      "online": "在线",
+      "offline": "离线"
+    },
+    "caddy": "Caddy",
+    "inSync": "同步",
+    "deleted": "节点已删除",
+    "deleteFailed": "删除节点失败",
+    "deleteConfirm": "删除后节点密钥即吊销,agent 需重新接入。确认删除?"
   }
 }

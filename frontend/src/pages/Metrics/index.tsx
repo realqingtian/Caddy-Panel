@@ -14,6 +14,7 @@ import {
 } from 'recharts'
 
 import { apiErrorMessage } from '@/api/auth'
+import { listNodes } from '@/api/nodes'
 import { getMetricsSummary, getPrometheusConfig, type MetricsSeries } from '@/api/metrics'
 
 const windows = ['1h', '6h', '24h']
@@ -27,10 +28,18 @@ export default function MetricsPage() {
   const { message, modal } = App.useApp()
   const [window, setWindow] = useState('1h')
   const [metric, setMetric] = useState('caddy_http_requests_total')
+  const [nodeId, setNodeId] = useState('local')
+
+  // 节点选择(local + 已接入节点;m3-design §3.2 第 6 条按节点维度展示)。
+  const nodesQuery = useQuery({ queryKey: ['nodes'], queryFn: listNodes })
+  const nodeOptions = [
+    { value: 'local', label: t('sites.node.local') },
+    ...(nodesQuery.data ?? []).map((n) => ({ value: n.node_id, label: n.name })),
+  ]
 
   const summaryQuery = useQuery({
-    queryKey: ['metrics', window],
-    queryFn: () => getMetricsSummary(window),
+    queryKey: ['metrics', window, nodeId],
+    queryFn: () => getMetricsSummary(window, nodeId),
     refetchInterval: 15000,
   })
 
@@ -89,6 +98,12 @@ export default function MetricsPage() {
         title={t('metrics.title')}
         extra={
           <Space>
+            <Select
+              value={nodeId}
+              onChange={setNodeId}
+              style={{ minWidth: 160 }}
+              options={nodeOptions}
+            />
             <Segmented value={window} onChange={(v) => setWindow(v as string)} options={windows} />
             <Select
               value={metric}

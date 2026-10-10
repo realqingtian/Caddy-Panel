@@ -13,6 +13,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"caddy-panel/backend/internal/agentconn"
 	"caddy-panel/backend/internal/api/handler"
 	"caddy-panel/backend/internal/api/middleware"
 	"caddy-panel/backend/internal/apierr"
@@ -34,9 +35,11 @@ type Deps struct {
 	Store           *store.Store
 	Bundle          *i18n.Bundle
 	Pipeline        *caddy.Pipeline
-	Client          caddy.Client // Admin API 通信出口(透传类接口使用)
+	Client          caddy.Client // Admin API 通信出口(透传类接口使用,local)
 	Collector       *service.MetricsCollector
 	TokenService    *service.TokenService
+	Nodes           *service.Node
+	Hub             *agentconn.Hub
 	CaddyfilePathFn func() string // 落盘路径解析(与 Pipeline 同源)
 }
 
@@ -81,9 +84,11 @@ func New(deps Deps) *gin.Engine {
 	write := authorized.Group("", middleware.RequireScope(model.ScopeWrite, forbidden))
 	authorized.GET("/me", authHandler.Me())
 
-	// 站点管理:渲染参数 settings 优先、env 默认兜底(FR-601)。
+	// 站点管理:渲染参数 settings 优先、env 默认兜底(FR-601);
+	// 多节点下路径类参数对远程节点取 agent 上报值(site_render.go)。
 	siteSvc := service.NewSite(service.SiteDeps{
 		Repo:     deps.Store,
+		Nodes:    deps.Store,
 		Pipeline: deps.Pipeline,
 		Defaults: service.SiteDefaults{
 			AdminBind:      deps.Cfg.CaddyAdminBind,
@@ -132,6 +137,7 @@ func New(deps Deps) *gin.Engine {
 		model.SettingKeyMetricsEnabled:  "false",
 		model.SettingKeyAcmeEmail:       "",
 		model.SettingKeyNotifyWebhook:   "",
+		model.SettingKeyPanelPublicURL:  deps.Cfg.PanelPublicURL,
 		model.SettingKeyGlobalExtra:     "",
 	})
 	settingsHandler := handler.NewSettings(settingSvc)
@@ -147,12 +153,28 @@ func New(deps Deps) *gin.Engine {
 	// (仅 JWT + admin);不进 authorized 组。
 	r.GET("/api/v1/terminal/ws", handler.NewTerminal(jwtSecret, deps.Store).WS())
 
+	// Agent 接入(T3.3):WS 握手与 metrics 上报,凭证在 hello 帧内,
+	// 不进 authorized 组(非用户会话,无 scope 语义)。
+	r.GET("/api/v1/agent/ws", handler.NewAgentWS(deps.Nodes, deps.Hub).WS())
+	r.POST("/api/v1/agent/metrics", apierr.InjectI18n(deps.Bundle),
+		handler.NewAgentReport(deps.Store, deps.Collector).Metrics())
+
 	// API Token 管理(M3):仅 JWT + admin。
 	tokenSvc := service.NewTokenService(deps.Store)
 	tokenAdmin := authorized.Group("/tokens", middleware.RequireJWTAdmin(forbidden))
 	tokenAdmin.GET("", handler.NewToken(tokenSvc).List())
 	tokenAdmin.POST("", handler.NewToken(tokenSvc).Create())
 	tokenAdmin.DELETE("/:id", handler.NewToken(tokenSvc).Delete())
+
+	// 节点管理(T3.3):列表/删除/接入令牌/安装命令;写操作需 write scope。
+	nodeHandler := handler.NewNode(deps.Nodes)
+	authorized.GET("/nodes", nodeHandler.List())
+	write.DELETE("/nodes/:nodeId", nodeHandler.Delete())
+	authorized.GET("/nodes/enrollment-tokens", nodeHandler.ListEnrollTokens())
+	write.POST("/nodes/enrollment-tokens", nodeHandler.CreateEnrollToken())
+	write.POST("/nodes/enrollment-tokens/:id/revoke", nodeHandler.RevokeEnrollToken())
+	write.DELETE("/nodes/enrollment-tokens/:id", nodeHandler.DeleteEnrollToken())
+	authorized.GET("/nodes/uninstall-command", nodeHandler.UninstallCommand())
 
 	// 监控查询(FR-702);抓取循环在 main 启动,此处仅查询。
 	authorized.GET("/metrics/summary", handler.NewMetrics(deps.Collector).Summary())
@@ -175,9 +197,9 @@ func New(deps Deps) *gin.Engine {
 	logsHandler := handler.NewLogs(service.NewLogs(logPathFn))
 	authorized.GET("/logs", logsHandler.Tail())
 
-	// Dashboard:状态聚合 + 漂移检测(FR-201/202)。
+	// Dashboard:状态聚合 + 漂移检测(FR-201/202)+ 远程节点摘要(T3.3)。
 	driftChecker := service.NewDriftChecker(deps.Store, deps.Pipeline, deps.CaddyfilePathFn)
-	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Drift: driftChecker})
+	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Nodes: deps.Store, Drift: driftChecker})
 	authorized.GET("/status", handler.NewDashboard(dashboardSvc).Status())
 
 	// 上游状态透传(FR-701)。

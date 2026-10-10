@@ -99,7 +99,7 @@ Caddy-Panel/
 
 **M2/M3 扩展点(先留边界、不建目录,演进路径已定):**
 
-- **多节点 Agent(M3)**:独立 `agent/` 模块 + 中心下发协议;`caddy.Client`/`pipeline` 方法签名不写死 host,多节点时按节点实例化;届时 `sites`/`config_versions` 增加 `node_id` 列(AutoMigrate + 一次性回填 `local`),API 按节点过滤;
+- **多节点 Agent(M3,已落地)**:`agent/` 独立 Go module(反向 WS + 心跳 + 指令执行);中心 `pipeline` 演进为 `Applier` 出口路由(local=本机 Admin API,remote=WS 指令,per-node 单写者锁);`sites`/`config_versions`/`audit_logs`/`metrics_samples` 已加 `node_id` 列并回填 `local`;协议见 `internal/agentproto`(agent 侧为同步副本);
 - **upstream 独立配置(M2)**:`upstreams` 当前为逗号分隔 TEXT;M2 引入健康检查/权重时拆 `site_upstreams` 子表(AutoMigrate + 一次性回填),渲染产物不变;
 - **监控(M2)**:全局模板已预留 metrics 位,开关在设置页(FR-601),M2 只需补抓取与图表;
 - **导入与复杂配置(M2)**:`sites.raw_extra` / `settings.global_extra` 片段通道 M1 已预留,M2 导入 Caddyfile 时不可识别内容落入片段,渲染管道零改动;

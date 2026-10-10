@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Card, Table, type TableProps } from 'antd'
+import { Card, Space, Table, Typography, type TableProps } from 'antd'
 import { useTranslation } from 'react-i18next'
 
 import { getUpstreams, type Upstream } from '@/api/upstreams'
@@ -53,5 +53,18 @@ export function UpstreamsTable({
     />
   )
   if (compact) return table
-  return <Card title={t('upstreams.title')}>{table}</Card>
+  return (
+    <Card
+      title={
+        <Space>
+          {t('upstreams.title')}
+          <Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 'normal' }}>
+            {t('common.localOnly')}
+          </Typography.Text>
+        </Space>
+      }
+    >
+      {table}
+    </Card>
+  )
 }

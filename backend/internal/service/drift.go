@@ -60,7 +60,7 @@ func (c *DriftChecker) Check(ctx context.Context) *DriftReport {
 	}
 
 	// Caddy 可达性:不可达是告警项而非漂移(无法判定运行态)。
-	liveJSON, err := c.pipeline.CurrentConfig(ctx)
+	liveJSON, err := c.pipeline.CurrentConfig(ctx, model.NodeIDLocal)
 	if err != nil {
 		report.CaddyReachable = false
 		report.InSync = false

@@ -92,6 +92,29 @@ export default function DashboardPage() {
         </Col>
       </Row>
 
+      {status && status.nodes.length > 0 && (
+        <Card title={t('dashboard.nodesTitle')}>
+          <Row gutter={16}>
+            {status.nodes.map((node) => (
+              <Col span={6} key={node.node_id} style={{ marginBottom: 12 }}>
+                <Card size="small" title={node.name}>
+                  <Space size={4} wrap>
+                    <Tag color={node.status === 'online' ? 'success' : 'default'}>
+                      {t('nodes.status.' + node.status)}
+                    </Tag>
+                    <Tag color={node.caddy_ok ? 'success' : 'error'}>{t('nodes.caddy')}</Tag>
+                    <Tag color={node.in_sync ? 'success' : 'warning'}>{t('nodes.inSync')}</Tag>
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      {t('nodes.field.sites')}: {node.site_count}
+                    </Typography.Text>
+                  </Space>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Card>
+      )}
+
       <Card title={t('dashboard.recentTitle')}>
         <List
           size="small"

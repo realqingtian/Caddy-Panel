@@ -2,8 +2,10 @@ import { App, Button, Drawer, Form, Input, Select, Switch } from 'antd'
 import type { FormInstance } from 'antd'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 
 import { apiErrorMessage } from '@/api/auth'
+import { listNodes } from '@/api/nodes'
 import { createSite, updateSite, type Site, type SiteInput } from '@/api/sites'
 
 interface SiteFormProps {
@@ -52,6 +54,13 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
 
   const type = Form.useWatch('type', form) ?? 'proxy'
 
+  // 节点选择(local + 已接入节点);编辑时禁用:归属节点不可迁移。
+  const nodesQuery = useQuery({ queryKey: ['nodes'], queryFn: listNodes, enabled: open && !site })
+  const nodeOptions = [
+    { value: 'local', label: t('sites.node.local') },
+    ...(nodesQuery.data ?? []).map((n) => ({ value: n.node_id, label: `${n.name} (${n.status})` })),
+  ]
+
   return (
     <Drawer
       open={open}
@@ -71,6 +80,7 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
         onFinish={onSubmit}
         initialValues={{
           type: 'proxy',
+          node_id: 'local',
           lb_policy: 'round_robin',
           https_redirect: true,
           enabled: true,
@@ -102,6 +112,13 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
               { value: 'redirect', label: t('sites.type.redirect') },
             ]}
           />
+        </Form.Item>
+        <Form.Item
+          name="node_id"
+          label={t('sites.field.node')}
+          extra={site ? t('sites.hint.nodeLocked') : t('sites.hint.node')}
+        >
+          <Select disabled={!!site} options={nodeOptions} />
         </Form.Item>
         <Form.Item
           name="domains"
@@ -279,7 +296,7 @@ function siteToValues(site: Site): SiteFormValues {
   const basic_auth = (
     site.basic_auth_users ? (JSON.parse(site.basic_auth_users) as { username: string }[]) : []
   ).map((u) => ({ username: u.username, password: '' }))
-  return { ...site, headers, basic_auth }
+  return { ...site, headers, basic_auth, node_id: site.node_id || 'local' }
 }
 
 function valuesToInput(values: SiteFormValues): SiteInput {

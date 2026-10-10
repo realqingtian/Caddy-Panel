@@ -1,15 +1,14 @@
-// Package caddy — 下发编排:渲染 → 校验 → (可选)热加载 → 原子落盘。
-// 内置全局单写者锁:全量渲染下并发下发会互相覆盖,串行化是正确性前提
-// (project-structure.md 3.1;单实例约束 NFR-102 使进程内锁成立)。
+// Package caddy — 下发编排:渲染 → 校验 → (可选)应用到目标节点。
+//
+// 锁策略(T3.3 演进):单写者锁从全局收敛为 per-node —— 站点变更只影响
+// 其归属节点,同节点串行避免互相覆盖渲染产物,跨节点天然并行
+// (m3-design §3.2 第 4 条);单实例约束(NFR-102)使进程内锁成立。
 package caddy
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"os"
-	"path/filepath"
 	"sync"
 )
 
@@ -17,7 +16,7 @@ import (
 type OpMode string
 
 const (
-	// OpValidateOnly 仅渲染+校验(dry run),不触 Caddy 不落盘。
+	// OpValidateOnly 仅渲染+校验(dry run),不触节点不落盘。
 	OpValidateOnly OpMode = "validate_only"
 	// OpPersist 校验+落盘,不热加载(Caddy 未运行时"保存但不下发",重启由 Caddy 读盘恢复)。
 	OpPersist OpMode = "persist"
@@ -25,7 +24,7 @@ const (
 	OpDeploy OpMode = "deploy"
 )
 
-// Options Execute 可选项。
+// Options ExecuteOn 可选项。
 type Options struct {
 	Mode OpMode
 }
@@ -37,132 +36,99 @@ type ExecuteResult struct {
 	Applied  bool // 是否已热加载生效
 }
 
+// Applier 把已通过中心校验的渲染产物应用到目标节点(热加载 + 落盘)。
+// local 由 LocalApplier 实现,远程节点经 WS 指令由 agent 执行
+// (agentconn.Applier);渲染与离线校验始终在中心完成(m3-design §3.3 第 8 条)。
+type Applier interface {
+	Apply(ctx context.Context, config json.RawMessage, rendered string, mode OpMode) (applied bool, err error)
+}
+
+// ApplierFor 按节点标识返回应用出口;未知节点返回错误。
+type ApplierFor func(nodeID string) (Applier, error)
+
 // Pipeline 配置下发管道;经 NewPipeline 构造。
 type Pipeline struct {
-	renderer  Renderer
-	validator Validator
-	client    Client
-	// caddyfilePath 每次执行时解析:设置页修改落盘路径后"下次操作生效"(FR-601)。
-	caddyfilePath func() string
+	renderer   Renderer
+	validator  Validator
+	applierFor ApplierFor
 
-	writeMu sync.Mutex
+	nodeLocks sync.Map // nodeID → *sync.Mutex(节点删除后残存锁对象,量级可忽略)
 }
 
-// NewPipeline 构造管道;client 仅在 Deploy 时使用,可传 nil(此时 Deploy 必须 false)。
-// caddyfilePath 为路径 provider,每次执行调用,返回空串视为配置错误。
-func NewPipeline(renderer Renderer, validator Validator, client Client, caddyfilePath func() string) *Pipeline {
-	return &Pipeline{
-		renderer:      renderer,
-		validator:     validator,
-		client:        client,
-		caddyfilePath: caddyfilePath,
+// NewPipeline 构造管道;applierFor 由装配层提供(local/remote 路由)。
+func NewPipeline(renderer Renderer, validator Validator, applierFor ApplierFor) *Pipeline {
+	return &Pipeline{renderer: renderer, validator: validator, applierFor: applierFor}
+}
+
+// nodeLock 返回节点专属写锁(首次访问惰性创建)。
+func (p *Pipeline) nodeLock(nodeID string) *sync.Mutex {
+	if v, ok := p.nodeLocks.Load(nodeID); ok {
+		return v.(*sync.Mutex)
 	}
+	v, _ := p.nodeLocks.LoadOrStore(nodeID, &sync.Mutex{})
+	return v.(*sync.Mutex)
 }
 
-// Execute 渲染输入并按模式执行(常规站点操作入口)。
-func (p *Pipeline) Execute(ctx context.Context, input RenderInput, opts Options) (*ExecuteResult, error) {
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
+// ExecuteOn 渲染输入并对指定节点按模式执行(常规站点操作入口)。
+func (p *Pipeline) ExecuteOn(ctx context.Context, nodeID string, input RenderInput, opts Options) (*ExecuteResult, error) {
+	mu := p.nodeLock(nodeID)
+	mu.Lock()
+	defer mu.Unlock()
 
 	rendered, err := p.renderer.Render(input)
 	if err != nil {
 		return nil, fmt.Errorf("渲染 Caddyfile: %w", err)
 	}
-	return p.deployRenderedLocked(ctx, rendered, opts.Mode)
+	return p.executeRenderedLocked(ctx, nodeID, rendered, opts.Mode)
 }
 
-// DeployRendered 下发既有渲染产物(回滚、Caddyfile 直编复用):校验→按模式执行。
-func (p *Pipeline) DeployRendered(ctx context.Context, rendered string, mode OpMode) (*ExecuteResult, error) {
-	p.writeMu.Lock()
-	defer p.writeMu.Unlock()
-	return p.deployRenderedLocked(ctx, rendered, mode)
+// DeployRenderedOn 对指定节点下发既有渲染产物(回滚、Caddyfile 直编复用)。
+func (p *Pipeline) DeployRenderedOn(ctx context.Context, nodeID string, rendered string, mode OpMode) (*ExecuteResult, error) {
+	mu := p.nodeLock(nodeID)
+	mu.Lock()
+	defer mu.Unlock()
+	return p.executeRenderedLocked(ctx, nodeID, rendered, mode)
 }
 
-// CurrentConfig 读取 Caddy 当前生效 JSON(GET /config 透传)。
-func (p *Pipeline) CurrentConfig(ctx context.Context) (json.RawMessage, error) {
-	if p.client == nil {
-		return nil, fmt.Errorf("Caddy Admin API 未配置")
-	}
-	config, _, err := p.client.GetConfig(ctx)
-	return config, err
-}
-
-// deployRenderedLocked 执行已渲染产物的校验与下发;调用方必须已持写锁。
-// 失败顺序语义:渲染/校验失败不触 Caddy 不落盘;/load 失败时 Caddy 侧已自动
-// 回滚运行态、此处不落盘,由调用方回滚 DB —— 保证三者一致;
-// 落盘失败(运行态已生效)返回错误,由启动漂移检测暴露差异。
-func (p *Pipeline) deployRenderedLocked(ctx context.Context, rendered string, mode OpMode) (*ExecuteResult, error) {
-	targetPath := p.caddyfilePath()
-	if targetPath == "" {
-		return nil, fmt.Errorf("Caddyfile 落盘路径未配置(检查 PANEL_CADDYFILE_PATH / 设置页)")
-	}
-
+// executeRenderedLocked 校验渲染产物并按模式应用;调用方必须已持该节点写锁。
+// 失败顺序语义:渲染/校验失败不触节点;/load 失败时 Caddy 侧已自动回滚运行态、
+// 不落盘,由调用方回滚 DB —— 保证三者一致;落盘失败(运行态已生效)返回错误,
+// 由漂移检测暴露差异。
+func (p *Pipeline) executeRenderedLocked(ctx context.Context, nodeID string, rendered string, mode OpMode) (*ExecuteResult, error) {
 	config, err := p.validator.Validate(ctx, rendered)
 	if err != nil {
 		return nil, err
 	}
-
-	applied := false
-	if mode == OpDeploy {
-		// 先取 ETag(同时预检 Caddy 可达)再下发,If-Match 防面板外并发改动覆盖。
-		_, etag, err := p.client.GetConfig(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("预检 Caddy 失败: %w", err)
-		}
-		if err := p.client.Load(ctx, config, etag); err != nil {
-			return nil, fmt.Errorf("热加载失败(Caddy 已保持旧配置继续服务): %w", err)
-		}
-		applied = true
-	}
-
 	if mode == OpValidateOnly {
 		return &ExecuteResult{Rendered: rendered, Config: config}, nil
 	}
 
-	if err := writeFileAtomic(targetPath, []byte(rendered)); err != nil {
-		if applied {
-			return nil, fmt.Errorf("配置已热加载但落盘失败(存在运行态/磁盘漂移,请检查 %s): %w", targetPath, err)
-		}
-		return nil, fmt.Errorf("落盘 Caddyfile: %w", err)
+	applier, err := p.applierFor(nodeID)
+	if err != nil {
+		return nil, err
 	}
-
+	applied, err := applier.Apply(ctx, config, rendered, mode)
+	if err != nil {
+		return nil, err
+	}
 	return &ExecuteResult{Rendered: rendered, Config: config, Applied: applied}, nil
 }
 
-// writeFileAtomic 临时文件 + rename 原子写;临时文件建于目标目录保证同文件系统。
-func writeFileAtomic(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, ".caddyfile-*")
+// CurrentConfig 读取 local 节点 Caddy 当前生效 JSON(GET /config 透传)。
+// 远程节点当前运行态 M3 不回读(远程读取能力未开放,见 m3-design §3.3 第 5 条)。
+func (p *Pipeline) CurrentConfig(ctx context.Context, nodeID string) (json.RawMessage, error) {
+	applier, err := p.applierFor(nodeID)
 	if err != nil {
-		return fmt.Errorf("创建临时文件: %w", err)
+		return nil, err
 	}
-	tmpName := tmp.Name()
-	committed := false
-	defer func() {
-		if !committed {
-			if rmErr := os.Remove(tmpName); rmErr != nil && !os.IsNotExist(rmErr) {
-				slog.Warn("清理临时文件失败", "file", tmpName, "error", rmErr)
-			}
-		}
-	}()
+	reader, ok := applier.(ConfigReader)
+	if !ok {
+		return nil, fmt.Errorf("节点 %s 不支持读取运行态配置", nodeID)
+	}
+	return reader.CurrentConfig(ctx)
+}
 
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return fmt.Errorf("写入临时文件: %w", err)
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return fmt.Errorf("刷盘临时文件: %w", err)
-	}
-	if err := tmp.Close(); err != nil {
-		return fmt.Errorf("关闭临时文件: %w", err)
-	}
-	if err := os.Chmod(tmpName, 0o644); err != nil {
-		return fmt.Errorf("设置文件权限: %w", err)
-	}
-	if err := os.Rename(tmpName, path); err != nil {
-		return fmt.Errorf("原子替换 %s: %w", path, err)
-	}
-	committed = true
-	return nil
+// ConfigReader 支持读取运行态配置的应用出口(仅 local 实现)。
+type ConfigReader interface {
+	CurrentConfig(ctx context.Context) (json.RawMessage, error)
 }

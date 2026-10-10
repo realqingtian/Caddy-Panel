@@ -23,7 +23,7 @@ const (
 // MetricsRepo metrics service 对数据层的依赖。
 type MetricsRepo interface {
 	InsertSamples(ctx context.Context, samples []model.MetricsSample) error
-	QuerySamples(ctx context.Context, namePrefix string, since time.Time) ([]model.MetricsSample, error)
+	QuerySamples(ctx context.Context, nodeID, namePrefix string, since time.Time) ([]model.MetricsSample, error)
 	DeleteMetricsOlderThan(ctx context.Context, olderThan time.Duration) error
 }
 
@@ -101,6 +101,24 @@ func (c *MetricsCollector) Collect(ctx context.Context) error {
 	return nil
 }
 
+// IngestRemote 落库远程节点上报的 metrics 文本(agent 经 HTTP 上报,
+// 样本带 node_id;m3-design §3.2 第 6 条)。复用中心解析逻辑。
+func (c *MetricsCollector) IngestRemote(ctx context.Context, nodeID, promText string) (int, error) {
+	parsed := caddy.ParsePrometheus(promText, model.MetricsNamePrefix)
+	now := time.Now()
+	samples := make([]model.MetricsSample, 0, len(parsed))
+	for _, m := range parsed {
+		_, labelsJSON := caddy.FormatSampleKey(m.Name, m.Labels)
+		samples = append(samples, model.MetricsSample{
+			NodeID: nodeID, Name: m.Name, Labels: labelsJSON, Value: m.Value, Ts: now,
+		})
+	}
+	if err := c.repo.InsertSamples(ctx, samples); err != nil {
+		return 0, err
+	}
+	return len(samples), nil
+}
+
 // MetricsPointDTO 图表采样点。
 type MetricsPointDTO struct {
 	Ts    time.Time `json:"ts"`
@@ -120,9 +138,9 @@ type MetricsSummary struct {
 	Series []MetricsSeriesDTO `json:"series"`
 }
 
-// Summary 查询窗口内序列并按 bucket 降采样(每 bucket 取最后值)。
-func (c *MetricsCollector) Summary(ctx context.Context, window time.Duration) (*MetricsSummary, error) {
-	raws, err := c.repo.QuerySamples(ctx, model.MetricsNamePrefix, time.Now().Add(-window))
+// Summary 查询指定节点窗口内序列并按 bucket 降采样(每 bucket 取最后值)。
+func (c *MetricsCollector) Summary(ctx context.Context, nodeID string, window time.Duration) (*MetricsSummary, error) {
+	raws, err := c.repo.QuerySamples(ctx, nodeID, model.MetricsNamePrefix, time.Now().Add(-window))
 	if err != nil {
 		return nil, err
 	}

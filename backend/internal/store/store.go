@@ -26,6 +26,8 @@ func allModels() []any {
 	return []any{
 		model.User{},
 		model.ApiToken{},
+		model.Node{},
+		model.EnrollmentToken{},
 		model.Site{},
 		model.ConfigVersion{},
 		model.AuditLog{},
@@ -46,7 +48,25 @@ func Open(path string) (*Store, error) {
 	if err := db.AutoMigrate(allModels()...); err != nil {
 		return nil, fmt.Errorf("执行数据库迁移: %w", err)
 	}
+	if err := backfillNodeID(db); err != nil {
+		return nil, err
+	}
 	return &Store{db: db}, nil
+}
+
+// backfillNodeID T3.3 迁移:node_id 列引入前产生的行回填为 local
+// (ALTER ADD COLUMN 不回填旧行的场景与历史空值都兜住)。
+func backfillNodeID(db *gorm.DB) error {
+	for _, table := range []string{"sites", "config_versions", "audit_logs", "metrics_samples"} {
+		if !db.Migrator().HasTable(table) {
+			continue
+		}
+		if err := db.Exec(fmt.Sprintf(
+			"UPDATE %s SET node_id = 'local' WHERE node_id IS NULL OR node_id = ''", table)).Error; err != nil {
+			return fmt.Errorf("回填 %s.node_id: %w", table, err)
+		}
+	}
+	return nil
 }
 
 // DB 暴露事务助手等底层能力;仅限 store 包内部与装配代码使用。

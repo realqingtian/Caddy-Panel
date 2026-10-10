@@ -58,7 +58,15 @@ func (f *fakeSiteRepo) ReplaceConfigVersions(_ context.Context, versions []model
 	return nil
 }
 
-func (f *fakeSiteRepo) ReplaceSites(_ context.Context, sites []model.Site) error {
+func (f *fakeSiteRepo) ReplaceAllSites(_ context.Context, sites []model.Site) error {
+	return f.replaceNodeSitesImpl(sites)
+}
+
+func (f *fakeSiteRepo) ReplaceNodeSites(ctx context.Context, nodeID string, sites []model.Site) error {
+	return f.replaceNodeSitesImpl(sites)
+}
+
+func (f *fakeSiteRepo) replaceNodeSitesImpl(sites []model.Site) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.sites = map[uint]*model.Site{}
@@ -85,7 +93,7 @@ func newConfigFixture(t *testing.T, validatorErr error) (*Config, *fakeSiteRepo,
 	repo := newFakeSiteRepo()
 	client := &recordingClient{}
 	pipeline := caddy.NewPipeline(&captureRenderer{out: "rendered"},
-		&passValidator{err: validatorErr}, client, func() string { return "/tmp/unused-Caddyfile" })
+		&passValidator{err: validatorErr}, localApplierFor(client))
 	svc := NewConfig(ConfigDeps{Repo: repo, Pipeline: pipeline, CaddyfilePathFn: func() string { return "/tmp/unused" }})
 	return svc, repo, client
 }

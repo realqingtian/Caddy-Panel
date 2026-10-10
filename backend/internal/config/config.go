@@ -27,6 +27,7 @@ type Config struct {
 	LogAccessPath   string        // 访问日志路径(tail 读取目标)
 	LogErrorPath    string        // 错误日志路径(tail 读取目标)
 	CertStoragePath string        // Caddy 证书存储根目录(只读;FR-308)
+	PanelPublicURL  string        // 面板对外可达地址(agent 安装命令生成 ws URL 用,可在设置页覆盖)
 }
 
 // Load 读取 PANEL_* 环境变量并填充默认值。
@@ -49,6 +50,7 @@ func Load() (*Config, error) {
 	v.SetDefault("log_access_path", "./data/access.log")
 	v.SetDefault("log_error_path", "./data/error.log")
 	v.SetDefault("cert_storage_path", "/data/caddy")
+	v.SetDefault("panel_public_url", "")
 
 	jwtTTL, err := time.ParseDuration(v.GetString("jwt_ttl"))
 	if err != nil {
@@ -78,6 +80,7 @@ func Load() (*Config, error) {
 		LogAccessPath:   v.GetString("log_access_path"),
 		LogErrorPath:    v.GetString("log_error_path"),
 		CertStoragePath: v.GetString("cert_storage_path"),
+		PanelPublicURL:  v.GetString("panel_public_url"),
 	}, nil
 }
 

@@ -19,6 +19,7 @@ import (
 type SiteInput struct {
 	Name              string `json:"name"`
 	Type              string `json:"type"`
+	NodeID            string `json:"node_id"` // 归属节点;空 = local(创建时确定,更新时忽略)
 	Domains           string `json:"domains"`
 	Upstreams         string `json:"upstreams"`
 	LBPolicy          string `json:"lb_policy"`
@@ -257,15 +258,20 @@ func splitDomains(raw string) []string {
 	return out
 }
 
-// toSite 转换为领域模型;LBPolicy 空值归一为 round_robin。
+// toSite 转换为领域模型;LBPolicy 空值归一为 round_robin,节点空值归一为 local。
 func (in SiteInput) toSite() *model.Site {
 	policy := in.LBPolicy
 	if policy == "" {
 		policy = model.LBPolicyRoundRobin
 	}
+	nodeID := in.NodeID
+	if nodeID == "" {
+		nodeID = model.NodeIDLocal
+	}
 	return &model.Site{
 		Name:                strings.TrimSpace(in.Name),
 		Type:                in.Type,
+		NodeID:              nodeID,
 		Domains:             in.Domains,
 		Upstreams:           in.Upstreams,
 		LBPolicy:            policy,

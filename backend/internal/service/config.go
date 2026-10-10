@@ -21,7 +21,7 @@ type ConfigRepo interface {
 	ListConfigVersions(ctx context.Context) ([]model.ConfigVersion, error)
 	GetConfigVersion(ctx context.Context, id uint) (*model.ConfigVersion, error)
 	ListSites(ctx context.Context) ([]model.Site, error)
-	ReplaceSites(ctx context.Context, sites []model.Site) error
+	ReplaceNodeSites(ctx context.Context, nodeID string, sites []model.Site) error
 	CreateConfigVersion(ctx context.Context, version *model.ConfigVersion) error
 }
 
@@ -67,8 +67,9 @@ func (s *Config) GetVersion(ctx context.Context, id uint) (*model.ConfigVersion,
 	return version, nil
 }
 
-// Rollback 回滚到历史成功版本:恢复 sites 快照(事务)+ 下发该版本渲染产物
-// (先 Caddy 后 DB);回滚本身生成新版本记录,可再回滚(FR-403)。
+// Rollback 回滚到历史成功版本:恢复该节点 sites 快照(事务)+ 下发该版本渲染产物
+// (先 Caddy 后 DB);回滚仅影响版本所属节点,回滚本身生成新版本记录,可再回滚
+// (FR-403;m3-design §3.2 第 7 条)。
 func (s *Config) Rollback(ctx context.Context, id uint) (*model.ConfigVersion, error) {
 	version, err := s.GetVersion(ctx, id)
 	if err != nil {
@@ -76,6 +77,10 @@ func (s *Config) Rollback(ctx context.Context, id uint) (*model.ConfigVersion, e
 	}
 	if version.Status != model.VersionStatusApplied || strings.TrimSpace(version.RenderedCaddyfile) == "" {
 		return nil, ErrVersionNotApplicable
+	}
+	nodeID := version.NodeID
+	if nodeID == "" {
+		nodeID = model.NodeIDLocal
 	}
 
 	currentSites, err := s.repo.ListSites(ctx)
@@ -87,14 +92,15 @@ func (s *Config) Rollback(ctx context.Context, id uint) (*model.ConfigVersion, e
 		return nil, fmt.Errorf("解析版本 %d 站点快照: %w", id, err)
 	}
 
-	if _, err := s.pipeline.DeployRendered(ctx, version.RenderedCaddyfile, caddy.OpDeploy); err != nil {
-		s.recordVersion(ctx, currentSites, "", false, err.Error())
+	if _, err := s.pipeline.DeployRenderedOn(ctx, nodeID, version.RenderedCaddyfile, caddy.OpDeploy); err != nil {
+		s.recordVersion(ctx, nodeID, sitesOfNode(currentSites, nodeID), "", false, err.Error())
 		return nil, &DeployError{Err: err}
 	}
-	if err := s.repo.ReplaceSites(ctx, snapshotSites); err != nil {
+	if err := s.repo.ReplaceNodeSites(ctx, nodeID, snapshotSites); err != nil {
 		return nil, err
 	}
 	applied := &model.ConfigVersion{
+		NodeID:            nodeID,
 		SitesSnapshot:     string(mustJSON(snapshotSites)),
 		RenderedCaddyfile: version.RenderedCaddyfile,
 		Status:            model.VersionStatusApplied,
@@ -108,7 +114,8 @@ func (s *Config) Rollback(ctx context.Context, id uint) (*model.ConfigVersion, e
 // adminDirectivePattern 匹配全局块中的 admin 监听指令(如 "\tadmin caddy:2019")。
 var adminDirectivePattern = regexp.MustCompile(`(?m)^\s*admin\s+\S+`)
 
-// SaveCaddyfile 直接编辑 Caddyfile:校验通过才下发落盘,并生成版本记录
+// SaveCaddyfile 直接编辑 Caddyfile(仅 local 节点 —— 落盘文件在中心管辖区,
+// 远程节点产物由 agent 自管):校验通过才下发落盘,并生成版本记录
 // (sites 表不变;站点操作后的全量渲染会覆盖手改内容,FR-404)。
 // 内容必须保留全局 admin 指令:缺失会导致 /load 后 Caddy 回落默认绑定,
 // 面板从此失联(T5 联调确认的故障模式)。
@@ -120,11 +127,12 @@ func (s *Config) SaveCaddyfile(ctx context.Context, content string) (*model.Conf
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.pipeline.DeployRendered(ctx, content, caddy.OpDeploy); err != nil {
-		s.recordVersion(ctx, currentSites, content, false, err.Error())
+	if _, err := s.pipeline.DeployRenderedOn(ctx, model.NodeIDLocal, content, caddy.OpDeploy); err != nil {
+		s.recordVersion(ctx, model.NodeIDLocal, sitesOfNode(currentSites, model.NodeIDLocal), content, false, err.Error())
 		return nil, &DeployError{Err: err}
 	}
 	applied := &model.ConfigVersion{
+		NodeID:            model.NodeIDLocal,
 		SitesSnapshot:     string(mustJSON(currentSites)),
 		RenderedCaddyfile: content,
 		Status:            model.VersionStatusApplied,
@@ -153,17 +161,18 @@ func (s *Config) CurrentCaddyfile(ctx context.Context) (string, error) {
 
 // CurrentJSON 透传 Caddy 当前生效配置(GET /config,FR-401)。
 func (s *Config) CurrentJSON(ctx context.Context) (json.RawMessage, error) {
-	return s.pipeline.CurrentConfig(ctx)
+	return s.pipeline.CurrentConfig(ctx, model.NodeIDLocal)
 }
 
 // recordVersion 失败痕写入;与 site service 同语义,快照失败仅日志。
-func (s *Config) recordVersion(ctx context.Context, sites []model.Site, rendered string, applied bool, errMsg string) {
+func (s *Config) recordVersion(ctx context.Context, nodeID string, sites []model.Site, rendered string, applied bool, errMsg string) {
 	snapshot := mustJSON(sites)
 	status := model.VersionStatusApplied
 	if !applied {
 		status = model.VersionStatusFailed
 	}
 	version := &model.ConfigVersion{
+		NodeID:            nodeID,
 		SitesSnapshot:     string(snapshot),
 		RenderedCaddyfile: rendered,
 		Status:            status,

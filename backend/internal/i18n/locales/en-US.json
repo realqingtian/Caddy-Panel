@@ -11,5 +11,7 @@
   "error.site_deploy_failed": "Config validation or deploy failed, nothing changed; see detail for the reason",
   "error.config_deploy_failed": "Config validation or deploy failed, nothing changed; see detail for the reason",
   "error.version_not_applicable": "Only successfully applied versions can be rolled back to",
-  "error.caddy_unreachable": "Caddy Admin API is unreachable, please check whether Caddy is running"
+  "error.caddy_unreachable": "Caddy Admin API is unreachable, please check whether Caddy is running",
+  "error.node_not_found": "Node not found or already deleted",
+  "error.node_has_sites": "The node still has sites; delete them before deleting the node"
 }

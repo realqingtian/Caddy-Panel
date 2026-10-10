@@ -11,5 +11,7 @@
   "error.site_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail",
   "error.config_deploy_failed": "配置校验或下发失败,未做任何变更;原因见 detail",
   "error.version_not_applicable": "只能回滚到下发成功的版本",
-  "error.caddy_unreachable": "Caddy Admin API 不可达,请检查 Caddy 是否运行"
+  "error.caddy_unreachable": "Caddy Admin API 不可达,请检查 Caddy 是否运行",
+  "error.node_not_found": "节点不存在或已被删除",
+  "error.node_has_sites": "节点名下仍有站点,请先删除站点再删除节点"
 }

@@ -48,7 +48,7 @@
 | --- | --- | --- | --- | --- | --- |
 | T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ✅ | 2026-10-11 | api_tokens 表(仅 sha256,前缀展示,过期/last_used);Bearer cpt_* 与 JWT 双轨认证;scope 路由级校验(读=read,写=write);users.role 启用 viewer(JWT 空 role 兼容 admin);token 管理仅限 JWT+admin;Settings 页 token 管理卡片(明文一次性展示) |
 | T3.2 | Web 终端(xterm.js + WebSocket) | M3 | ✅ | 2026-10-11 | WS 端点(查询参数传 JWT —— 浏览器无法自定义 WS 头)+ creack/pty;二进制帧数据 + 文本帧 resize 控制;仅 JWT+admin;打开事件审计;前端 xterm 页(暗色同步/自适应尺寸/会话结束横幅);菜单 admin 显隐;登录响应带 role |
-| T3.3 | 多节点 Agent(反向连接) | M3 | ⬜ | | node_id 回填 local;中心按节点路由下发 |
+| T3.3 | 多节点 Agent(反向连接) | M3 | ✅ | 2026-10-11 | agent/ 独立 module(反向 WS+心跳+本机执行);中心 Enrollment Token 接入(cen_ 一次性/24h/可撤销)→ 签发 cnd_ 节点密钥(仅存哈希);渲染按节点分组、pipeline 演进为 Applier 路由(local 直连/remote WS 指令,per-node 单写者锁);四表 node_id 回填 local;安装/卸载命令一键生成;心跳 30s/90s 离线扫描;指令 request_id+30s 超时不排队;协议版本握手;节点维度 Dashboard/metrics/审计;前端 Nodes 页+站点节点选择;agent 单测 + hub 真实 WS 回路测试 |
 | T3.4 | l4 转发(caddy-l4) | M3 | ⬜ | | 插件镜像追加;与 http 渲染互斥 |
 
 ### M2 — 进阶(设计见 [m2-design.md](./m2-design.md))
@@ -98,6 +98,7 @@
 | 2026-10-11 | M3 设计定稿与任务拆解(T3.1 API Token+RBAC → T3.2 Web 终端 → T3.3 多节点 Agent → T3.4 l4),见 m3-design.md;Agent 采用反向连接,Token 只存哈希,RBAC 先行 admin/viewer 两级 | 认证层增强(鉴权/token)是多节点与终端的前置依赖,故列首位 |
 | 2026-10-11 | M3 四项关键决策拍板:①节点接入用 Enrollment Token(一次性注册令牌,注册后签发节点密钥);②Agent 安装由面板生成安装命令(systemd);③l4 仅 TCP/UDP 透传不做 TLS 终结;④T3.3 先于 T3.4 | 用户确认(均选推荐项);已固化进 m3-design §3.1 |
 | 2026-10-11 | 开工前需求审查:七点本地性语义确认(总原则"agent 自管本地,中心管策略":路径类设置/手动证书/终端/导入限 local,渲染按节点分组,每节点串行+跨节点并行,漂移与 metrics 由 agent 上报,站点创建时绑节点不可迁移,回滚按节点,备份全中心);PRD M3 需求正式化为 FR-801~804(801/802 已交付) | 用户确认(总原则选推荐);消除多节点下"本地性配置"归属歧义后才开工 |
+| 2026-10-11 | T3.3 实现定档:协议信封单结构(Message+Type 判别);agent in_sync 实现为"磁盘产物 vs 上次成功下发内容"字节比较(手改漂移检测;运行态深度对比仍由 local 漂移检测承担);凭证前缀 cen_(接入)/cnd_(节点密钥)与 cpt_ 并列;域名唯一性按节点判定(不同节点可服务同一域名);回滚恢复演进为节点级 ReplaceNodeSites(其他节点站点不受影响);备份/恢复保持全中心语义(含 nodes 表) | 按 §3.3 定稿实现中的具体技术取型;全部为设计语义的实现细节,不改变对外行为 |
 | 2026-10-11 | T3.3 最终审查(端到端生命周期推演)固化 8 项:节点名随安装命令填写、指令 request_id+30s 超时(离线即失败不排队)、心跳 30s/三倍判 offline、握手协议版本不匹配拒绝升级提示、远程节点日志与上游状态 M3 不做(页面标注仅 local)、有站点禁删节点、站点响应补 node_id 默认 local、agent 为独立 Go module(轻依赖,渲染留在中心) | 实现者视角端到端推演;全部有明确正确答案无需用户决策,需求就此定稿 |
 
 ## 5. 待决事项

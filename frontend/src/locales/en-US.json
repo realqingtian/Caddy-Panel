@@ -10,7 +10,8 @@
     "settings": "Settings",
     "upstreams": "Upstreams",
     "metrics": "Metrics",
-    "terminal": "Terminal"
+    "terminal": "Terminal",
+    "nodes": "Nodes"
   },
   "layout": {
     "theme": "Theme",
@@ -41,7 +42,9 @@
     "actions": "Actions",
     "reset": "Reset",
     "loading": "Loading…",
-    "close": "Close"
+    "close": "Close",
+    "localOnly": "Local node only",
+    "done": "Done"
   },
   "sites": {
     "title": "Sites",
@@ -83,7 +86,8 @@
       "rateLimitEvents": "Max events per window",
       "dnsProvider": "DNS challenge provider",
       "dnsProviderPlaceholder": "Disabled (automatic HTTPS)",
-      "dnsTokenEnv": "Credential env var name"
+      "dnsTokenEnv": "Credential env var name",
+      "node": "Node"
     },
     "hint": {
       "domains": "Separate multiple domains with commas",
@@ -93,7 +97,9 @@
       "ipList": "Comma separated, single IP or CIDR; allowlist returns 403 to everyone else",
       "rateLimit": "Rate-limit by client IP; requires caddy with caddy-rate-limit plugin (included in compose build)",
       "dnsProvider": "Issue certificates via DNS challenge; requires the matching caddy-dns plugin (cloudflare included in compose build)",
-      "dnsTokenEnv": "Credentials are never stored: enter the env var name, Caddy reads it from its own environment, e.g. CF_API_TOKEN"
+      "dnsTokenEnv": "Credentials are never stored: enter the env var name, Caddy reads it from its own environment, e.g. CF_API_TOKEN",
+      "node": "The owning node is fixed at creation and cannot be changed later (re-create to move)",
+      "nodeLocked": "The owning node cannot be changed"
     },
     "lbPolicy": {
       "roundRobin": "Round robin",
@@ -146,6 +152,9 @@
       "disabledHint": "Imported sites are disabled; review then enable them one by one (enabling deploys)",
       "parseFailed": "Failed to parse Caddyfile",
       "failed": "Import failed"
+    },
+    "node": {
+      "local": "local (panel host)"
     }
   },
   "pages": {
@@ -285,7 +294,8 @@
       "caddyVsDisk": "Caddy live vs disk Caddyfile"
     },
     "recentTitle": "Recent deploys",
-    "noVersions": "No deploys yet"
+    "noVersions": "No deploys yet",
+    "nodesTitle": "Remote Nodes"
   },
   "upstreams": {
     "title": "Upstreams",
@@ -313,5 +323,47 @@
     "connectionFailed": "Terminal connection failed",
     "closed": "Connection closed",
     "closedBanner": "—— session ended, refresh to reopen ——"
+  },
+  "nodes": {
+    "title": "Remote Nodes",
+    "enroll": {
+      "tokens": "Enrollment Tokens",
+      "nodeName": "Node Name",
+      "nodeNameHint": "The node registers under this name; immutable after enrollment",
+      "plainToken": "Enrollment Token (one-time)",
+      "plainTokenHint": "Shown only once; invalidated after use — use it in the install command now",
+      "installCommand": "Install Command",
+      "installHint": "Paste on the target host (Linux + systemd) to enroll. Prerequisite: set the panel public URL (panel_public_url) in Settings",
+      "generate": "Generate",
+      "createFailed": "Failed to create enrollment token",
+      "prefix": "Prefix",
+      "state": "State",
+      "used": "Used",
+      "revoked": "Revoked",
+      "expired": "Expired",
+      "pending": "Pending",
+      "revoke": "Revoke",
+      "expiresAt": "Expires At"
+    },
+    "uninstall": "Uninstall Command",
+    "uninstallHint": "Run on the target host to stop and remove the agent (delete the node record in the panel separately)",
+    "field": {
+      "name": "Name",
+      "status": "Connection",
+      "health": "Health",
+      "sites": "Sites",
+      "version": "Agent",
+      "platform": "Platform",
+      "lastSeen": "Last Seen"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "caddy": "Caddy",
+    "inSync": "Sync",
+    "deleted": "Node deleted",
+    "deleteFailed": "Failed to delete node",
+    "deleteConfirm": "Deleting revokes the node secret; the agent must re-enroll. Delete?"
   }
 }

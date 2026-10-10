@@ -65,6 +65,7 @@ func (h *SiteHandler) Create() gin.HandlerFunc {
 			return
 		}
 		c.Set(middleware.CtxKeyAuditTarget, site.Name)
+		c.Set(middleware.CtxKeyAuditNodeID, siteNodeID(site))
 		c.JSON(http.StatusCreated, SiteMutationResponse{Site: *site, Applied: result.Applied})
 	}
 }
@@ -144,6 +145,7 @@ func (h *SiteHandler) Update() gin.HandlerFunc {
 			return
 		}
 		c.Set(middleware.CtxKeyAuditTarget, site.Name)
+		c.Set(middleware.CtxKeyAuditNodeID, siteNodeID(site))
 		c.JSON(http.StatusOK, SiteMutationResponse{Site: *site, Applied: result.Applied})
 	}
 }
@@ -188,6 +190,7 @@ func (h *SiteHandler) setEnabled(enabled bool) gin.HandlerFunc {
 			return
 		}
 		c.Set(middleware.CtxKeyAuditTarget, site.Name)
+		c.Set(middleware.CtxKeyAuditNodeID, siteNodeID(site))
 		c.JSON(http.StatusOK, SiteMutationResponse{Site: *site, Applied: result.Applied})
 	}
 }
@@ -208,12 +211,23 @@ func (h *SiteHandler) Delete() gin.HandlerFunc {
 		if !ok {
 			return
 		}
-		if _, err := h.sites.Delete(c.Request.Context(), id); err != nil {
+		site, _, err := h.sites.Delete(c.Request.Context(), id)
+		if err != nil {
 			respondSiteError(c, err)
 			return
 		}
+		c.Set(middleware.CtxKeyAuditTarget, site.Name)
+		c.Set(middleware.CtxKeyAuditNodeID, siteNodeID(site))
 		c.Status(http.StatusNoContent)
 	}
+}
+
+// siteNodeID 审计用节点标识;空值兜底 local。
+func siteNodeID(site *model.Site) string {
+	if site.NodeID == "" {
+		return model.NodeIDLocal
+	}
+	return site.NodeID
 }
 
 // parseID 解析路径参数 id;非法时直接写 400 响应。

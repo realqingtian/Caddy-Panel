@@ -24,6 +24,10 @@ type Site struct {
 	Name string `gorm:"size:128;not null" json:"name"` // 展示名
 	Type string `gorm:"size:16;not null" json:"type"`  // proxy | static | redirect
 
+	// 站点归属节点(创建时确定,不支持迁移 —— 换节点=删除重建,m3-design §3.2);
+	// 域名唯一性也按节点判定(不同节点可服务同一域名)。
+	NodeID string `gorm:"size:64;not null;default:local;index" json:"node_id"`
+
 	Domains string `gorm:"size:1024;not null" json:"domains"` // 逗号分隔,如 "a.com, www.a.com"
 
 	// proxy 专用

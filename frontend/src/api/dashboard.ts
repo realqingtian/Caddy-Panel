@@ -21,6 +21,15 @@ export interface StatusSummary {
     db_vs_disk?: { in_sync: boolean; detail: string }
     caddy_vs_disk?: { in_sync: boolean; detail: string }
   }
+  /** 远程节点摘要(T3.3);空 = 未接入远程节点。 */
+  nodes: {
+    node_id: string
+    name: string
+    status: 'online' | 'offline'
+    caddy_ok: boolean
+    in_sync: boolean
+    site_count: number
+  }[]
 }
 
 /** 运行状态总览(FR-201/202)。 */

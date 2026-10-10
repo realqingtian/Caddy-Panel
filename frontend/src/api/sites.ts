@@ -5,6 +5,8 @@ export interface Site {
   id: number
   name: string
   type: 'proxy' | 'static' | 'redirect'
+  /** 归属节点(local = 面板本机);创建时确定,不支持迁移。 */
+  node_id: string
   domains: string
   upstreams: string
   lb_policy: string
@@ -37,6 +39,8 @@ export interface Site {
 export interface SiteInput {
   name: string
   type: Site['type']
+  /** 归属节点;空 = local(仅创建时生效,更新时后端忽略)。 */
+  node_id?: string
   domains: string
   upstreams: string
   lb_policy: string

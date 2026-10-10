@@ -23,7 +23,7 @@ func (f *fakeMetricsRepo) InsertSamples(_ context.Context, samples []model.Metri
 	return nil
 }
 
-func (f *fakeMetricsRepo) QuerySamples(_ context.Context, prefix string, since time.Time) ([]model.MetricsSample, error) {
+func (f *fakeMetricsRepo) QuerySamples(_ context.Context, _ string, prefix string, since time.Time) ([]model.MetricsSample, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	out := make([]model.MetricsSample, 0)
@@ -107,7 +107,7 @@ func TestMetricsSummary_BucketAndSort(t *testing.T) {
 		{Name: "caddy_http_requests_total", Labels: `{"host":"a.com"}`, Value: 1, Ts: now},
 	}
 
-	summary, err := collector.Summary(context.Background(), 24*time.Hour)
+	summary, err := collector.Summary(context.Background(), model.NodeIDLocal, 24*time.Hour)
 	if err != nil {
 		t.Fatalf("查询失败: %v", err)
 	}

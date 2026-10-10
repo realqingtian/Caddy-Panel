@@ -35,6 +35,7 @@ func Audit(repo AuditRepo) gin.HandlerFunc {
 		entry := &model.AuditLog{
 			Action: auditAction(c),
 			Target: c.GetString(CtxKeyAuditTarget),
+			NodeID: auditNodeID(c),
 			IP:     c.ClientIP(),
 			Detail: `{"status":` + strconv.Itoa(c.Writer.Status()) + `}`,
 		}
@@ -48,6 +49,12 @@ func Audit(repo AuditRepo) gin.HandlerFunc {
 			slog.Error("写入审计日志失败", "action", entry.Action, "error", err)
 		}
 	}
+}
+
+// auditNodeID 目标资源所属节点:handler 在处理前 Set(CtxKeyAuditNodeID, nodeID);
+// 未设置(管理面操作)回落 default 'local'(DB 列默认)。
+func auditNodeID(c *gin.Context) string {
+	return c.GetString(CtxKeyAuditNodeID)
 }
 
 // auditAction 归一化动作标识:"/api/v1/auth/login" → "auth.login";

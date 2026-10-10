@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 
 import {
   ApiOutlined,
+  ClusterOutlined,
   CodeOutlined,
   LineChartOutlined,
   ControlOutlined,
@@ -43,6 +44,7 @@ export function AdminLayout() {
     { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
     { key: '/sites', icon: <GlobalOutlined />, label: t('menu.sites') },
     { key: '/upstreams', icon: <ApiOutlined />, label: t('menu.upstreams') },
+    { key: '/nodes', icon: <ClusterOutlined />, label: t('menu.nodes') },
     { key: '/config', icon: <ControlOutlined />, label: t('menu.config') },
     { key: '/logs', icon: <FileTextOutlined />, label: t('menu.logs') },
     { key: '/metrics', icon: <LineChartOutlined />, label: t('menu.metrics') },

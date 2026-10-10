@@ -138,7 +138,7 @@ func TestBackupExportAndRestore(t *testing.T) {
 	}
 
 	// 清空后恢复。
-	_ = repo.ReplaceSites(ctx, nil)
+	_ = repo.ReplaceAllSites(ctx, nil)
 	_ = repo.ReplaceConfigVersions(ctx, nil)
 	result, err := svc.Restore(ctx, file)
 	if err != nil {

@@ -26,7 +26,7 @@ type BackupFile struct {
 type BackupRepo interface {
 	ListSites(ctx context.Context) ([]model.Site, error)
 	ListConfigVersions(ctx context.Context) ([]model.ConfigVersion, error)
-	ReplaceSites(ctx context.Context, sites []model.Site) error
+	ReplaceAllSites(ctx context.Context, sites []model.Site) error
 	ReplaceConfigVersions(ctx context.Context, versions []model.ConfigVersion) error
 	ReplaceSettings(ctx context.Context, settings []model.Setting) error
 }
@@ -99,7 +99,7 @@ func (s *BackupService) Restore(ctx context.Context, file *BackupFile) (*Restore
 		settings = append(settings, model.Setting{Key: key, Value: value})
 	}
 
-	if err := s.repo.ReplaceSites(ctx, file.Sites); err != nil {
+	if err := s.repo.ReplaceAllSites(ctx, file.Sites); err != nil {
 		return nil, err
 	}
 	if err := s.repo.ReplaceConfigVersions(ctx, file.ConfigVersions); err != nil {

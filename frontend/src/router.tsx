@@ -7,6 +7,7 @@ import DashboardPage from '@/pages/Dashboard'
 import LoginPage from '@/pages/Login'
 import LogsPage from '@/pages/Logs'
 import MetricsPage from '@/pages/Metrics'
+import NodesPage from '@/pages/Nodes'
 import SettingsPage from '@/pages/Settings'
 import TerminalPage from '@/pages/Terminal'
 import SitesPage from '@/pages/Sites'
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
           { path: 'config', element: <ConfigEditorPage /> },
           { path: 'logs', element: <LogsPage /> },
           { path: 'metrics', element: <MetricsPage /> },
+          { path: 'nodes', element: <NodesPage /> },
           { path: 'terminal', element: <TerminalPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],

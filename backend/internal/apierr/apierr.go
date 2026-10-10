@@ -25,6 +25,8 @@ const (
 	CodeCaddyUnreachable           = "CADDY_UNREACHABLE"
 	CodeNotFound                   = "NOT_FOUND"
 	CodeSettingInvalid             = "SETTING_INVALID"
+	CodeNodeNotFound               = "NODE_NOT_FOUND"
+	CodeNodeHasSites               = "NODE_HAS_SITES"
 )
 
 // gin context 键:injectI18n 写入翻译包。

@@ -27,6 +27,7 @@ const (
 	SettingKeySMTPFrom        = "smtp_from"
 	SettingKeySMTPTo          = "smtp_to"
 	SettingKeyCertStoragePath = "cert_storage_path" // 仅 env 管理(证书存储只读视图)
+	SettingKeyPanelPublicURL  = "panel_public_url"  // 面板对外可达地址(agent 安装命令据此生成 ws 连接 URL)
 	SettingKeyGlobalExtra     = "global_extra"
 	SettingKeyJWTSecret       = "jwt_secret" // 仅启动侧管理,设置页不提供
 )
