@@ -106,7 +106,9 @@ settings          -- KV:日志路径、Caddyfile 路径、admin endpoint 等
 ## 6. 前端设计(React 19 + TypeScript + Ant Design 6)
 
 - 构建:Vite;**依赖与脚本管理:Bun**(`bun install` / `bun run dev`,本机已装 bun 1.4.2);路由:React Router;服务端状态:TanStack Query;本地状态:Zustand(登录态/主题);请求:axios(拦截器统一带 JWT、401 跳登录)。
-- 布局:Sider 菜单(仪表盘/站点管理/配置中心/日志/设置)+ Content。
+- 布局:Sider 菜单(仪表盘/站点管理/配置中心/日志/设置)+ Content;Header 放语言切换(中/英)与主题切换(亮/暗/跟随系统);
+- **国际化**:react-i18next,文案集中在 `src/locales/{zh-CN,en-US}.json`,**禁止硬编码 UI 文案**;antd 组件库文案经 ConfigProvider locale 同步切换,语言偏好持久化;
+- **主题**:antd 6 `theme.algorithm`(亮/暗)三态切换(跟随系统 `prefers-color-scheme`),偏好持久化;
 - 页面:
   - **Login**:居中卡片表单;
   - **Dashboard**:状态卡片(Caddy 存活/版本/站点数)+ 最近下发记录;

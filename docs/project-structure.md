@@ -76,7 +76,8 @@ Caddy-Panel/
 │       │   ├── client.ts          # axios 实例:baseURL、JWT 拦截器、401 跳登录、错误归一化
 │       │   ├── types.ts           # 与后端契约对应的 TS 类型(Site、ConfigVersion、Status...)
 │       │   └── auth.ts  sites.ts  config.ts  logs.ts
-│       ├── stores/auth.ts         # Zustand:token、当前用户
+│       ├── stores/                # Zustand:auth.ts(token/当前用户)、theme.ts(语言/主题偏好)
+│       ├── locales/               # i18n 文案:zh-CN.json、en-US.json、index.ts(react-i18next 初始化)
 │       ├── hooks/                 # 通用 hooks(usePolling 日志轮询、useAuth)
 │       ├── layouts/AdminLayout.tsx# Sider 菜单 + Header(用户菜单/退出)
 │       ├── pages/

@@ -25,6 +25,8 @@
 | 本地状态 | Zustand | v5 |
 | HTTP 客户端 | axios | v1 |
 | 前端工程化 | ESLint 9(flat config)+ Prettier;测试 Vitest | 当前主流 |
+| 国际化 | react-i18next(i18next),M1 即内置中/英 | React 生态事实标准;antd locale 经 ConfigProvider 同步切换 |
+| 主题 | antd 6 theme algorithm(亮/暗/跟随系统),偏好持久化 | 组件库原生能力,零额外依赖 |
 | 配置编辑器 | @monaco-editor/react | VS Code 同源内核,自定义 Caddyfile 语法高亮 |
 | 部署 | Docker + docker compose;单二进制(go:embed 前端产物) | — |
 
@@ -53,7 +55,8 @@ import `github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile` 可在 Panel 
 ### 前端(Bun)
 
 ```bash
-bun add react react-dom antd@6 react-router-dom @tanstack/react-query zustand axios dayjs
+bun add react react-dom antd@6 react-router-dom @tanstack/react-query zustand axios dayjs \
+  i18next react-i18next
 bun add -d typescript vite @vitejs/plugin-react @types/react @types/react-dom \
   @monaco-editor/react monaco-editor eslint@9 prettier vitest
 ```

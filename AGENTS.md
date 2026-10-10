@@ -13,6 +13,7 @@ Caddy Panel:可视化管理 Caddy 的面板(Go + Gin 后端 / React 19 + Ant Des
 3. 一切配置变更必须走 `caddy/pipeline`(渲染 → 校验 → load → 原子落盘 → 快照),禁止绕过管道直连 Admin API 写配置。
 4. 错误响应统一 `{code, message, detail}`;接口必须写 swaggo 注解。
 5. 前端依赖只用 Bun(`bun add` / `bun run`),不引入 npm/pnpm/yarn。
+6. **UI 文案一律走 i18n**:写入 `src/locales/zh-CN.json` 与 `en-US.json` 两份语言文件,禁止硬编码任何语言文案。
 
 ## 查 antd 6 文档的正确姿势
 
@@ -66,3 +67,4 @@ cd backend && swag init -g cmd/panel/main.go
 - [ ] 新接口有 swaggo 注解且 Swagger 可见
 - [ ] 涉及配置变更的代码走 pipeline 且失败分支有测试
 - [ ] UI 组件用法与 antd 6 文档核对过(非记忆中的 v5)
+- [ ] 新增 UI 文案已同时补入 zh-CN.json 与 en-US.json

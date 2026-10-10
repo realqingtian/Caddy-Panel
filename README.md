@@ -3,8 +3,9 @@
 可视化管理 Caddy 的开源面板:站点/反向代理表单化配置、HTTPS 证书状态、Caddyfile 校验与热加载、配置版本回滚、日志查看。
 
 - **架构**:Go 后端(唯一事实源 SQLite + 渲染引擎)→ Caddyfile 渲染 → adapt 校验 → Admin API(`/load`)热加载,Caddyfile 落盘保障重启恢复。
-- **技术栈**:Go 1.27 + Gin + GORM/SQLite;React 19 + TypeScript + Vite + Ant Design 6(依赖管理:Bun)。
-- **状态**:🚧 设计阶段,未开始编码。
+- **技术栈**:Go 1.27 + Gin + GORM/SQLite;React 19 + TypeScript + Vite + Ant Design 6(依赖管理:Bun),中/英双语、亮/暗主题。
+- **状态**:🚧 设计完成,待启动编码(M1 脚手架)。
+- **License**:Apache-2.0
 
 ## 文档
 

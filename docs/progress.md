@@ -32,7 +32,7 @@
 
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 |---|---|---|---|---|---|
-| T1 | 脚手架:前后端骨架可运行、compose 可起;接入 antd MCP/Skill(AGENTS.md) | — | ⬜ | | Bun 初始化前端;Gin 骨架;/healthz |
+| T1 | 脚手架:前后端骨架可运行、compose 可起;接入 antd MCP/Skill(AGENTS.md) | FR-603/604 | ⬜ | | Bun 初始化前端;Gin 骨架;/healthz;i18n(中/英)与主题(亮/暗/跟随系统)基建 |
 | T2 | 登录/JWT + SQLite 迁移 + 审计/限速中间件 | FR-10x | ⬜ | | |
 | T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ⬜ | | unix socket 支持 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ⬜ | | 渲染单测 golden file |
@@ -54,10 +54,14 @@
 | 2026-10-10 | 评审修复:下发全局单写者锁、失败回滚语义、审计唯一写入方、原子落盘、优雅停机、首启随机密码、/healthz、登录限速、drift 独立模块、测试约定 | 见 progress 同日评审记录;细节在 project-structure.md 第 3.1、5 节 |
 | 2026-10-10 | swaggo/OpenAPI 转正为 M1 范围(用户拍板) | 注解成本低,前后端契约同源 |
 | 2026-10-10 | 引入 antd 官方 for-agents 资源,新增 AGENTS.md(用户提议) | v6 与训练数据差异大,查文档防用废弃 API |
+| 2026-10-10 | License 选 Apache-2.0(用户拍板) | 宽松且含专利授权条款,利于社区采用 |
+| 2026-10-10 | i18n(中/英)M1 即落地(用户拍板) | 免留历史包袱;react-i18next + antd ConfigProvider 同步 |
+| 2026-10-10 | 暗色模式 M1 即落地(用户拍板) | antd 6 theme algorithm 原生支持,成本低 |
+| 2026-10-10 | M2 范围细化完成(FR-701~706) | 用户拍板;详见 PRD 第 5 节 |
 
 ## 5. 待决事项
 
 | 事项 | 状态 | 说明 |
 |---|---|---|
-| M2 范围细化 | ⬜ | M1 验收后再细化 PRD 第 5 节占位需求 |
+| M2 范围细化 | ✅ | 已细化为 FR-701~706,见 PRD 第 5 节;M1 验收后复核优先级 |
 | 是否上线 CI(GitHub Actions) | ⬜ | 建议 T9 完成后决定;最少做 lint + go test + build |
