@@ -38,7 +38,8 @@
     "delete": "删除",
     "actions": "操作",
     "reset": "还原",
-    "loading": "加载中…"
+    "loading": "加载中…",
+    "close": "关闭"
   },
   "sites": {
     "title": "站点管理",
@@ -113,6 +114,22 @@
       "notIssued": "未签发(首次 HTTPS 访问后自动签发)",
       "expires": "到期时间",
       "hint": "证书由 Caddy 自动管理(ACME);数据来自 Caddy 证书存储,管理操作将在 M2 提供"
+    },
+    "import": {
+      "action": "导入 Caddyfile",
+      "title": "导入 Caddyfile",
+      "preview": "解析预览",
+      "confirm": "确认导入(站点将以停用状态落库)",
+      "previewHint": "粘贴现有 Caddyfile 全文;可识别的站点映射为领域模型,未识别指令原样保留为自定义片段",
+      "placeholder": "粘贴 Caddyfile 内容…",
+      "globalExtra": "未识别的全局指令(将并入设置中的全局自定义片段)",
+      "noSites": "未解析出站点",
+      "done": "导入完成",
+      "created": "已创建",
+      "skipped": "已跳过(域名冲突)",
+      "disabledHint": "导入的站点均为停用状态,请核对后逐个启用(启用即下发生效)",
+      "parseFailed": "Caddyfile 解析失败",
+      "failed": "导入失败"
     }
   },
   "pages": {

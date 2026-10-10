@@ -152,6 +152,11 @@ func New(deps Deps) *gin.Engine {
 	// 上游状态透传(FR-701)。
 	authorized.GET("/upstreams", handler.NewUpstreams(deps.Client).List())
 
+	// Caddyfile 导入(FR-705)。
+	importHandler := handler.NewImport(deps.Store)
+	authorized.POST("/import/preview", importHandler.Preview())
+	authorized.POST("/import/apply", importHandler.Apply())
+
 	mountFrontend(r, deps.Bundle)
 
 	return r

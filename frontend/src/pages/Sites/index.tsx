@@ -1,26 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Alert,
   App,
   Button,
   Card,
+  Input,
   Modal,
   Popconfirm,
   Space,
   Switch,
   Table,
   Tag,
+  Typography,
   type TableProps,
 } from 'antd'
-import { useState } from 'react'
-import { Typography } from 'antd'
+import { useState, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '@/api/auth'
 import {
+  applyImport,
   deleteSite,
   getSiteCertificate,
   listSites,
+  previewImport,
   setSiteEnabled,
+  type ImportedSite,
+  type ImportPreview,
   type Site,
   type SiteCertStatus,
 } from '@/api/sites'
@@ -35,6 +41,39 @@ export default function SitesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Site | null>(null)
   const [certView, setCertView] = useState<{ site: Site; status: SiteCertStatus } | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importContent, setImportContent] = useState('')
+  const [importResult, setImportResult] = useState<ImportPreview | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
+  const [importDone, setImportDone] = useState<{ created: string[]; skipped: string[] } | null>(
+    null,
+  )
+
+  const runPreview = async () => {
+    setImportBusy(true)
+    try {
+      setImportResult(await previewImport(importContent))
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('sites.import.parseFailed')))
+    } finally {
+      setImportBusy(false)
+    }
+  }
+
+  const runApply = async () => {
+    setImportBusy(true)
+    try {
+      const result = await applyImport(importContent)
+      setImportDone(result)
+      setImportResult(null)
+      setImportContent('')
+      invalidate()
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('sites.import.failed')))
+    } finally {
+      setImportBusy(false)
+    }
+  }
 
   const showCertificate = async (site: Site) => {
     const status = await getSiteCertificate(site.id)
@@ -124,15 +163,26 @@ export default function SitesPage() {
     <Card
       title={t('sites.title')}
       extra={
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditing(null)
-            setFormOpen(true)
-          }}
-        >
-          {t('sites.action.new')}
-        </Button>
+        <Space>
+          <Button
+            onClick={() => {
+              setImportOpen(true)
+              setImportResult(null)
+              setImportDone(null)
+            }}
+          >
+            {t('sites.import.action')}
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              setEditing(null)
+              setFormOpen(true)
+            }}
+          >
+            {t('sites.action.new')}
+          </Button>
+        </Space>
       }
     >
       <Table<Site>
@@ -170,6 +220,101 @@ export default function SitesPage() {
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('sites.certificate.hint')}
             </Typography.Text>
+          </div>
+        )}
+      </Modal>
+      <Modal
+        open={importOpen}
+        title={t('sites.import.title')}
+        width={720}
+        onCancel={() => setImportOpen(false)}
+        footer={
+          importDone ? (
+            <Button onClick={() => setImportOpen(false)}>{t('common.close')}</Button>
+          ) : importResult ? (
+            <Space>
+              <Button onClick={() => setImportResult(null)}>{t('common.reset')}</Button>
+              <Button type="primary" loading={importBusy} onClick={() => void runApply()}>
+                {t('sites.import.confirm')}
+              </Button>
+            </Space>
+          ) : (
+            <Button
+              type="primary"
+              loading={importBusy}
+              disabled={!importContent.trim()}
+              onClick={() => void runPreview()}
+            >
+              {t('sites.import.preview')}
+            </Button>
+          )
+        }
+      >
+        {importDone ? (
+          <div>
+            <Alert
+              type="success"
+              showIcon
+              message={t('sites.import.done')}
+              style={{ marginBottom: 12 }}
+            />
+            <Typography.Paragraph>
+              {t('sites.import.created')}: {importDone.created.join(', ') || '—'}
+            </Typography.Paragraph>
+            <Typography.Paragraph>
+              {t('sites.import.skipped')}: {importDone.skipped.join(', ') || '—'}
+            </Typography.Paragraph>
+            <Typography.Text type="secondary">{t('sites.import.disabledHint')}</Typography.Text>
+          </div>
+        ) : importResult ? (
+          <div>
+            {importResult.global_extra && (
+              <Alert
+                type="info"
+                showIcon
+                message={t('sites.import.globalExtra')}
+                description={
+                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {importResult.global_extra}
+                  </pre>
+                }
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            {importResult.sites.map((site: ImportedSite) => (
+              <Card
+                key={site.name}
+                size="small"
+                style={{ marginBottom: 8 }}
+                title={`${site.name}(${t('sites.type.' + site.type)})`}
+              >
+                <Typography.Text>{site.domains}</Typography.Text>
+                {site.upstreams && (
+                  <Typography.Text type="secondary"> → {site.upstreams}</Typography.Text>
+                )}
+                {site.warnings?.map((warning: string) => (
+                  <Alert key={warning} type="warning" message={warning} style={{ marginTop: 8 }} />
+                ))}
+              </Card>
+            ))}
+            {importResult.sites.length === 0 && (
+              <Alert type="warning" showIcon message={t('sites.import.noSites')} />
+            )}
+          </div>
+        ) : (
+          <div>
+            <Alert
+              type="info"
+              showIcon
+              message={t('sites.import.previewHint')}
+              style={{ marginBottom: 12 }}
+            />
+            <Input.TextArea
+              rows={14}
+              value={importContent}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setImportContent(e.target.value)}
+              placeholder={t('sites.import.placeholder')}
+            />
           </div>
         )}
       </Modal>

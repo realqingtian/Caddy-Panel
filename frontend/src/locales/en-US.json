@@ -38,7 +38,8 @@
     "delete": "Delete",
     "actions": "Actions",
     "reset": "Reset",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "close": "Close"
   },
   "sites": {
     "title": "Sites",
@@ -113,6 +114,22 @@
       "notIssued": "Not issued yet (auto-issued on first HTTPS visit)",
       "expires": "Expires",
       "hint": "Certificates are managed automatically by Caddy (ACME); data comes from Caddy's storage, management lands in M2"
+    },
+    "import": {
+      "action": "Import Caddyfile",
+      "title": "Import Caddyfile",
+      "preview": "Parse & preview",
+      "confirm": "Import (sites stored disabled)",
+      "previewHint": "Paste an existing Caddyfile; recognized sites map to the model, unknown directives are kept verbatim as snippets",
+      "placeholder": "Paste Caddyfile content…",
+      "globalExtra": "Unrecognized global directives (merged into the global snippet in Settings)",
+      "noSites": "No sites parsed",
+      "done": "Import finished",
+      "created": "Created",
+      "skipped": "Skipped (domain conflict)",
+      "disabledHint": "Imported sites are disabled; review then enable them one by one (enabling deploys)",
+      "parseFailed": "Failed to parse Caddyfile",
+      "failed": "Import failed"
     }
   },
   "pages": {

@@ -118,3 +118,46 @@ export async function getSiteCertificate(id: number): Promise<SiteCertStatus> {
   const res = await apiClient.get<SiteCertStatus>(`/sites/${id}/certificate`)
   return res.data
 }
+
+/** 导入预览的站点条目(FR-705)。 */
+export interface ImportedSite {
+  name: string
+  type: Site['type']
+  domains: string
+  upstreams?: string
+  lb_policy?: string
+  websocket: boolean
+  health_check_enabled: boolean
+  health_check_path?: string
+  health_check_interval?: string
+  health_check_expected?: number
+  basic_auth_users?: string
+  root_path?: string
+  redirect_to?: string
+  redirect_permanent: boolean
+  https_redirect: boolean
+  raw_extra?: string
+  warnings?: string[]
+}
+
+export interface ImportPreview {
+  sites: ImportedSite[]
+  global_extra: string
+}
+
+export interface ImportApplyResult {
+  created: string[]
+  skipped: string[]
+}
+
+/** 导入预览:解析但不落库。 */
+export async function previewImport(content: string): Promise<ImportPreview> {
+  const res = await apiClient.post<ImportPreview>('/import/preview', { content })
+  return res.data
+}
+
+/** 确认导入:落库为停用站点,冲突跳过。 */
+export async function applyImport(content: string): Promise<ImportApplyResult> {
+  const res = await apiClient.post<{ result: ImportApplyResult }>('/import/apply', { content })
+  return res.data.result
+}
