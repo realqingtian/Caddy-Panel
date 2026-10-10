@@ -1,3 +1,5 @@
-{{define "access_control"}}{{- range .AccessLines}}
+{{define "access_control"}}{{- range .TLSLines}}
+	{{.}}
+{{- end}}{{- range .AccessLines}}
 	{{.}}
 {{- end}}{{end}}

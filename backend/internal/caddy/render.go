@@ -19,6 +19,7 @@ type GlobalOptions struct {
 	AdminBind      string // Caddy admin 监听地址,如 localhost:2019(与 Panel 连接的 AdminURL 是两个概念)
 	ErrorLogPath   string // Caddy 自身错误日志输出
 	AccessLogPath  string // 所有站点共用的访问日志输出
+	AcmeEmail      string // ACME 账号邮箱(渲染全局 email 指令,FR-703)
 	MetricsEnabled bool   // metrics 端点开关(默认关,FR-601/M2 监控依赖)
 	GlobalExtra    string // 全局自定义片段,原样拼入(逃生舱;语法由使用者负责)
 }
@@ -44,6 +45,7 @@ type tmplSite struct {
 	RawExtra      string
 	AccessLogPath string
 	AccessLines   []string
+	TLSLines      []string
 }
 
 // Renderer Caddyfile 渲染器接口;pipeline 依赖抽象以便单测。
@@ -107,6 +109,7 @@ func toTmplSite(site model.Site, global GlobalOptions) tmplSite {
 		RawExtra:      site.RawExtra, // 逃生舱:原样拼入,不做任何加工
 		AccessLogPath: global.AccessLogPath,
 		AccessLines:   accessLines(site),
+		TLSLines:      tlsLines(site),
 	}
 	switch site.Type {
 	case model.SiteTypeProxy:
@@ -141,6 +144,14 @@ func healthLines(site model.Site) []string {
 		lines = append(lines, `health_uri "/healthz"`, "health_interval 10s")
 	}
 	return lines
+}
+
+// tlsLines FR-703 手动上传证书的 tls 指令行;未上传时不输出(走自动 HTTPS)。
+func tlsLines(site model.Site) []string {
+	if site.CertFile == "" || site.KeyFile == "" {
+		return nil
+	}
+	return []string{"tls " + strconv.Quote(site.CertFile) + " " + strconv.Quote(site.KeyFile)}
 }
 
 // accessLines FR-704 访问控制指令行(三类站点通用,拼在站点体末尾):

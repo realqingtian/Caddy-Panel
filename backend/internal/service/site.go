@@ -243,6 +243,7 @@ func (s *Site) renderInput(ctx context.Context, sites []model.Site) caddy.Render
 		AdminBind:      s.settingOr(ctx, model.SettingKeyCaddyAdminBind, s.defaults.AdminBind),
 		ErrorLogPath:   s.settingOr(ctx, model.SettingKeyLogErrorPath, s.defaults.ErrorLogPath),
 		AccessLogPath:  s.settingOr(ctx, model.SettingKeyLogAccessPath, s.defaults.AccessLogPath),
+		AcmeEmail:      s.settingOr(ctx, model.SettingKeyAcmeEmail, ""),
 		MetricsEnabled: s.settingBool(ctx, model.SettingKeyMetricsEnabled, s.defaults.MetricsEnabled),
 		GlobalExtra:    s.settingOr(ctx, model.SettingKeyGlobalExtra, ""),
 	}

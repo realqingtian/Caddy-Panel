@@ -18,6 +18,8 @@ interface SettingsFormValues {
   login_max_fails: string
   login_lock_window: string
   metrics_enabled: boolean
+  acme_email: string
+  notify_webhook_url: string
   global_extra: string
 }
 
@@ -54,6 +56,8 @@ export default function SettingsPage() {
       login_max_fails: s.login_max_fails ?? '',
       login_lock_window: s.login_lock_window ?? '',
       metrics_enabled: s.metrics_enabled === 'true',
+      acme_email: s.acme_email ?? '',
+      notify_webhook_url: s.notify_webhook_url ?? '',
       global_extra: s.global_extra ?? '',
     })
   }, [settingsQuery.data, form])

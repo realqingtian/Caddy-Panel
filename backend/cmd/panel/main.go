@@ -93,6 +93,16 @@ func run() error {
 	defer cancelCollector()
 	go collector.Run(collectorCtx)
 
+	// 证书到期检查循环(FR-703):每日检查 + Webhook 提醒。
+	certSvc := service.NewCert(func() string {
+		if v, ok, err := st.GetSetting(ctx, model.SettingKeyCertStoragePath); err == nil && ok && v != "" {
+			return v
+		}
+		return cfg.CertStoragePath
+	}, st)
+	expiryChecker := service.NewCertExpiryChecker(st, certSvc, st)
+	go expiryChecker.Run(ctx)
+
 	// 启动漂移检测(FR-202):结果日志留痕;Dashboard 每次访问都会实时复核。
 	go func() {
 		checker := service.NewDriftChecker(st, pipeline, caddyfilePathFn)

@@ -97,6 +97,7 @@ func New(deps Deps) *gin.Engine {
 	authorized.POST("/sites/:id/enable", sites.Enable())
 	authorized.POST("/sites/:id/disable", sites.Disable())
 	authorized.GET("/sites/:id/certificate", certHandler.SiteCertificate())
+	authorized.POST("/sites/:id/certificate/upload", certHandler.UploadCertificate())
 
 	// 配置中心:版本历史/回滚/直编/当前配置(FR-40x)。
 	configSvc := service.NewConfig(service.ConfigDeps{
@@ -122,6 +123,8 @@ func New(deps Deps) *gin.Engine {
 		model.SettingKeyLoginMaxFails:   strconv.Itoa(deps.Cfg.LoginMaxFails),
 		model.SettingKeyLoginLockWindow: deps.Cfg.LoginLockWindow.String(),
 		model.SettingKeyMetricsEnabled:  "false",
+		model.SettingKeyAcmeEmail:       "",
+		model.SettingKeyNotifyWebhook:   "",
 		model.SettingKeyGlobalExtra:     "",
 	})
 	settingsHandler := handler.NewSettings(settingSvc)

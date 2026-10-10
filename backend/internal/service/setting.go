@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"caddy-panel/backend/internal/model"
@@ -56,6 +57,18 @@ var settingValidators = map[string]func(string) error{
 	model.SettingKeyMetricsEnabled: func(v string) error {
 		if v != "true" && v != "false" {
 			return fmt.Errorf("metrics 开关必须为 true 或 false")
+		}
+		return nil
+	},
+	model.SettingKeyAcmeEmail: func(v string) error {
+		if !strings.Contains(v, "@") {
+			return fmt.Errorf("ACME 邮箱格式非法")
+		}
+		return nil
+	},
+	model.SettingKeyNotifyWebhook: func(v string) error {
+		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") {
+			return fmt.Errorf("Webhook 地址必须以 http(s):// 开头")
 		}
 		return nil
 	},

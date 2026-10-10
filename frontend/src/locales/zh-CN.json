@@ -114,7 +114,13 @@
       "issued": "已签发",
       "notIssued": "未签发(首次 HTTPS 访问后自动签发)",
       "expires": "到期时间",
-      "hint": "证书由 Caddy 自动管理(ACME);数据来自 Caddy 证书存储,管理操作将在 M2 提供"
+      "hint": "证书由 Caddy 自动管理(ACME);数据来自 Caddy 证书存储,管理操作将在 M2 提供",
+      "uploadCert": "上传证书(.pem)",
+      "uploadKey": "上传私钥(.key)",
+      "uploadHint": "先选证书再选私钥;校验配对后保存,下次下发生效",
+      "selectCertFirst": "请先选择证书文件",
+      "uploadSuccess": "证书已上传,下次下发生效",
+      "uploadFailed": "证书上传失败"
     },
     "import": {
       "action": "导入 Caddyfile",
@@ -186,14 +192,18 @@
       "loginMaxFails": "登录失败锁定阈值(次)",
       "loginLockWindow": "登录锁定时长",
       "metrics": "启用 metrics 端点",
-      "globalExtra": "全局自定义片段(global_extra)"
+      "globalExtra": "全局自定义片段(global_extra)",
+      "acmeEmail": "ACME 账号邮箱",
+      "notifyWebhook": "证书到期提醒 Webhook"
     },
     "hint": {
       "adminUrl": "面板连接 Caddy Admin API 的地址",
       "adminBind": "写入渲染产物的全局 admin 指令;Caddy 重启恢复依赖它,须与面板可达地址一致",
       "nextOp": "修改后在下次操作时生效",
       "immediate": "修改后立即生效",
-      "globalExtra": "原样拼入全局块;语法由使用者负责,保存前会整体校验"
+      "globalExtra": "原样拼入全局块;语法由使用者负责,保存前会整体校验",
+      "acmeEmail": "渲染进全局块 email 指令,用于 Let's Encrypt 等账户注册与到期通知",
+      "notifyWebhook": "剩余有效期不足 30 天时每日推送 JSON 提醒(随每日检查触发)"
     },
     "saved": "设置已保存",
     "saveFailed": "设置保存失败",

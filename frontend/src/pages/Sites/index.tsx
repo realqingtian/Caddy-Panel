@@ -12,9 +12,10 @@ import {
   Table,
   Tag,
   Typography,
+  Upload,
   type TableProps,
 } from 'antd'
-import { useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '@/api/auth'
@@ -31,6 +32,9 @@ import {
   type SiteCertStatus,
 } from '@/api/sites'
 import { SiteForm } from '@/components/SiteForm'
+import { uploadCertificate } from '@/api/sites'
+import { UploadOutlined } from '@ant-design/icons'
+import type { UploadFile } from 'antd'
 
 /** 站点管理页:列表 + 新建/编辑 Drawer + 启停 + 删除(FR-301~307)。 */
 export default function SitesPage() {
@@ -72,6 +76,22 @@ export default function SitesPage() {
       message.error(apiErrorMessage(error, t('sites.import.failed')))
     } finally {
       setImportBusy(false)
+    }
+  }
+
+  const uploadCertRef = useRef<File | null>(null)
+
+  const doUploadCertificate = async (keyFile: File) => {
+    if (!certView || !uploadCertRef.current) {
+      message.warning(t('sites.certificate.selectCertFirst'))
+      return
+    }
+    try {
+      await uploadCertificate(certView.site.id, uploadCertRef.current, keyFile)
+      void message.success(t('sites.certificate.uploadSuccess'))
+      invalidate()
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('sites.certificate.uploadFailed')))
     }
   }
 
@@ -217,6 +237,34 @@ export default function SitesPage() {
                 )}
               </div>
             ))}
+            <Upload
+              accept=".pem,.crt,.cer"
+              showUploadList={false}
+              beforeUpload={(certFile: UploadFile) => {
+                // 两步选择:先证书后私钥(此处取 cert,由自定义 input 补 key)
+                uploadCertRef.current = certFile as unknown as File
+                return false
+              }}
+            >
+              <Button size="small" icon={<UploadOutlined />}>
+                {t('sites.certificate.uploadCert')}
+              </Button>
+            </Upload>
+            <Upload
+              accept=".pem,.key"
+              showUploadList={false}
+              beforeUpload={(keyFile: UploadFile) => {
+                void doUploadCertificate(keyFile as unknown as File)
+                return false
+              }}
+            >
+              <Button size="small" icon={<UploadOutlined />}>
+                {t('sites.certificate.uploadKey')}
+              </Button>
+            </Upload>
+            <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+              {t('sites.certificate.uploadHint')}
+            </Typography.Text>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {t('sites.certificate.hint')}
             </Typography.Text>

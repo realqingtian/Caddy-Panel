@@ -55,6 +55,10 @@ type Site struct {
 	IPAllowlist    string `json:"ip_allowlist"`                      // 逗号分隔 CIDR/IP
 	IPBlocklist    string `json:"ip_blocklist"`                      // 逗号分隔 CIDR/IP
 
+	// FR-703 手动上传证书(渲染 tls <cert> <key>;文件在共享卷,路径由服务端生成)
+	CertFile string `json:"cert_file"`
+	KeyFile  string `json:"key_file"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

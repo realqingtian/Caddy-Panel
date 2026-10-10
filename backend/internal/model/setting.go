@@ -18,6 +18,9 @@ const (
 	SettingKeyLoginMaxFails   = "login_max_fails"
 	SettingKeyLoginLockWindow = "login_lock_window"
 	SettingKeyMetricsEnabled  = "metrics_enabled"
+	SettingKeyAcmeEmail       = "acme_email"         // FR-703 渲染全局块 email 指令
+	SettingKeyNotifyWebhook   = "notify_webhook_url" // FR-703 证书到期提醒 Webhook
+	SettingKeyCertStoragePath = "cert_storage_path"  // 仅 env 管理(证书存储只读视图)
 	SettingKeyGlobalExtra     = "global_extra"
 	SettingKeyJWTSecret       = "jwt_secret" // 仅启动侧管理,设置页不提供
 )

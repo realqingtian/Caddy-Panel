@@ -114,7 +114,13 @@
       "issued": "Issued",
       "notIssued": "Not issued yet (auto-issued on first HTTPS visit)",
       "expires": "Expires",
-      "hint": "Certificates are managed automatically by Caddy (ACME); data comes from Caddy's storage, management lands in M2"
+      "hint": "Certificates are managed automatically by Caddy (ACME); data comes from Caddy's storage, management lands in M2",
+      "uploadCert": "Upload cert (.pem)",
+      "uploadKey": "Upload key (.key)",
+      "uploadHint": "Pick the cert first, then the key; validated as a pair and applied on next deploy",
+      "selectCertFirst": "Select the certificate file first",
+      "uploadSuccess": "Certificate uploaded; takes effect on next deploy",
+      "uploadFailed": "Certificate upload failed"
     },
     "import": {
       "action": "Import Caddyfile",
@@ -186,14 +192,18 @@
       "loginMaxFails": "Login lock threshold (attempts)",
       "loginLockWindow": "Login lock window",
       "metrics": "Enable metrics endpoint",
-      "globalExtra": "Global custom snippet (global_extra)"
+      "globalExtra": "Global custom snippet (global_extra)",
+      "acmeEmail": "ACME account email",
+      "notifyWebhook": "Certificate expiry webhook"
     },
     "hint": {
       "adminUrl": "Address the panel uses to reach the Caddy Admin API",
       "adminBind": "Written into the rendered global block; Caddy relies on it after restart and it must be reachable from the panel",
       "nextOp": "Takes effect on the next operation",
       "immediate": "Takes effect immediately",
-      "globalExtra": "Appended verbatim into the global block; syntax is on you, the whole file is validated before saving"
+      "globalExtra": "Appended verbatim into the global block; syntax is on you, the whole file is validated before saving",
+      "acmeEmail": "Rendered into the global block email directive for ACME account registration",
+      "notifyWebhook": "JSON alert pushed daily when remaining validity drops below 30 days"
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings",

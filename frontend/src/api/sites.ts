@@ -161,3 +161,14 @@ export async function applyImport(content: string): Promise<ImportApplyResult> {
   const res = await apiClient.post<{ result: ImportApplyResult }>('/import/apply', { content })
   return res.data.result
 }
+
+/** 上传站点证书(multipart;校验配对后保存,下次下发生效)。 */
+export async function uploadCertificate(id: number, cert: File, key: File): Promise<Site> {
+  const form = new FormData()
+  form.append('cert', cert)
+  form.append('key', key)
+  const res = await apiClient.post<Site>(`/sites/${id}/certificate/upload`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data
+}
