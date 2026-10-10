@@ -59,21 +59,23 @@ func (s *CertService) UploadCertificate(ctx context.Context, siteID uint, certPE
 }
 
 // CertExpiryChecker 证书到期检查(FR-703):每日检查启用站点,
-// 剩余有效期不足 30 天时向设置的 Webhook 推送提醒。
+// 剩余有效期不足 30 天时经已配置的渠道(Webhook / SMTP)发送提醒。
 type CertExpiryChecker struct {
 	siteRepo SiteRepo
 	cert     *CertService
 	settings SettingReader
 	webhook  *http.Client
+	mailer   *SMTPMailer
 }
 
-// NewCertExpiryChecker 构造到期检查器。
+// NewCertExpiryChecker 构造到期检查器;渠道按设置动态判定,双渠道并存时都发送。
 func NewCertExpiryChecker(siteRepo SiteRepo, cert *CertService, settings SettingReader) *CertExpiryChecker {
 	return &CertExpiryChecker{
 		siteRepo: siteRepo,
 		cert:     cert,
 		settings: settings,
 		webhook:  &http.Client{Timeout: 10 * time.Second},
+		mailer:   NewSMTPMailer(settings),
 	}
 }
 
@@ -96,11 +98,19 @@ func (c *CertExpiryChecker) Run(ctx context.Context) {
 	}
 }
 
-// Check 单轮检查;返回即将到期的站点数(仅日志与 Webhook,无接口消费)。
+// Check 单轮检查;返回即将到期的站点数。Webhook 与 SMTP 任一配置即发送。
 func (c *CertExpiryChecker) Check(ctx context.Context) int {
 	webhookURL, _, err := c.settings.GetSetting(ctx, model.SettingKeyNotifyWebhook)
-	if err != nil || webhookURL == "" {
-		return 0 // 未配置通知渠道:静默跳过
+	if err != nil {
+		webhookURL = ""
+	}
+	smtpCfg, smtpOK, err := c.mailer.Load(ctx)
+	if err != nil {
+		slog.Warn("读取 SMTP 配置失败", "error", err)
+		smtpOK = false
+	}
+	if webhookURL == "" && !smtpOK {
+		return 0 // 未配置任何通知渠道:静默跳过
 	}
 
 	sites, err := c.siteRepo.ListSites(ctx)
@@ -128,7 +138,16 @@ func (c *CertExpiryChecker) Check(ctx context.Context) int {
 			}
 			if time.Until(notAfter) < expiryWarnThreshold {
 				expiring++
-				c.notify(ctx, webhookURL, site.Name, domain.Domain, notAfter)
+				subject := fmt.Sprintf("[Caddy Panel] 证书即将到期: %s", domain.Domain)
+				body := fmt.Sprintf("站点 %s 的证书 %s 将于 %s 到期。", site.Name, domain.Domain, notAfter.Format("2006-01-02"))
+				if webhookURL != "" {
+					c.notifyWebhook(ctx, webhookURL, site.Name, domain.Domain, notAfter)
+				}
+				if smtpOK {
+					if err := c.mailer.Send(smtpCfg, subject, body); err != nil {
+						slog.Warn("证书到期邮件发送失败", "domain", domain.Domain, "error", err)
+					}
+				}
 			}
 		}
 	}
@@ -138,8 +157,8 @@ func (c *CertExpiryChecker) Check(ctx context.Context) int {
 	return expiring
 }
 
-// notify 推送 Webhook 提醒;失败仅日志。
-func (c *CertExpiryChecker) notify(ctx context.Context, webhookURL, siteName, domain string, notAfter time.Time) {
+// notifyWebhook 推送 Webhook 提醒;失败仅日志。
+func (c *CertExpiryChecker) notifyWebhook(ctx context.Context, webhookURL, siteName, domain string, notAfter time.Time) {
 	payload, err := json.Marshal(map[string]any{
 		"event":     "certificate_expiry",
 		"site":      siteName,

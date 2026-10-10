@@ -22,6 +22,9 @@
 {{- range .HeaderLines}}
 	{{.}}
 {{- end}}
+{{- range .RateLimitLines}}
+	{{.}}
+{{- end}}
 {{- template "access_control" .}}
 {{- if .RawExtra}}
 	{{.RawExtra}}

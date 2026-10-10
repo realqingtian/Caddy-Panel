@@ -59,6 +59,14 @@ type Site struct {
 	CertFile string `json:"cert_file"`
 	KeyFile  string `json:"key_file"`
 
+	// FR-704 限流(需带 caddy-rate-limit 插件的 Caddy)
+	RateLimitEnabled bool   `json:"rate_limit_enabled"`
+	RateLimitEvents  int    `json:"rate_limit_events"` // 窗口内最大次数
+	RateLimitWindow  string `json:"rate_limit_window"` // Go duration,如 1m
+	// FR-703 DNS challenge(需带 caddy-dns/<provider> 插件的 Caddy;凭据经 {env.X} 占位,不落库)
+	DNSProvider string `json:"dns_provider"`  // 如 cloudflare(空 = 关闭)
+	DNSTokenEnv string `json:"dns_token_env"` // 凭据环境变量名,如 CF_API_TOKEN
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

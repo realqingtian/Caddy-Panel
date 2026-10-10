@@ -1,0 +1,80 @@
+// Package service — SMTP 邮件通知渠道(FR-703)。
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/smtp"
+	"strings"
+
+	"caddy-panel/backend/internal/model"
+)
+
+// SMTPConfig 通知渠道配置(settings 表生效值)。
+type SMTPConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	From     string
+	To       []string
+}
+
+// SMTPMailer 发送通知邮件;配置不完整时 HasConfigured 为 false。
+type SMTPMailer struct {
+	settings SettingReader
+}
+
+// NewSMTPMailer 构造邮件发送器。
+func NewSMTPMailer(settings SettingReader) *SMTPMailer {
+	return &SMTPMailer{settings: settings}
+}
+
+// Load 读取 SMTP 配置;未配置(缺 host/port/to)时返回 ok=false。
+func (m *SMTPMailer) Load(ctx context.Context) (SMTPConfig, bool, error) {
+	cfg := SMTPConfig{}
+	get := func(key string) string {
+		v, _, err := m.settings.GetSetting(ctx, key)
+		if err != nil {
+			return ""
+		}
+		return v
+	}
+	cfg.Host = get(model.SettingKeySMTPHost)
+	cfg.Port = get(model.SettingKeySMTPPort)
+	cfg.Username = get(model.SettingKeySMTPUsername)
+	cfg.Password = get(model.SettingKeySMTPPassword)
+	cfg.From = get(model.SettingKeySMTPFrom)
+	to := get(model.SettingKeySMTPTo)
+	if cfg.Host == "" || cfg.Port == "" || to == "" {
+		return cfg, false, nil
+	}
+	cfg.To = strings.Split(to, ",")
+	for i := range cfg.To {
+		cfg.To[i] = strings.TrimSpace(cfg.To[i])
+	}
+	return cfg, true, nil
+}
+
+// Send 发送通知邮件(STARTTLS 由 net/smtp 自动协商)。
+func (m *SMTPMailer) Send(cfg SMTPConfig, subject, body string) error {
+	addr := cfg.Host + ":" + cfg.Port
+	message := strings.Join([]string{
+		"From: " + cfg.From,
+		"To: " + strings.Join(cfg.To, ", "),
+		"Subject: " + subject,
+		"MIME-Version: 1.0",
+		"Content-Type: text/plain; charset=UTF-8",
+		"",
+		body,
+	}, "\r\n")
+
+	var auth smtp.Auth
+	if cfg.Username != "" {
+		auth = smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
+	}
+	if err := smtp.SendMail(addr, auth, cfg.From, cfg.To, []byte(message)); err != nil {
+		return fmt.Errorf("发送邮件: %w", err)
+	}
+	return nil
+}

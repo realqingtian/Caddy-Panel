@@ -20,7 +20,13 @@ const (
 	SettingKeyMetricsEnabled  = "metrics_enabled"
 	SettingKeyAcmeEmail       = "acme_email"         // FR-703 渲染全局块 email 指令
 	SettingKeyNotifyWebhook   = "notify_webhook_url" // FR-703 证书到期提醒 Webhook
-	SettingKeyCertStoragePath = "cert_storage_path"  // 仅 env 管理(证书存储只读视图)
+	SettingKeySMTPHost        = "smtp_host"
+	SettingKeySMTPPort        = "smtp_port"
+	SettingKeySMTPUsername    = "smtp_username"
+	SettingKeySMTPPassword    = "smtp_password" // 回显脱敏(GET 返回空,PUT 空值保留旧值)
+	SettingKeySMTPFrom        = "smtp_from"
+	SettingKeySMTPTo          = "smtp_to"
+	SettingKeyCertStoragePath = "cert_storage_path" // 仅 env 管理(证书存储只读视图)
 	SettingKeyGlobalExtra     = "global_extra"
 	SettingKeyJWTSecret       = "jwt_secret" // 仅启动侧管理,设置页不提供
 )

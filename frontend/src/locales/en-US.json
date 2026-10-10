@@ -77,14 +77,22 @@
       "basicAuthUser": "Username",
       "basicAuthPassword": "Password",
       "ipAllowlist": "IP allowlist",
-      "ipBlocklist": "IP blocklist"
+      "ipBlocklist": "IP blocklist",
+      "rateLimit": "Rate limit",
+      "rateLimitEvents": "Max events per window",
+      "dnsProvider": "DNS challenge provider",
+      "dnsProviderPlaceholder": "Disabled (automatic HTTPS)",
+      "dnsTokenEnv": "Credential env var name"
     },
     "hint": {
       "domains": "Separate multiple domains with commas",
       "upstreams": "Separate multiple upstreams with commas, e.g. 127.0.0.1:8080, 127.0.0.1:8081",
       "healthCheck": "Caddy actively probes upstreams and ejects unhealthy ones",
       "basicAuth": "Replaced and re-hashed (bcrypt) on every save; re-enter passwords for existing users, empty entries are ignored",
-      "ipList": "Comma separated, single IP or CIDR; allowlist returns 403 to everyone else"
+      "ipList": "Comma separated, single IP or CIDR; allowlist returns 403 to everyone else",
+      "rateLimit": "Rate-limit by client IP; requires caddy with caddy-rate-limit plugin (included in compose build)",
+      "dnsProvider": "Issue certificates via DNS challenge; requires the matching caddy-dns plugin (cloudflare included in compose build)",
+      "dnsTokenEnv": "Credentials are never stored: enter the env var name, Caddy reads it from its own environment, e.g. CF_API_TOKEN"
     },
     "lbPolicy": {
       "roundRobin": "Round robin",
@@ -194,7 +202,13 @@
       "metrics": "Enable metrics endpoint",
       "globalExtra": "Global custom snippet (global_extra)",
       "acmeEmail": "ACME account email",
-      "notifyWebhook": "Certificate expiry webhook"
+      "notifyWebhook": "Certificate expiry webhook",
+      "smtpHost": "SMTP server",
+      "smtpPort": "Port",
+      "smtpUsername": "Username",
+      "smtpPassword": "Password",
+      "smtpFrom": "From address",
+      "smtpTo": "To addresses"
     },
     "hint": {
       "adminUrl": "Address the panel uses to reach the Caddy Admin API",
@@ -203,7 +217,9 @@
       "immediate": "Takes effect immediately",
       "globalExtra": "Appended verbatim into the global block; syntax is on you, the whole file is validated before saving",
       "acmeEmail": "Rendered into the global block email directive for ACME account registration",
-      "notifyWebhook": "JSON alert pushed daily when remaining validity drops below 30 days"
+      "notifyWebhook": "JSON alert pushed daily when remaining validity drops below 30 days",
+      "smtpPassword": "Not shown after saving; leave empty to keep the current password",
+      "smtpTo": "Comma separated; the email channel activates when server/port/to are all set"
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings",
@@ -215,6 +231,9 @@
       "restoreFailed": "Restore failed",
       "warning": "Importing replaces all sites, version history and settings, and never auto-deploys",
       "hint": "After restoring, review and enable sites, or redeploy from the Config Center"
+    },
+    "smtp": {
+      "title": "SMTP notification channel (certificate expiry)"
     }
   },
   "logs": {

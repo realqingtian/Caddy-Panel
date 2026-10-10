@@ -81,6 +81,10 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
           basic_auth: [],
           ip_allowlist: '',
           ip_blocklist: '',
+          rate_limit_events: 100,
+          rate_limit_window: '1m',
+          dns_provider: '',
+          dns_token_env: '',
         }}
       >
         <Form.Item
@@ -136,6 +140,15 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
               <Switch />
             </Form.Item>
             <HealthCheckFields form={form} />
+            <Form.Item
+              name="rate_limit_enabled"
+              label={t('sites.field.rateLimit')}
+              tooltip={t('sites.hint.rateLimit')}
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+            <RateLimitFields form={form} />
             <Form.Item name="websocket" label={t('sites.field.websocket')} valuePropName="checked">
               <Switch />
             </Form.Item>
@@ -180,6 +193,24 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
         )}
 
         <AccessControlFields />
+        <Form.Item
+          name="dns_provider"
+          label={t('sites.field.dnsProvider')}
+          tooltip={t('sites.hint.dnsProvider')}
+        >
+          <Select
+            allowClear
+            placeholder={t('sites.field.dnsProviderPlaceholder')}
+            options={[{ value: 'cloudflare', label: 'Cloudflare' }]}
+          />
+        </Form.Item>
+        <Form.Item
+          name="dns_token_env"
+          label={t('sites.field.dnsTokenEnv')}
+          extra={t('sites.hint.dnsTokenEnv')}
+        >
+          <Input placeholder="CF_API_TOKEN" />
+        </Form.Item>
         <Form.Item
           name="https_redirect"
           label={t('sites.field.httpsRedirect')}
@@ -337,5 +368,23 @@ function AccessControlFields() {
         <Input.TextArea rows={2} />
       </Form.Item>
     </>
+  )
+}
+
+/** 限流参数;仅在开关打开时渲染(需带 caddy-rate-limit 插件的 Caddy)。 */
+function RateLimitFields({ form }: { form: FormInstance<SiteFormValues> }) {
+  const { t } = useTranslation()
+  const enabled = Form.useWatch('rate_limit_enabled', form)
+  if (!enabled) return null
+
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <Form.Item name="rate_limit_events" style={{ flex: 1 }}>
+        <Input type="number" placeholder={t('sites.field.rateLimitEvents')} />
+      </Form.Item>
+      <Form.Item name="rate_limit_window" style={{ flex: 1 }}>
+        <Input placeholder="1m" />
+      </Form.Item>
+    </div>
   )
 }

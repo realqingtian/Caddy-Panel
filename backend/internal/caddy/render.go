@@ -32,20 +32,21 @@ type RenderInput struct {
 
 // tmplSite 模板数据:领域字段的"渲染就绪"形态。
 type tmplSite struct {
-	Type          string
-	Domains       []string
-	Upstreams     []string
-	LBPolicyLines []string
-	Websocket     bool
-	HeaderLines   []string
-	HealthLines   []string
-	RootPath      string
-	RedirectLines []string
-	HTTPSRedirect bool
-	RawExtra      string
-	AccessLogPath string
-	AccessLines   []string
-	TLSLines      []string
+	Type           string
+	Domains        []string
+	Upstreams      []string
+	LBPolicyLines  []string
+	Websocket      bool
+	HeaderLines    []string
+	HealthLines    []string
+	RootPath       string
+	RedirectLines  []string
+	HTTPSRedirect  bool
+	RawExtra       string
+	AccessLogPath  string
+	AccessLines    []string
+	TLSLines       []string
+	RateLimitLines []string
 }
 
 // Renderer Caddyfile 渲染器接口;pipeline 依赖抽象以便单测。
@@ -101,15 +102,16 @@ func funcMap() template.FuncMap {
 // toTmplSite 领域模型 → 模板数据;所有语法相关加工集中在这里。
 func toTmplSite(site model.Site, global GlobalOptions) tmplSite {
 	out := tmplSite{
-		Type:          site.Type,
-		Domains:       splitList(site.Domains),
-		Websocket:     site.Websocket,
-		HTTPSRedirect: site.HTTPSRedirect,
-		RootPath:      site.RootPath,
-		RawExtra:      site.RawExtra, // 逃生舱:原样拼入,不做任何加工
-		AccessLogPath: global.AccessLogPath,
-		AccessLines:   accessLines(site),
-		TLSLines:      tlsLines(site),
+		Type:           site.Type,
+		Domains:        splitList(site.Domains),
+		Websocket:      site.Websocket,
+		HTTPSRedirect:  site.HTTPSRedirect,
+		RootPath:       site.RootPath,
+		RawExtra:       site.RawExtra, // 逃生舱:原样拼入,不做任何加工
+		AccessLogPath:  global.AccessLogPath,
+		AccessLines:    accessLines(site),
+		TLSLines:       tlsLines(site),
+		RateLimitLines: rateLimitLines(site),
 	}
 	switch site.Type {
 	case model.SiteTypeProxy:
@@ -146,12 +148,45 @@ func healthLines(site model.Site) []string {
 	return lines
 }
 
-// tlsLines FR-703 手动上传证书的 tls 指令行;未上传时不输出(走自动 HTTPS)。
-func tlsLines(site model.Site) []string {
-	if site.CertFile == "" || site.KeyFile == "" {
+// rateLimitLines FR-704 限流指令(需 caddy-rate-limit 插件);
+// key 使用 Caddy 占位符 {remote_host} 按客户端 IP 限流。
+func rateLimitLines(site model.Site) []string {
+	if !site.RateLimitEnabled {
 		return nil
 	}
-	return []string{"tls " + strconv.Quote(site.CertFile) + " " + strconv.Quote(site.KeyFile)}
+	zone := strings.TrimSpace(site.Domains)
+	if idx := strings.Index(zone, ","); idx > 0 {
+		zone = strings.TrimSpace(zone[:idx])
+	}
+	events := site.RateLimitEvents
+	if events < 1 {
+		events = 100
+	}
+	window := site.RateLimitWindow
+	if window == "" {
+		window = "1m"
+	}
+	return []string{
+		"rate_limit {",
+		"\tzone " + zone + " {",
+		"\t\tkey {remote_host}",
+		"\t\tevents " + strconv.Itoa(events),
+		"\t\twindow " + window,
+		"\t}",
+		"}",
+	}
+}
+
+// tlsLines FR-703 证书来源优先级:手动上传 > DNS challenge(插件) > 自动 HTTPS。
+func tlsLines(site model.Site) []string {
+	if site.CertFile != "" && site.KeyFile != "" {
+		return []string{"tls " + strconv.Quote(site.CertFile) + " " + strconv.Quote(site.KeyFile)}
+	}
+	if site.DNSProvider != "" {
+		// 凭据经 {env.X} 占位引用 Caddy 进程环境变量,不落库。
+		return []string{"tls {", "\tdns " + site.DNSProvider + " {env." + site.DNSTokenEnv + "}", "}"}
+	}
+	return nil
 }
 
 // accessLines FR-704 访问控制指令行(三类站点通用,拼在站点体末尾):

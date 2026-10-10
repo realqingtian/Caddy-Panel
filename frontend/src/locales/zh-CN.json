@@ -77,14 +77,22 @@
       "basicAuthUser": "用户名",
       "basicAuthPassword": "密码",
       "ipAllowlist": "IP 白名单",
-      "ipBlocklist": "IP 黑名单"
+      "ipBlocklist": "IP 黑名单",
+      "rateLimit": "限流",
+      "rateLimitEvents": "窗口内最大次数",
+      "dnsProvider": "DNS challenge 供应商",
+      "dnsProviderPlaceholder": "不使用(自动 HTTPS)",
+      "dnsTokenEnv": "凭据环境变量名"
     },
     "hint": {
       "domains": "多个域名用英文逗号分隔",
       "upstreams": "多个上游用英文逗号分隔,如 127.0.0.1:8080, 127.0.0.1:8081",
       "healthCheck": "开启后 Caddy 主动探测上游,异常自动摘除",
       "basicAuth": "保存时全量替换并重新哈希(bcrypt);已有用户需重输密码,留空条目将被忽略",
-      "ipList": "逗号分隔,支持单个 IP 或 CIDR 网段;白名单为名单外全部 403"
+      "ipList": "逗号分隔,支持单个 IP 或 CIDR 网段;白名单为名单外全部 403",
+      "rateLimit": "按客户端 IP 限流;需要带 caddy-rate-limit 插件的 Caddy(compose 默认已含)",
+      "dnsProvider": "使用 DNS challenge 签发证书;需要带对应 caddy-dns 插件的 Caddy(compose 默认含 cloudflare)",
+      "dnsTokenEnv": "凭据不落库:填环境变量名,Caddy 从自身环境读取,如 CF_API_TOKEN"
     },
     "lbPolicy": {
       "roundRobin": "轮询(round_robin)",
@@ -194,7 +202,13 @@
       "metrics": "启用 metrics 端点",
       "globalExtra": "全局自定义片段(global_extra)",
       "acmeEmail": "ACME 账号邮箱",
-      "notifyWebhook": "证书到期提醒 Webhook"
+      "notifyWebhook": "证书到期提醒 Webhook",
+      "smtpHost": "SMTP 服务器",
+      "smtpPort": "端口",
+      "smtpUsername": "用户名",
+      "smtpPassword": "密码",
+      "smtpFrom": "发件地址",
+      "smtpTo": "收件地址"
     },
     "hint": {
       "adminUrl": "面板连接 Caddy Admin API 的地址",
@@ -203,7 +217,9 @@
       "immediate": "修改后立即生效",
       "globalExtra": "原样拼入全局块;语法由使用者负责,保存前会整体校验",
       "acmeEmail": "渲染进全局块 email 指令,用于 Let's Encrypt 等账户注册与到期通知",
-      "notifyWebhook": "剩余有效期不足 30 天时每日推送 JSON 提醒(随每日检查触发)"
+      "notifyWebhook": "剩余有效期不足 30 天时每日推送 JSON 提醒(随每日检查触发)",
+      "smtpPassword": "保存后不回显;留空表示保留当前密码",
+      "smtpTo": "多个收件人用英文逗号分隔;服务器/端口/收件人齐备即启用邮件渠道"
     },
     "saved": "设置已保存",
     "saveFailed": "设置保存失败",
@@ -215,6 +231,9 @@
       "restoreFailed": "恢复失败",
       "warning": "导入将替换当前全部站点、版本历史与设置,且不自动下发",
       "hint": "恢复后请在站点页核对并启用,或在配置中心重新下发使配置生效"
+    },
+    "smtp": {
+      "title": "SMTP 通知渠道(证书到期提醒)"
     }
   },
   "logs": {

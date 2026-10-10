@@ -24,6 +24,11 @@ export interface Site {
   basic_auth_users: string
   ip_allowlist: string
   ip_blocklist: string
+  rate_limit_enabled: boolean
+  rate_limit_events: number
+  rate_limit_window: string
+  dns_provider: string
+  dns_token_env: string
   created_at: string
   updated_at: string
 }
@@ -51,6 +56,11 @@ export interface SiteInput {
   basic_auth: { username: string; password: string }[]
   ip_allowlist: string
   ip_blocklist: string
+  rate_limit_enabled: boolean
+  rate_limit_events: number
+  rate_limit_window: string
+  dns_provider: string
+  dns_token_env: string
 }
 
 export interface SiteMutationResponse {

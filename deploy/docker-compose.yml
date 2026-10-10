@@ -1,6 +1,10 @@
 services:
   caddy:
-    image: caddy:2
+    # 带插件构建:限流(caddy-rate-limit)与 DNS challenge(cloudflare)。
+    # 不需要插件时可改回 image: caddy:2。
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"

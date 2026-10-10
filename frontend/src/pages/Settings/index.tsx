@@ -20,6 +20,12 @@ interface SettingsFormValues {
   metrics_enabled: boolean
   acme_email: string
   notify_webhook_url: string
+  smtp_host: string
+  smtp_port: string
+  smtp_username: string
+  smtp_password: string
+  smtp_from: string
+  smtp_to: string
   global_extra: string
 }
 
@@ -58,6 +64,12 @@ export default function SettingsPage() {
       metrics_enabled: s.metrics_enabled === 'true',
       acme_email: s.acme_email ?? '',
       notify_webhook_url: s.notify_webhook_url ?? '',
+      smtp_host: s.smtp_host ?? '',
+      smtp_port: s.smtp_port ?? '',
+      smtp_username: s.smtp_username ?? '',
+      smtp_password: s.smtp_password ?? '',
+      smtp_from: s.smtp_from ?? '',
+      smtp_to: s.smtp_to ?? '',
       global_extra: s.global_extra ?? '',
     })
   }, [settingsQuery.data, form])

@@ -84,6 +84,8 @@
 | 2026-10-10 | M2 设计定稿与任务拆解(T2.1~T2.6,顺序:上游健康→访问控制→导入→备份→监控→证书),见 m2-design.md;图表库选 recharts | 复核 PRD 与调研;按依赖与风险排序,插件依赖项(限流/DNS challenge)只产出配置并标注 |
 | 2026-10-11 | Caddyfile 导入改用自研 Tokenize 块解析:caddyfile.Parse 会丢弃个别子指令行(实测 flush_interval -1 整行消失),导入必须无损保留原文 | T2.3 实测发现;契约测试与解析器测试双向覆盖 |
 | 2026-10-11 | 漂移运行态对比、metrics 解析等全部通过"产物契约/行为测试"先行验证后再接入;全 mock 单测无法发现生产装配漏注入(T2.1 的 deps.Client),冒烟冒烟兜底 | M2 期间缺陷均在测试/冒烟阶段拦截 |
+| 2026-10-11 | 插件支持落地:compose 默认构建带插件 Caddy(caddy-rate-limit + caddy-dns/cloudflare),面板渲染限流(rate_limit,按 IP)与 DNS challenge(tls { dns ... {env.X} },凭据 {env.X} 占位不落库) | 用户拍板;凭据不落库原则延续 |
+| 2026-10-11 | SMTP 通知渠道落地:settings 可视化配置(host/port/username/password/from/to),密码脱敏(GET 不回显、PUT 空值保留);到期提醒 Webhook/SMTP 双渠道并存 | 用户拍板;渠道配置必须可视化而非 .env |
 
 ## 5. 待决事项
 

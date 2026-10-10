@@ -41,6 +41,14 @@ type SiteInput struct {
 	BasicAuth   []BasicAuthUser `json:"basic_auth"`
 	IPAllowlist string          `json:"ip_allowlist"`
 	IPBlocklist string          `json:"ip_blocklist"`
+
+	// FR-704 限流(需 caddy-rate-limit 插件)
+	RateLimitEnabled bool   `json:"rate_limit_enabled"`
+	RateLimitEvents  int    `json:"rate_limit_events"`
+	RateLimitWindow  string `json:"rate_limit_window"`
+	// FR-703 DNS challenge(需 caddy-dns 插件;凭据由 Caddy 侧环境变量提供)
+	DNSProvider string `json:"dns_provider"`
+	DNSTokenEnv string `json:"dns_token_env"`
 }
 
 // BasicAuthUser basic auth 条目;Password 明文入参,Hash bcrypt 出参。
@@ -162,6 +170,17 @@ func (in SiteInput) hashBasicAuthUsers() (string, error) {
 func (in SiteInput) validateByType() error {
 	switch in.Type {
 	case model.SiteTypeProxy:
+		if in.RateLimitEnabled {
+			if in.RateLimitEvents < 1 {
+				return &InvalidInputError{Reason: "限流次数必须为正整数"}
+			}
+			if _, err := time.ParseDuration(in.RateLimitWindow); err != nil {
+				return &InvalidInputError{Reason: fmt.Sprintf("限流窗口格式非法(Go duration,如 1m): %s", in.RateLimitWindow)}
+			}
+		}
+		if in.DNSProvider != "" && in.DNSTokenEnv == "" {
+			return &InvalidInputError{Reason: "DNS challenge 需要提供凭据的环境变量名(如 CF_API_TOKEN)"}
+		}
 		if in.HealthCheckEnabled {
 			if in.HealthCheckInterval != "" {
 				if _, err := time.ParseDuration(in.HealthCheckInterval); err != nil {
@@ -264,5 +283,10 @@ func (in SiteInput) toSite() *model.Site {
 		HealthCheckExpected: in.HealthCheckExpected,
 		IPAllowlist:         strings.TrimSpace(in.IPAllowlist),
 		IPBlocklist:         strings.TrimSpace(in.IPBlocklist),
+		RateLimitEnabled:    in.RateLimitEnabled,
+		RateLimitEvents:     in.RateLimitEvents,
+		RateLimitWindow:     strings.TrimSpace(in.RateLimitWindow),
+		DNSProvider:         strings.TrimSpace(in.DNSProvider),
+		DNSTokenEnv:         strings.TrimSpace(in.DNSTokenEnv),
 	}
 }
