@@ -84,6 +84,9 @@ func New(deps Deps) *gin.Engine {
 		},
 	})
 	sites := handler.NewSite(siteSvc)
+	certHandler := handler.NewCert(service.NewCert(func() string {
+		return deps.Cfg.CertStoragePath
+	}, deps.Store))
 	authorized.POST("/sites", sites.Create())
 	authorized.GET("/sites", sites.List())
 	authorized.GET("/sites/:id", sites.Get())
@@ -91,6 +94,7 @@ func New(deps Deps) *gin.Engine {
 	authorized.DELETE("/sites/:id", sites.Delete())
 	authorized.POST("/sites/:id/enable", sites.Enable())
 	authorized.POST("/sites/:id/disable", sites.Disable())
+	authorized.GET("/sites/:id/certificate", certHandler.SiteCertificate())
 
 	// 配置中心:版本历史/回滚/直编/当前配置(FR-40x)。
 	configSvc := service.NewConfig(service.ConfigDeps{

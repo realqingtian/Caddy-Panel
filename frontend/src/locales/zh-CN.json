@@ -91,7 +91,15 @@
     "enabledSuccess": "站点已启用",
     "disabledSuccess": "站点已停用",
     "deletedSuccess": "站点已删除",
-    "deleteConfirm": "确认删除该站点?删除后域名立即下线,可通过版本历史回滚"
+    "deleteConfirm": "确认删除该站点?删除后域名立即下线,可通过版本历史回滚",
+    "certificate": {
+      "action": "证书",
+      "title": "证书状态 — {{name}}",
+      "issued": "已签发",
+      "notIssued": "未签发(首次 HTTPS 访问后自动签发)",
+      "expires": "到期时间",
+      "hint": "证书由 Caddy 自动管理(ACME);数据来自 Caddy 证书存储,管理操作将在 M2 提供"
+    }
   },
   "pages": {
     "dashboard": {

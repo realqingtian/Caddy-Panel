@@ -1,10 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Button, Card, Popconfirm, Space, Switch, Table, Tag, type TableProps } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Modal,
+  Popconfirm,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  type TableProps,
+} from 'antd'
 import { useState } from 'react'
+import { Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '@/api/auth'
-import { deleteSite, listSites, setSiteEnabled, type Site } from '@/api/sites'
+import {
+  deleteSite,
+  getSiteCertificate,
+  listSites,
+  setSiteEnabled,
+  type Site,
+  type SiteCertStatus,
+} from '@/api/sites'
 import { SiteForm } from '@/components/SiteForm'
 
 /** 站点管理页:列表 + 新建/编辑 Drawer + 启停 + 删除(FR-301~307)。 */
@@ -15,6 +34,12 @@ export default function SitesPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Site | null>(null)
+  const [certView, setCertView] = useState<{ site: Site; status: SiteCertStatus } | null>(null)
+
+  const showCertificate = async (site: Site) => {
+    const status = await getSiteCertificate(site.id)
+    setCertView({ site, status })
+  }
 
   const sitesQuery = useQuery({ queryKey: ['sites'], queryFn: listSites })
 
@@ -87,6 +112,9 @@ export default function SitesPage() {
               {t('common.delete')}
             </Button>
           </Popconfirm>
+          <Button type="link" size="small" onClick={() => void showCertificate(record)}>
+            {t('sites.certificate.action')}
+          </Button>
         </Space>
       ),
     },
@@ -114,6 +142,37 @@ export default function SitesPage() {
         columns={columns}
         pagination={false}
       />
+      <Modal
+        open={certView !== null}
+        title={t('sites.certificate.title', { name: certView?.site.name ?? '' })}
+        footer={null}
+        onCancel={() => setCertView(null)}
+      >
+        {certView && (
+          <div>
+            {certView.status.domains.map((d) => (
+              <div key={d.domain} style={{ marginBottom: 8 }}>
+                <Space>
+                  <Typography.Text strong>{d.domain}</Typography.Text>
+                  {d.found ? (
+                    <Tag color="green">{t('sites.certificate.issued')}</Tag>
+                  ) : (
+                    <Tag>{t('sites.certificate.notIssued')}</Tag>
+                  )}
+                </Space>
+                {d.found && (
+                  <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+                    {t('sites.certificate.expires')}: {d.not_after || '—'}
+                  </Typography.Text>
+                )}
+              </div>
+            ))}
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {t('sites.certificate.hint')}
+            </Typography.Text>
+          </div>
+        )}
+      </Modal>
       <SiteForm
         open={formOpen}
         site={editing}

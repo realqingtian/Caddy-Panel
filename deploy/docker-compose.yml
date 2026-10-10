@@ -41,6 +41,8 @@ services:
     volumes:
       - panel_data:/data
       - caddy_logs:/data/logs
+      # 证书状态查看(FR-308):只读共享 Caddy 证书存储
+      - caddy_data:/data/caddy:ro
 
 volumes:
   caddy_data:

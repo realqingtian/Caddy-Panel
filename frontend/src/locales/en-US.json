@@ -91,7 +91,15 @@
     "enabledSuccess": "Site enabled",
     "disabledSuccess": "Site disabled",
     "deletedSuccess": "Site deleted",
-    "deleteConfirm": "Delete this site? The domain goes offline immediately; rollback is available via version history"
+    "deleteConfirm": "Delete this site? The domain goes offline immediately; rollback is available via version history",
+    "certificate": {
+      "action": "Cert",
+      "title": "Certificate status — {{name}}",
+      "issued": "Issued",
+      "notIssued": "Not issued yet (auto-issued on first HTTPS visit)",
+      "expires": "Expires",
+      "hint": "Certificates are managed automatically by Caddy (ACME); data comes from Caddy's storage, management lands in M2"
+    }
   },
   "pages": {
     "dashboard": {

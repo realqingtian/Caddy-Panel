@@ -81,3 +81,25 @@ export async function setSiteEnabled(id: number, enabled: boolean): Promise<Site
   )
   return res.data
 }
+
+/** 单域名证书状态(FR-308)。 */
+export interface DomainCertStatus {
+  domain: string
+  found: boolean
+  subject?: string
+  not_after?: string
+  not_before?: string
+}
+
+export interface SiteCertStatus {
+  site_id: number
+  name: string
+  domains: DomainCertStatus[]
+  any_found: boolean
+}
+
+/** 站点证书签发状态(只读;证书管理属 M2)。 */
+export async function getSiteCertificate(id: number): Promise<SiteCertStatus> {
+  const res = await apiClient.get<SiteCertStatus>(`/sites/${id}/certificate`)
+  return res.data
+}

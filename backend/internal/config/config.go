@@ -26,6 +26,7 @@ type Config struct {
 	LoginLockWindow time.Duration // 登录锁定时长
 	LogAccessPath   string        // 访问日志路径(tail 读取目标)
 	LogErrorPath    string        // 错误日志路径(tail 读取目标)
+	CertStoragePath string        // Caddy 证书存储根目录(只读;FR-308)
 }
 
 // Load 读取 PANEL_* 环境变量并填充默认值。
@@ -47,6 +48,7 @@ func Load() (*Config, error) {
 	v.SetDefault("login_lock_window", "1m")
 	v.SetDefault("log_access_path", "./data/access.log")
 	v.SetDefault("log_error_path", "./data/error.log")
+	v.SetDefault("cert_storage_path", "/data/caddy")
 
 	jwtTTL, err := time.ParseDuration(v.GetString("jwt_ttl"))
 	if err != nil {
@@ -75,6 +77,7 @@ func Load() (*Config, error) {
 		LoginLockWindow: lockWindow,
 		LogAccessPath:   v.GetString("log_access_path"),
 		LogErrorPath:    v.GetString("log_error_path"),
+		CertStoragePath: v.GetString("cert_storage_path"),
 	}, nil
 }
 

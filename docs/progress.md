@@ -5,15 +5,15 @@
 
 ## 1. 当前状态
 
-**阶段:M1 编码进行中 —— T8 漂移检测/Dashboard 已完成,最后一项 T9(Docker 镜像与 compose 打磨 + README)。**
-T9 注意事项:多阶段构建已存在且经多轮联调;剩 README(部署/开发指引)、CI 决策(待决事项)、全量回归(lint/build/go test/compose)与 M1 收尾核对(PRD ✅ 项对照)。
+**阶段:🎉 M1(MVP)已完成 —— T1–T9 全部 ✅,compose 一键可跑,PRD M1 需求实现并逐项联调验证。**
+下一步:M1 验收复核(见下);按待决事项约定,提醒用户评估 Oxlint(替代/混用 ESLint);CI 引入与否待定;M2 启动前复核 FR-701~706 优先级。
 
 ## 2. 里程碑
 
 | 里程碑 | 判定标准 | 状态 |
 | --- | --- | --- |
 | M0 设计与规划 | 文档体系定稿(调研/技术栈/架构/M1 设计/PRD/本文件) | ✅ |
-| M1 MVP 可用 | T1–T9 全部完成,PRD 中 ✅ 需求验收全过,Docker Compose 一键可跑 | ⬜ |
+| M1 MVP 可用 | T1–T9 全部完成,PRD 中 ✅ 需求验收全过,Docker Compose 一键可跑 | ✅ |
 | M2 进阶 | 见 PRD 第 5 节占位,启动前再细化 | ⬜ |
 | M3 平台化 | 同上 | ⬜ |
 
@@ -40,7 +40,7 @@ T9 注意事项:多阶段构建已存在且经多轮联调;剩 README(部署/开
 | T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ✅ | 2026-10-10 | 版本历史/详情/回滚(恢复站点快照+下发,生成新版本)/直编(校验+防护:缺全局 admin 指令直接拒绝)/当前配置双视图;系统设置白名单+值校验(env 默认兜底);前端 Monaco+Caddyfile 高亮+DiffEditor+暗色同步;联调:直编生效/非法 422/回滚恢复反代/设置读写 |
 | T7 | 日志 tail API + Logs 页 | FR-50x | ✅ | 2026-10-10 | 末尾读取(上限 1000 行/2MiB,半行丢弃);文件不存在 exists=false 明确提示;前端 usePolling(3s 可暂停)+ access/error 切换 + 行数选择 |
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ✅ | 2026-10-10 | drift 三方对比:DB rendered vs 磁盘(文本)+ 运行态 vs 磁盘(站点指纹语义比较,规避 Caddy JSON 往返噪声);/status 聚合(Caddy 存活/适配器版本/站点计数/最近 5 次下发);启动检查日志留痕;前端 Dashboard 卡片 + 告警;联调:一致态 true、直编不误报 |
-| T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ⬜ | | 多阶段构建 |
+| T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ✅ | 2026-10-10 | 多阶段镜像(bun→swag→CGO=0)+ 双容器 compose 多轮联调;README 重写(部署/配置/工程命令);FR-308 证书状态查看补齐(只读共享 caddy_data 卷);全量回归通过 |
 
 ## 4. 决策与变更日志
 
@@ -76,4 +76,4 @@ T9 注意事项:多阶段构建已存在且经多轮联调;剩 README(部署/开
 | --- | --- | --- |
 | M2 范围细化 | ✅ | 已细化为 FR-701~706,见 PRD 第 5 节;M1 验收后复核优先级 |
 | 是否上线 CI(GitHub Actions) | ⬜ | 建议 T9 完成后决定;最少做 lint + go test + build |
-| Oxlint 评估(替代/混用 ESLint) | ⬜ | **M1 MVP 完成后提醒用户评估**:Oxlint 速度优势明显,但 react-refresh/typescript-eslint 等插件能力需逐项比对;届时决定"替代 / 预检+深检混合 / 维持现状" |
+| Oxlint 评估(替代/混用 ESLint) | 🔵 | **M1 MVP 已完成 —— 待与用户一起评估**:Oxlint 速度优势明显,但 react-refresh/typescript-eslint 等插件能力需逐项比对;届时决定"替代 / 预检+深检混合 / 维持现状" |
