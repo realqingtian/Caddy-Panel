@@ -58,7 +58,8 @@
     "type": {
       "proxy": "反向代理",
       "static": "静态站点",
-      "redirect": "重定向"
+      "redirect": "重定向",
+      "l4": "l4 透传"
     },
     "field": {
       "name": "站点名称",
@@ -87,7 +88,10 @@
       "dnsProvider": "DNS challenge 供应商",
       "dnsProviderPlaceholder": "不使用(自动 HTTPS)",
       "dnsTokenEnv": "凭据环境变量名",
-      "node": "归属节点"
+      "node": "归属节点",
+      "l4Listen": "监听地址端口",
+      "l4Network": "网络类型",
+      "l4Upstreams": "上游地址端口"
     },
     "hint": {
       "domains": "多个域名用英文逗号分隔",
@@ -99,7 +103,10 @@
       "dnsProvider": "使用 DNS challenge 签发证书;需要带对应 caddy-dns 插件的 Caddy(compose 默认含 cloudflare)",
       "dnsTokenEnv": "凭据不落库:填环境变量名,Caddy 从自身环境读取,如 CF_API_TOKEN",
       "node": "站点归属节点在创建时确定,不可迁移(换节点=删除重建)",
-      "nodeLocked": "归属节点不可迁移"
+      "nodeLocked": "归属节点不可迁移",
+      "l4Listen": "如 0.0.0.0:3306 或 :5353;端口不可与 http/其他 l4 站点冲突",
+      "l4Network": "仅支持 TCP/UDP 透传,不做 TLS 终结",
+      "l4Upstreams": "逗号分隔 host:port,透传(不做 HTTP 层处理)"
     },
     "lbPolicy": {
       "roundRobin": "轮询(round_robin)",
@@ -115,7 +122,9 @@
       "redirectTo": "请输入重定向目标",
       "headerKey": "请输入响应头名称",
       "basicAuthUser": "请输入用户名",
-      "basicAuthPassword": "请输入密码(至少 4 位)"
+      "basicAuthPassword": "请输入密码(至少 4 位)",
+      "l4Listen": "l4 站点需要监听地址端口",
+      "l4Upstreams": "l4 站点需要至少一个上游"
     },
     "saved": "已保存并生效",
     "saveFailed": "保存失败",

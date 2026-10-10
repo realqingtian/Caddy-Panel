@@ -29,6 +29,10 @@ type SiteInput struct {
 	RootPath          string `json:"root_path"`
 	RedirectTo        string `json:"redirect_to"`
 	RedirectPermanent bool   `json:"redirect_permanent"`
+	// l4 专用(T3.4)
+	L4Listen    string `json:"l4_listen"`
+	L4Network   string `json:"l4_network"` // tcp | udp(空 = tcp)
+	L4Upstreams string `json:"l4_upstreams"`
 	HTTPSRedirect     bool   `json:"https_redirect"`
 	Enabled           bool   `json:"enabled"`
 
@@ -64,6 +68,11 @@ var (
 		model.SiteTypeProxy:    true,
 		model.SiteTypeStatic:   true,
 		model.SiteTypeRedirect: true,
+		model.SiteTypeL4:       true,
+	}
+	l4Networks = map[string]bool{
+		model.L4NetworkTCP: true,
+		model.L4NetworkUDP: true,
 	}
 	lbPolicies = map[string]bool{
 		model.LBPolicyRoundRobin: true,
@@ -98,6 +107,34 @@ func (in SiteInput) Validate() error {
 	}
 	if in.HeadersEnabled {
 		return validateCustomHeaders(in.CustomHeaders)
+	}
+	return in.validateL4()
+}
+
+// validateL4 T3.4:监听地址/网络类型/上游格式(TCP/UDP 透传,无其他指令面)。
+func (in SiteInput) validateL4() error {
+	if in.Type != model.SiteTypeL4 {
+		return nil
+	}
+	if !l4Networks[in.L4Network] && in.L4Network != "" {
+		return &InvalidInputError{Reason: fmt.Sprintf("l4 网络类型非法(可选 tcp/udp): %s", in.L4Network)}
+	}
+	listen := strings.TrimSpace(in.L4Listen)
+	_, port, err := net.SplitHostPort(listen)
+	if err != nil {
+		return &InvalidInputError{Reason: fmt.Sprintf("l4 监听地址格式非法(应为 [host:]port): %s", listen)}
+	}
+	if portNum, pErr := strconv.Atoi(port); pErr != nil || portNum < 1 || portNum > 65535 {
+		return &InvalidInputError{Reason: fmt.Sprintf("l4 监听端口非法: %s", port)}
+	}
+	upstreams := splitDomains(in.L4Upstreams)
+	if len(upstreams) == 0 {
+		return &InvalidInputError{Reason: "l4 透传至少需要一个上游地址"}
+	}
+	for _, u := range upstreams {
+		if err := validateUpstream(u); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -281,6 +318,9 @@ func (in SiteInput) toSite() *model.Site {
 		RootPath:            in.RootPath,
 		RedirectTo:          in.RedirectTo,
 		RedirectPermanent:   in.RedirectPermanent,
+		L4Listen:            strings.TrimSpace(in.L4Listen),
+		L4Network:           strings.TrimSpace(in.L4Network),
+		L4Upstreams:         in.L4Upstreams,
 		HTTPSRedirect:       in.HTTPSRedirect,
 		Enabled:             in.Enabled,
 		HealthCheckEnabled:  in.HealthCheckEnabled,

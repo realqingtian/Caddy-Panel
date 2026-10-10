@@ -1,4 +1,4 @@
-{{- template "global" .Global -}}
+{{- template "global" . -}}
 {{- range .Sites}}
 {{- if eq .Type "proxy"}}{{template "site_proxy" .}}
 {{- else if eq .Type "static"}}{{template "site_static" .}}

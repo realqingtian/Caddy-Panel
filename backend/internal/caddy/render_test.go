@@ -62,6 +62,20 @@ func renderFixture() RenderInput {
 				Enabled:           true,
 			},
 			{
+				Name: "mysql", Type: model.SiteTypeL4,
+				L4Listen:    "0.0.0.0:3306",
+				L4Network:   model.L4NetworkTCP,
+				L4Upstreams: "10.0.0.10:3306, 10.0.0.11:3306",
+				Enabled:     true, // l4 渲染进全局 layer4 块,不产生 http 站点块(T3.4)
+			},
+			{
+				Name: "dns", Type: model.SiteTypeL4,
+				L4Listen:    ":5353",
+				L4Network:   model.L4NetworkUDP,
+				L4Upstreams: "10.0.0.53:53",
+				Enabled:     true,
+			},
+			{
 				Name: "disabled", Type: model.SiteTypeStatic,
 				Domains: "off.example.com", RootPath: "/var/www/off",
 				Enabled: false, // 停用站点不得出现在产物中
@@ -123,5 +137,39 @@ func TestRender_OutputAdaptsOffline(t *testing.T) {
 	}
 	if _, err := NewValidator(nil).Validate(context.Background(), got); err != nil {
 		t.Fatalf("渲染产物未通过离线校验(模板或转换层有语法问题): %v\n产物:\n%s", err, got)
+	}
+}
+
+// TestRender_L4_MutualExclusion T3.4:l4 站点归全局 layer4 块,
+// 不产生 http 站点块;停用的 l4 站点不渲染。
+func TestRender_L4_MutualExclusion(t *testing.T) {
+	got, err := NewRenderer().Render(RenderInput{
+		Sites: []model.Site{
+			{Name: "mysql", Type: model.SiteTypeL4, L4Listen: "0.0.0.0:3306",
+				L4Network: model.L4NetworkTCP, L4Upstreams: "10.0.0.10:3306", Enabled: true},
+			{Name: "off", Type: model.SiteTypeL4, L4Listen: ":9999",
+				L4Network: model.L4NetworkUDP, L4Upstreams: "10.0.0.9:53", Enabled: false},
+			{Name: "web", Type: model.SiteTypeStatic, Domains: "web.example.com",
+				RootPath: "/srv", Enabled: true},
+		},
+		Global: GlobalOptions{AdminBind: "localhost:2019"},
+	})
+	if err != nil {
+		t.Fatalf("渲染失败: %v", err)
+	}
+	if !strings.Contains(got, "layer4 {") || !strings.Contains(got, "tcp/0.0.0.0:3306") {
+		t.Fatalf("l4 站点应渲染进全局 layer4 块: %s", got)
+	}
+	if !strings.Contains(got, "proxy 10.0.0.10:3306") {
+		t.Fatalf("透传上游应渲染为 proxy 指令: %s", got)
+	}
+	if strings.Contains(got, "9999") {
+		t.Fatalf("停用的 l4 站点不应渲染: %s", got)
+	}
+	if strings.Contains(got, "mysql {") || strings.Contains(got, "l4 {") {
+		t.Fatalf("l4 站点不应产生 http 站点块: %s", got)
+	}
+	if !strings.Contains(got, "web.example.com") {
+		t.Fatalf("http 站点应正常渲染: %s", got)
 	}
 }

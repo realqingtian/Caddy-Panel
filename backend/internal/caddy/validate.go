@@ -12,6 +12,11 @@ import (
 	// 离线适配需要 Caddy 标准模块的 init 注册(log writer file、respond 等),
 	// 与官方 caddy 二进制的模块面保持一致(见 tech-stack.md"离线校验优先"节)。
 	_ "github.com/caddyserver/caddy/v2/modules/standard"
+	// T3.4 l4 站点:注册 layer4 app、Caddyfile 指令与 l4proxy handler,
+	// 使渲染产物可离线校验(部署侧 Caddy 由 compose 镜像以 xcaddy 装入同一插件,
+	// 版本对齐约束同上)。
+	_ "github.com/mholt/caddy-l4/layer4"
+	_ "github.com/mholt/caddy-l4/modules/l4proxy"
 )
 
 // Validator Caddyfile 校验器接口:校验通过返回可下发的 JSON 配置(校验即适配)。

@@ -81,6 +81,7 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
         initialValues={{
           type: 'proxy',
           node_id: 'local',
+          l4_network: 'tcp',
           lb_policy: 'round_robin',
           https_redirect: true,
           enabled: true,
@@ -110,6 +111,7 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
               { value: 'proxy', label: t('sites.type.proxy') },
               { value: 'static', label: t('sites.type.static') },
               { value: 'redirect', label: t('sites.type.redirect') },
+              { value: 'l4', label: t('sites.type.l4') },
             ]}
           />
         </Form.Item>
@@ -188,6 +190,39 @@ export function SiteForm({ open, site, onClose, onSaved }: SiteFormProps) {
           >
             <Input placeholder="/var/www/html" />
           </Form.Item>
+        )}
+
+        {type === 'l4' && (
+          <>
+            <Form.Item
+              name="l4_listen"
+              label={t('sites.field.l4Listen')}
+              extra={t('sites.hint.l4Listen')}
+              rules={[{ required: true, message: t('sites.required.l4Listen') }]}
+            >
+              <Input placeholder="0.0.0.0:3306" />
+            </Form.Item>
+            <Form.Item
+              name="l4_network"
+              label={t('sites.field.l4Network')}
+              extra={t('sites.hint.l4Network')}
+            >
+              <Select
+                options={[
+                  { value: 'tcp', label: 'TCP' },
+                  { value: 'udp', label: 'UDP' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item
+              name="l4_upstreams"
+              label={t('sites.field.l4Upstreams')}
+              extra={t('sites.hint.l4Upstreams')}
+              rules={[{ required: true, message: t('sites.required.l4Upstreams') }]}
+            >
+              <Input.TextArea rows={2} placeholder="10.0.0.10:3306, 10.0.0.11:3306" />
+            </Form.Item>
+          </>
         )}
 
         {type === 'redirect' && (

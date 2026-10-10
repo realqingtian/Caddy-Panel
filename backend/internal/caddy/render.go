@@ -30,6 +30,13 @@ type RenderInput struct {
 	Global GlobalOptions
 }
 
+// L4Route l4 站点的模板数据:全局 layer4 块下的一个 server(m3-design T3.4)。
+type L4Route struct {
+	Network   string   // tcp | udp
+	Listen    string   // 监听地址端口,如 0.0.0.0:3306
+	Upstreams []string // 透传目标 host:port 列表
+}
+
 // tmplSite 模板数据:领域字段的"渲染就绪"形态。
 type tmplSite struct {
 	Type           string
@@ -69,10 +76,16 @@ func (templateRenderer) Render(input RenderInput) (string, error) {
 
 	data := struct {
 		Global GlobalOptions
+		L4     []L4Route
 		Sites  []tmplSite
 	}{Global: input.Global, Sites: []tmplSite{}}
 	for _, site := range input.Sites {
 		if !site.Enabled {
+			continue
+		}
+		// 与 http 渲染互斥:l4 站点归全局 layer4 块,不产生 http 站点块。
+		if site.Type == model.SiteTypeL4 {
+			data.L4 = append(data.L4, toL4Route(site))
 			continue
 		}
 		data.Sites = append(data.Sites, toTmplSite(site, input.Global))
@@ -97,6 +110,15 @@ func funcMap() template.FuncMap {
 			return "http://" + strings.Join(s.Domains, ", http://")
 		},
 	}
+}
+
+// toL4Route l4 站点 → layer4 块数据;network 空值归一 tcp。
+func toL4Route(site model.Site) L4Route {
+	network := site.L4Network
+	if network == "" {
+		network = model.L4NetworkTCP
+	}
+	return L4Route{Network: network, Listen: site.L4Listen, Upstreams: splitList(site.L4Upstreams)}
 }
 
 // toTmplSite 领域模型 → 模板数据;所有语法相关加工集中在这里。

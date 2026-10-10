@@ -68,8 +68,18 @@ nodes(T3.3)
 7. **站点 API 兼容**:sites/config_versions 响应增加 node_id 字段;未指定时默认 local(现有客户端无感)。
 8. **代码结构**:agent 为**独立 Go module**(`agent/go.mod`)—— agent 仅需 websocket/本机文件/Admin API 调用,不拖入 caddy 库与 gorm;渲染始终在中心完成,agent 只收 rendered 全文写盘 + 本机 /load。
 
+## 3.4 实现记录(T3.3/T3.4 落地取型,2026-10-11)
+
+- **协议形态**:WS 单帧统一信封 `Message{Type, ClientHello/ServerHello/Heartbeat/Command/Ack}`;凭证在 hello 帧内传递(不经 URL/header,避免落访问日志);agent 侧 `agent/agentproto` 为中心 `internal/agentproto` 的同步副本(独立 module 不能 import)。
+- **凭证前缀**:`cen_`(接入令牌)/ `cnd_`(节点密钥)与 API Token `cpt_` 并列;节点标识 `n_<16hex>`。
+- **agent in_sync 语义**:磁盘 Caddyfile vs 上次成功下发产物(字节比较,检测手改漂移);运行态深度对比仍由 local 漂移检测承担。
+- **agent Caddy 加载**:POST /load + `Content-Type: text/caddyfile`(Caddy 原生支持,agent 无需适配器);deploy 先 load 后写盘(load 失败 Caddy 保持旧配置不落盘)。
+- **域名唯一性**:按节点判定(不同节点可服务同一域名 —— 多节点的核心价值)。
+- **回滚**:节点级 ReplaceNodeSites(只替换该节点站点,快照行保留原 ID);备份/恢复保持全中心语义。
+- **l4 渲染**:全局块 `layer4 { <network>/<listen> { route { proxy <upstreams...> } } }`(caddy-l4 语法,离线校验注册 layer4+l4proxy 模块);l4 站点字段 = 监听地址端口/网络(tcp|udp)/上游列表。
+
 ## 4. 插件依赖
 
 | 功能 | 插件 | 镜像 |
 | --- | --- | --- |
-| T3.4 l4 | github.com/mholt/caddy-l4 | compose caddy Dockerfile 追加 --with(T3.4 落地时) |
+| T3.4 l4 | github.com/mholt/caddy-l4 | compose caddy Dockerfile 已追加 --with;面板离线校验同步注册(layer4+l4proxy) |

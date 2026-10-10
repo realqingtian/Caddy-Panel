@@ -4,7 +4,7 @@ import { apiClient } from './client'
 export interface Site {
   id: number
   name: string
-  type: 'proxy' | 'static' | 'redirect'
+  type: 'proxy' | 'static' | 'redirect' | 'l4'
   /** 归属节点(local = 面板本机);创建时确定,不支持迁移。 */
   node_id: string
   domains: string
@@ -16,6 +16,10 @@ export interface Site {
   root_path: string
   redirect_to: string
   redirect_permanent: boolean
+  /** l4 专用(T3.4:仅 TCP/UDP 透传) */
+  l4_listen: string
+  l4_network: string
+  l4_upstreams: string
   https_redirect: boolean
   enabled: boolean
   raw_extra: string
@@ -50,6 +54,10 @@ export interface SiteInput {
   root_path: string
   redirect_to: string
   redirect_permanent: boolean
+  /** l4 专用(T3.4:仅 TCP/UDP 透传) */
+  l4_listen: string
+  l4_network: string
+  l4_upstreams: string
   https_redirect: boolean
   enabled: boolean
   health_check_enabled: boolean

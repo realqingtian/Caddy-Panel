@@ -1,19 +1,30 @@
 {{define "global"}}{
-	admin {{.AdminBind}}
-{{- if .AcmeEmail}}
-	email {{.AcmeEmail}}
+	admin {{.Global.AdminBind}}
+{{- if .Global.AcmeEmail}}
+	email {{.Global.AcmeEmail}}
 {{- end}}
-{{- if .ErrorLogPath}}
+{{- if .Global.ErrorLogPath}}
 	log {
-		output file {{.ErrorLogPath}}
+		output file {{.Global.ErrorLogPath}}
 		level INFO
 	}
 {{- end}}
-{{- if .MetricsEnabled}}
+{{- if .Global.MetricsEnabled}}
 	metrics
 {{- end}}
-{{- if .GlobalExtra}}
-{{.GlobalExtra}}
+{{- if .L4}}
+	layer4 {
+{{- range .L4}}
+		{{.Network}}/{{.Listen}} {
+			route {
+				proxy {{join .Upstreams " "}}
+			}
+		}
+{{- end}}
+	}
+{{- end}}
+{{- if .Global.GlobalExtra}}
+{{.Global.GlobalExtra}}
 {{- end}}
 }
 {{end}}

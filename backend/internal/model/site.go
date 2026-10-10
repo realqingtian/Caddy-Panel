@@ -3,11 +3,19 @@ package model
 
 import "time"
 
-// 站点类型;渲染模板按类型选择(site_proxy/site_static/site_redirect)。
+// 站点类型;渲染模板按类型选择。l4 渲染进全局 layer4 块(caddy-l4 插件),
+// 与 http 站点渲染互斥(T3.4:仅 TCP/UDP 透传,不做 TLS 终结)。
 const (
 	SiteTypeProxy    = "proxy"
 	SiteTypeStatic   = "static"
 	SiteTypeRedirect = "redirect"
+	SiteTypeL4       = "l4"
+)
+
+// l4 网络类型(T3.4 范围:仅透传,不含 TLS 终结)。
+const (
+	L4NetworkTCP = "tcp"
+	L4NetworkUDP = "udp"
 )
 
 // 负载均衡策略(proxy 站点可选值)。
@@ -43,6 +51,11 @@ type Site struct {
 	// redirect 专用
 	RedirectTo        string `gorm:"size:512" json:"redirect_to"`
 	RedirectPermanent bool   `json:"redirect_permanent"` // true=301/308,false=302
+
+	// l4 专用(仅 TCP/UDP 透传;TLS 终结不在范围,FR:M3 T3.4)
+	L4Listen    string `gorm:"size:255" json:"l4_listen"`    // 监听地址端口,如 0.0.0.0:3306
+	L4Network   string `gorm:"size:8" json:"l4_network"`     // tcp | udp(空 = tcp)
+	L4Upstreams string `gorm:"size:1024" json:"l4_upstreams"` // 逗号分隔 "host:port, ..."
 
 	HTTPSRedirect bool   `json:"https_redirect"`             // http→https,默认 true
 	Enabled       bool   `json:"enabled"`                    // 停用站点不渲染

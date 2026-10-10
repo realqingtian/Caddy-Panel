@@ -5,8 +5,8 @@
 
 ## 1. 当前状态
 
-**阶段:🎉 M1(MVP)已完成 —— T1–T9 全部 ✅,compose 一键可跑,PRD M1 需求实现并逐项联调验证。**
-下一步:M1 验收复核(见下);按待决事项约定,提醒用户评估 Oxlint(替代/混用 ESLint);CI 引入与否待定;M2 启动前复核 FR-701~706 优先级。
+**阶段:🔵 M3(平台化)开发完成 —— T3.1–T3.4 全部 ✅,进入真实验收(compose + agent 全链路联调)。**
+M1/M2 已完成并通过验收;M3 剩余:真实验收(compose 双容器 + agent 注册/下发/心跳/l4 转发逐项联调)。
 
 ## 2. 里程碑
 
@@ -15,7 +15,7 @@
 | M0 设计与规划 | 文档体系定稿(调研/技术栈/架构/M1 设计/PRD/本文件) | ✅ |
 | M1 MVP 可用 | T1–T9 全部完成,PRD 中 ✅ 需求验收全过,Docker Compose 一键可跑 | ✅ |
 | M2 进阶 | T2.1–T2.6 完成,FR-701~706 验收通过 | ✅ |
-| M3 平台化 | T3.1–T3.4 完成,FR 验收通过 | ⬜ |
+| M3 平台化 | T3.1–T3.4 完成,FR 验收通过 | 🔵 真实验收中 |
 
 ## 3. 任务看板
 
@@ -49,7 +49,7 @@
 | T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ✅ | 2026-10-11 | api_tokens 表(仅 sha256,前缀展示,过期/last_used);Bearer cpt_* 与 JWT 双轨认证;scope 路由级校验(读=read,写=write);users.role 启用 viewer(JWT 空 role 兼容 admin);token 管理仅限 JWT+admin;Settings 页 token 管理卡片(明文一次性展示) |
 | T3.2 | Web 终端(xterm.js + WebSocket) | M3 | ✅ | 2026-10-11 | WS 端点(查询参数传 JWT —— 浏览器无法自定义 WS 头)+ creack/pty;二进制帧数据 + 文本帧 resize 控制;仅 JWT+admin;打开事件审计;前端 xterm 页(暗色同步/自适应尺寸/会话结束横幅);菜单 admin 显隐;登录响应带 role |
 | T3.3 | 多节点 Agent(反向连接) | M3 | ✅ | 2026-10-11 | agent/ 独立 module(反向 WS+心跳+本机执行);中心 Enrollment Token 接入(cen_ 一次性/24h/可撤销)→ 签发 cnd_ 节点密钥(仅存哈希);渲染按节点分组、pipeline 演进为 Applier 路由(local 直连/remote WS 指令,per-node 单写者锁);四表 node_id 回填 local;安装/卸载命令一键生成;心跳 30s/90s 离线扫描;指令 request_id+30s 超时不排队;协议版本握手;节点维度 Dashboard/metrics/审计;前端 Nodes 页+站点节点选择;agent 单测 + hub 真实 WS 回路测试 |
-| T3.4 | l4 转发(caddy-l4) | M3 | ⬜ | | 插件镜像追加;与 http 渲染互斥 |
+| T3.4 | l4 转发(caddy-l4) | M3 | ✅ | 2026-10-11 | 站点类型 l4(监听地址端口/网络 tcp|udp/上游列表)渲染进全局 layer4 块,与 http 站点渲染互斥;仅 TCP/UDP 透传不做 TLS 终结;离线校验注册 caddy-l4 模块(layer4+l4proxy)使产物可离线适配;compose 镜像 xcaddy 追加插件;表单/类型标签/i18n;golden 更新 + 互斥断言 + 全量测试绿 |
 
 ### M2 — 进阶(设计见 [m2-design.md](./m2-design.md))
 

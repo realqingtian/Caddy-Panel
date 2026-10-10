@@ -58,7 +58,8 @@
     "type": {
       "proxy": "Reverse Proxy",
       "static": "Static Site",
-      "redirect": "Redirect"
+      "redirect": "Redirect",
+      "l4": "L4 Passthrough"
     },
     "field": {
       "name": "Name",
@@ -87,7 +88,10 @@
       "dnsProvider": "DNS challenge provider",
       "dnsProviderPlaceholder": "Disabled (automatic HTTPS)",
       "dnsTokenEnv": "Credential env var name",
-      "node": "Node"
+      "node": "Node",
+      "l4Listen": "Listen Address",
+      "l4Network": "Network",
+      "l4Upstreams": "Upstream Addresses"
     },
     "hint": {
       "domains": "Separate multiple domains with commas",
@@ -99,7 +103,10 @@
       "dnsProvider": "Issue certificates via DNS challenge; requires the matching caddy-dns plugin (cloudflare included in compose build)",
       "dnsTokenEnv": "Credentials are never stored: enter the env var name, Caddy reads it from its own environment, e.g. CF_API_TOKEN",
       "node": "The owning node is fixed at creation and cannot be changed later (re-create to move)",
-      "nodeLocked": "The owning node cannot be changed"
+      "nodeLocked": "The owning node cannot be changed",
+      "l4Listen": "e.g. 0.0.0.0:3306 or :5353; must not clash with HTTP or other L4 sites",
+      "l4Network": "TCP/UDP passthrough only; TLS termination is not supported",
+      "l4Upstreams": "Comma-separated host:port list; raw passthrough (no HTTP processing)"
     },
     "lbPolicy": {
       "roundRobin": "Round robin",
@@ -115,7 +122,9 @@
       "redirectTo": "Please enter the redirect target",
       "headerKey": "Please enter the header name",
       "basicAuthUser": "Please enter the username",
-      "basicAuthPassword": "Please enter the password (min 4 chars)"
+      "basicAuthPassword": "Please enter the password (min 4 chars)",
+      "l4Listen": "Listen address is required for L4 sites",
+      "l4Upstreams": "At least one upstream is required for L4 sites"
     },
     "saved": "Saved and applied",
     "saveFailed": "Save failed",

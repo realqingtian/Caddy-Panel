@@ -5,6 +5,18 @@
 		level INFO
 	}
 	metrics
+	layer4 {
+		tcp/0.0.0.0:3306 {
+			route {
+				proxy 10.0.0.10:3306 10.0.0.11:3306
+			}
+		}
+		udp/:5353 {
+			route {
+				proxy 10.0.0.53:53
+			}
+		}
+	}
 	servers {
 		protocols h1 h2 h3
 	}
@@ -50,4 +62,3 @@ http://old.example.com {
 	}
 	redir "https://new.example.com" permanent
 }
-
