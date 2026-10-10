@@ -34,7 +34,7 @@ T3 注意事项:client 是唯一与 Admin API 通信的出口;HTTP client 必须
 | --- | --- | --- | --- | --- | --- |
 | T1 | 脚手架:前后端骨架可运行、compose 可起;接入 antd MCP/Skill(AGENTS.md) | FR-603/604 | ✅ | 2026-10-10 | 后端 /healthz+Swagger+SPA 托管+优雅停机;前端 i18n 中英、主题三态、AdminLayout+占位页;compose 双容器验证通过。版本:antd 6.6.5 / Vite 8 / TS 6 / ESLint 10 |
 | T2 | 登录/JWT + SQLite 迁移 + 审计/限速中间件 | FR-10x | ✅ | 2026-10-10 | GORM 5 表 AutoMigrate;首启 seed(PANEL_ADMIN_PASSWORD/随机);JWT+bcrypt;LoginGuard 来源锁定(settings 运行时可调);审计唯一写入方;后端错误消息 i18n(Accept-Language);前端接真实登录 |
-| T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ⬜ | | unix socket 支持 |
+| T3 | Caddy Admin client(/adapt /load /config /status) | FR-201 | ✅ | 2026-10-10 | http(s):// 与 unix:// 双协议;请求超时 10s、响应上限 32MiB;If-Match 并发防护;Caddy 错误原文以 HTTPError 透传;Ping 读 /config 判活 |
 | T4 | Caddyfile 渲染引擎 + 校验 + pipeline(单写者/原子落盘) | FR-304/405 | ⬜ | | 渲染单测 golden file |
 | T5 | 站点 CRUD API + 前端 Sites 页 | FR-30x | ⬜ | | |
 | T6 | 配置中心(版本/diff/回滚/直编/系统设置)+ ConfigEditor/Settings 页 | FR-40x、FR-601 | ⬜ | | Monaco + Caddyfile 高亮 |
