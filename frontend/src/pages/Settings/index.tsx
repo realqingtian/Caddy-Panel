@@ -400,8 +400,33 @@ function AdvancedPane({ savePending }: { savePending: boolean }) {
 function NotifyPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   const { message } = App.useApp()
+
+  const testWebhook = () => {
+    void apiClient
+      .post('/settings/webhook/test')
+      .then(() => message.success(t('settings.webhookTestOk')))
+      .catch((error) => message.error(apiErrorMessage(error, t('settings.webhookTestFailed'))))
+  }
+  const testSMTP = () => {
+    void apiClient
+      .post('/settings/smtp/test')
+      .then(() => message.success(t('settings.smtpTestOk')))
+      .catch((error) => message.error(apiErrorMessage(error, t('settings.smtpTestFailed'))))
+  }
+
+  const typeOptions = [
+    { value: 'auto', label: t('settings.webhookType.auto') },
+    { value: 'feishu', label: t('settings.webhookType.feishu') },
+    { value: 'dingtalk', label: t('settings.webhookType.dingtalk') },
+    { value: 'wecom', label: t('settings.webhookType.wecom') },
+    { value: 'slack', label: t('settings.webhookType.slack') },
+    { value: 'discord', label: t('settings.webhookType.discord') },
+    { value: 'json', label: t('settings.webhookType.json') },
+  ]
+
   return (
     <>
+      {/* 事件源配置:ACME 账号 + 到期 Webhook 地址 */}
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -413,28 +438,34 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="notify_webhook_type" label={t('settings.field.notifyWebhookType')}>
-            <Select
-              options={[
-                { value: 'auto', label: t('settings.webhookType.auto') },
-                { value: 'feishu', label: t('settings.webhookType.feishu') },
-                { value: 'dingtalk', label: t('settings.webhookType.dingtalk') },
-                { value: 'wecom', label: t('settings.webhookType.wecom') },
-                { value: 'slack', label: t('settings.webhookType.slack') },
-                { value: 'discord', label: t('settings.webhookType.discord') },
-                { value: 'json', label: t('settings.webhookType.json') },
-              ]}
-            />
+          <Form.Item
+            name="notify_webhook_url"
+            label={t('settings.field.notifyWebhook')}
+            extra={t('settings.hint.notifyWebhook')}
+          >
+            <Input placeholder="https://example.com/hook" />
           </Form.Item>
         </Col>
       </Row>
-      <Form.Item
-        name="notify_webhook_url"
-        label={t('settings.field.notifyWebhook')}
-        extra={t('settings.hint.notifyWebhook')}
-      >
-        <Input placeholder="https://example.com/hook" />
-      </Form.Item>
+
+      {/* Webhook 渠道:类型与测试按钮同区 */}
+      <Divider titlePlacement="start">{t('settings.webhookChannel')}</Divider>
+      <Row gutter={24} align="middle">
+        <Col span={12}>
+          <Form.Item
+            name="notify_webhook_type"
+            label={t('settings.field.notifyWebhookType')}
+            style={{ marginBottom: 8 }}
+          >
+            <Select options={typeOptions} />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Button onClick={testWebhook}>{t('settings.webhookTest')}</Button>
+        </Col>
+      </Row>
+
+      {/* SMTP 渠道:表单与测试按钮同区 */}
       <Divider titlePlacement="start">{t('settings.smtp.title')}</Divider>
       <Row gutter={24}>
         <Col span={12}>
@@ -476,31 +507,12 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <Space size={8} style={{ marginBottom: 24 }}>
-        <Button
-          onClick={() => {
-            void apiClient
-              .post('/settings/webhook/test')
-              .then(() => message.success(t('settings.webhookTestOk')))
-              .catch((error) =>
-                message.error(apiErrorMessage(error, t('settings.webhookTestFailed'))),
-              )
-          }}
-        >
-          {t('settings.webhookTest')}
-        </Button>
-        <Button
-          onClick={() => {
-            void apiClient
-              .post('/settings/smtp/test')
-              .then(() => message.success(t('settings.smtpTestOk')))
-              .catch((error) => message.error(apiErrorMessage(error, t('settings.smtpTestFailed'))))
-          }}
-        >
-          {t('settings.smtpTest')}
-        </Button>
-      </Space>
-      <SaveButton pending={savePending} />
+      <Button style={{ marginBottom: 24 }} onClick={testSMTP}>
+        {t('settings.smtpTest')}
+      </Button>
+      <div>
+        <SaveButton pending={savePending} />
+      </div>
     </>
   )
 }

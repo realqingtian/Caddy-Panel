@@ -327,7 +327,8 @@
       "slack": "Slack",
       "discord": "Discord",
       "json": "通用 JSON"
-    }
+    },
+    "webhookChannel": "Webhook 渠道"
   },
   "logs": {
     "title": "日志",

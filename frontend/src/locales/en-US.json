@@ -327,7 +327,8 @@
       "slack": "Slack",
       "discord": "Discord",
       "json": "Generic JSON"
-    }
+    },
+    "webhookChannel": "Webhook channel"
   },
   "logs": {
     "title": "Logs",
