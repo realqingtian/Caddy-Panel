@@ -22,6 +22,8 @@ import {
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import {
   apiErrorMessage,
   changePassword,
@@ -460,9 +462,9 @@ function SessionsSection() {
         {t('profile.sessions.revokeOthers')}
       </Button>
       <Table<SessionView>
+        pagination={tablePagination(t)}
         rowKey="sid"
         size="small"
-        pagination={false}
         loading={sessionsQuery.isLoading}
         dataSource={sessions.filter((s) => !s.revoked)}
         columns={[

@@ -17,6 +17,8 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import { useLocaleTag } from '@/hooks/useLocale'
 
 import { apiErrorMessage } from '@/api/auth'
@@ -186,17 +188,17 @@ export default function NodesPage() {
           columns={nodeColumns}
           dataSource={nodesQuery.data ?? []}
           loading={nodesQuery.isLoading}
-          pagination={false}
+          pagination={tablePagination(t)}
         />
       </Card>
 
       <Card title={t('nodes.enroll.tokens')} style={{ marginTop: 16 }}>
         <Table
           rowKey="id"
+          pagination={tablePagination(t)}
           columns={tokenColumns}
           dataSource={tokensQuery.data ?? []}
           loading={tokensQuery.isLoading}
-          pagination={false}
         />
       </Card>
 

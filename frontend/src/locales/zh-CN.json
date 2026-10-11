@@ -59,7 +59,8 @@
     "close": "关闭",
     "cancel": "取消",
     "localOnly": "仅本机(local 节点)",
-    "done": "完成"
+    "done": "完成",
+    "tableTotal": "共 {{total}} 条"
   },
   "sites": {
     "title": "站点管理",

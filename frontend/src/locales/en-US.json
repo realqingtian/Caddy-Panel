@@ -59,7 +59,8 @@
     "close": "Close",
     "cancel": "Cancel",
     "localOnly": "Local node only",
-    "done": "Done"
+    "done": "Done",
+    "tableTotal": "{{total}} items in total"
   },
   "sites": {
     "title": "Sites",

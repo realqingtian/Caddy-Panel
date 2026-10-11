@@ -24,6 +24,8 @@ import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd'
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import { useLocaleTag } from '@/hooks/useLocale'
 
 import { apiErrorMessage } from '@/api/auth'
@@ -497,10 +499,10 @@ function TokensPane({
         style={{ marginBottom: 12 }}
       />
       <Table<ApiToken>
+        pagination={tablePagination(t)}
         rowKey="id"
         size="small"
         dataSource={tokens}
-        pagination={false}
         columns={[
           { title: t('settings.tokens.column.name'), dataIndex: 'name' },
           { title: t('settings.tokens.column.prefix'), dataIndex: 'prefix' },

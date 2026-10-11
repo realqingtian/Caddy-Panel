@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, Space, Table, Typography, type TableProps } from 'antd'
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import { getUpstreams, type Upstream } from '@/api/upstreams'
 
 interface UpstreamsTableProps {
@@ -43,12 +45,12 @@ export function UpstreamsTable({
 
   const table = (
     <Table<Upstream>
+      pagination={tablePagination(t)}
       rowKey="dial"
       size="small"
       loading={upstreamsQuery.isLoading}
       dataSource={upstreamsQuery.data ?? []}
       columns={columns}
-      pagination={false}
       locale={{ emptyText: t('upstreams.empty') }}
     />
   )

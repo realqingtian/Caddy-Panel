@@ -19,6 +19,8 @@ import type { ColumnsType } from 'antd/es/table'
 
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import {
   createUser,
   deleteUser,
@@ -45,7 +47,10 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<UserView | null>(null)
   const [sessionsOf, setSessionsOf] = useState<UserView | null>(null)
 
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['users'] })
+  const refresh = useCallback(
+    () => void queryClient.invalidateQueries({ queryKey: ['users'] }),
+    [queryClient],
+  )
 
   const openCreate = () => {
     setEditing(null)
@@ -186,11 +191,11 @@ export default function UsersPage() {
         }
       >
         <Table<UserView>
+          pagination={tablePagination(t)}
           rowKey="id"
           columns={columns}
           dataSource={usersQuery.data ?? []}
           loading={usersQuery.isLoading}
-          pagination={false}
         />
       </Card>
 
@@ -393,8 +398,8 @@ function SessionsDrawer({
       {sessions && (
         <Table<SessionView>
           rowKey="sid"
+          pagination={tablePagination(t)}
           size="small"
-          pagination={false}
           dataSource={sessions}
           columns={[
             {

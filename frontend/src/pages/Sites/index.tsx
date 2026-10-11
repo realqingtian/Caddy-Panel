@@ -19,6 +19,8 @@ import {
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { tablePagination } from '@/lib/tablePagination'
+
 import { apiErrorMessage } from '@/api/auth'
 import {
   applyImport,
@@ -228,11 +230,11 @@ export default function SitesPage() {
       }
     >
       <Table<Site>
+        pagination={tablePagination(t)}
         rowKey="id"
         loading={sitesQuery.isLoading}
         dataSource={sitesQuery.data ?? []}
         columns={columns}
-        pagination={false}
       />
       <Modal
         open={certView !== null}

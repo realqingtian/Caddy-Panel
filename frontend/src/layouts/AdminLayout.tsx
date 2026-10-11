@@ -12,12 +12,15 @@ import {
   GlobalOutlined,
   LineChartOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   MoonOutlined,
   SettingOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { App, Dropdown, Layout, Menu, Modal, Space, Typography, theme } from 'antd'
+import type { ItemType } from 'antd/es/menu/interface'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -47,34 +50,41 @@ export function AdminLayout() {
   const clearSession = useAuthStore((s) => s.clear)
 
   // 菜单按权限点显隐(§3.4);后端仍按权限点强制校验。
-  const menuItems = [
+  // 菜单按功能域分组排序(I5):总览 → 业务 → 观测 → 基础设施/高级 → 系统管理,
+  // 分组之间用分隔线,便于扫读;各分组内受权限点过滤。
+  const menuItems: ItemType[] = [
     { key: '/', icon: <DashboardOutlined />, label: t('menu.dashboard') },
     { key: '/sites', icon: <GlobalOutlined />, label: t('menu.sites') },
     { key: '/upstreams', icon: <ApiOutlined />, label: t('menu.upstreams') },
-    { key: '/nodes', icon: <ClusterOutlined />, label: t('menu.nodes') },
-    ...(can('config:read')
-      ? [{ key: '/config', icon: <ControlOutlined />, label: t('menu.config') }]
+    { type: 'divider' },
+    ...(can('metrics:read')
+      ? [{ key: '/metrics', icon: <LineChartOutlined />, label: t('menu.metrics') }]
       : []),
     ...(can('logs:read')
       ? [{ key: '/logs', icon: <FileTextOutlined />, label: t('menu.logs') }]
       : []),
-    ...(can('metrics:read')
-      ? [{ key: '/metrics', icon: <LineChartOutlined />, label: t('menu.metrics') }]
+    { type: 'divider' },
+    { key: '/nodes', icon: <ClusterOutlined />, label: t('menu.nodes') },
+    ...(can('config:read')
+      ? [{ key: '/config', icon: <ControlOutlined />, label: t('menu.config') }]
       : []),
     ...(can('terminal:use')
       ? [{ key: '/terminal', icon: <CodeOutlined />, label: t('menu.terminal') }]
       : []),
-    ...(can('settings:read')
-      ? [{ key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') }]
-      : []),
+    { type: 'divider' },
     ...(can('users:manage')
       ? [{ key: '/users', icon: <UserOutlined />, label: t('menu.users') }]
       : []),
+    ...(can('settings:read')
+      ? [{ key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') }]
+      : []),
   ]
   // /profile 不在侧栏菜单中,单独回退标题(I4-D4)
+  const matched = menuItems.find(
+    (item) => !!item && 'key' in item && item.key === location.pathname,
+  ) as { label: string } | undefined
   const pageTitle =
-    menuItems.find((item) => item.key === location.pathname)?.label ??
-    (location.pathname === '/profile' ? t('profile.title') : undefined)
+    matched?.label ?? (location.pathname === '/profile' ? t('profile.title') : undefined)
 
   // Gravatar 镜像:登录后拉取一次设置(设置页修改后刷新页面生效)。
   useEffect(() => {
@@ -96,6 +106,15 @@ export function AdminLayout() {
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
+        trigger={
+          <div
+            style={{ textAlign: 'center', cursor: 'pointer', padding: '12px 0', fontSize: 14 }}
+            role="button"
+            aria-label={collapsed ? 'expand menu' : 'collapse menu'}
+          >
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </div>
+        }
         style={
           {
             // 背景与内容区同源(token),交由亮/暗 algorithm 自适应,避免 dark 主题深藏青与中性灰内容区打架
@@ -286,15 +305,14 @@ function HeaderActions() {
         placement="bottomRight"
         trigger={['click']}
       >
-        {/* 官方模式:无边框圆形头像直接作触发器,hover 淡出背景,不再用大按钮包裹(I5 反馈) */}
+        {/* 头像+昵称横排触发器:无边框、hover 淡背景,点击展开聚合菜单(参考 ProLayout/GitHub 惯例) */}
         <span
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
+            gap: 8,
+            padding: '4px 12px 4px 4px',
+            borderRadius: 20,
             cursor: 'pointer',
             transition: 'background 0.2s',
           }}
@@ -306,8 +324,9 @@ function HeaderActions() {
             nickname={nickname ?? undefined}
             email={email ?? undefined}
             avatarURL={avatarURL ?? undefined}
-            size={32}
+            size={30}
           />
+          <span style={{ fontSize: 14 }}>{nickname || username || t('layout.user')}</span>
         </span>
       </Dropdown>
     </div>
