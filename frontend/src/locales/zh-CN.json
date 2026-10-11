@@ -33,7 +33,16 @@
     "passwordRequired": "请输入密码",
     "submit": "登录",
     "failed": "登录失败,请稍后再试",
-    "firstRunHint": "首次启动:管理员账号 admin,随机密码见面板启动日志"
+    "firstRunHint": "首次启动:管理员账号 admin,随机密码见面板启动日志",
+    "welcome": "欢迎回来",
+    "welcomeHint": "登录以管理站点、证书与配置",
+    "brandTagline": "站点、证书与配置变更,全部可视化完成,无需手写 Caddyfile。",
+    "pointSitesTitle": "站点可视化管理",
+    "pointSitesDesc": "反向代理、静态站点、重定向与 l4 透传",
+    "pointCertTitle": "自动 HTTPS 与证书管理",
+    "pointCertDesc": "ACME 自动签发,支持手动上传与到期提醒",
+    "pointRollbackTitle": "配置变更可回滚",
+    "pointRollbackDesc": "每次下发自动留存版本,Diff 对比、一键回退"
   },
   "common": {
     "save": "保存",
@@ -43,6 +52,7 @@
     "reset": "还原",
     "loading": "加载中…",
     "close": "关闭",
+    "cancel": "取消",
     "localOnly": "仅本机(local 节点)",
     "done": "完成"
   },
@@ -258,6 +268,7 @@
       "title": "API Token(开放接口)",
       "namePlaceholder": "Token 名称",
       "create": "签发",
+      "createFailed": "签发 Token 失败",
       "hint": "Bearer 方式调用 /api/v1 接口;仅存哈希,明文仅签发时显示一次;write 可执行全部操作,read 仅只读;Token 不能管理 Token",
       "column": {
         "name": "名称",
@@ -336,6 +347,7 @@
   "nodes": {
     "title": "远程节点",
     "enroll": {
+      "action": "接入节点",
       "tokens": "接入令牌",
       "nodeName": "节点名",
       "nodeNameHint": "安装命令按此名注册,注册后不可更改",

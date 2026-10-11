@@ -33,7 +33,16 @@
     "passwordRequired": "Please enter your password",
     "submit": "Sign in",
     "failed": "Sign-in failed, please try again later",
-    "firstRunHint": "First run: admin account, random password is printed in the panel startup log"
+    "firstRunHint": "First run: admin account, random password is printed in the panel startup log",
+    "welcome": "Welcome back",
+    "welcomeHint": "Sign in to manage sites, certificates and config",
+    "brandTagline": "Sites, certificates and config changes — all visual, no Caddyfile editing required.",
+    "pointSitesTitle": "Visual site management",
+    "pointSitesDesc": "Reverse proxy, static sites, redirects and L4 passthrough",
+    "pointCertTitle": "Automatic HTTPS & certificates",
+    "pointCertDesc": "ACME auto-issuance, manual upload and expiry alerts",
+    "pointRollbackTitle": "Every change is rollback-able",
+    "pointRollbackDesc": "Each deploy snapshots a version — diff and roll back in one click"
   },
   "common": {
     "save": "Save",
@@ -43,6 +52,7 @@
     "reset": "Reset",
     "loading": "Loading…",
     "close": "Close",
+    "cancel": "Cancel",
     "localOnly": "Local node only",
     "done": "Done"
   },
@@ -258,6 +268,7 @@
       "title": "API Tokens (open API)",
       "namePlaceholder": "Token name",
       "create": "Issue",
+      "createFailed": "Failed to issue token",
       "hint": "Call /api/v1 with Bearer auth; only hashes are stored, the plaintext is shown once at issuance; write performs everything, read is read-only; tokens cannot manage tokens",
       "column": {
         "name": "Name",
@@ -336,6 +347,7 @@
   "nodes": {
     "title": "Remote Nodes",
     "enroll": {
+      "action": "Enroll Node",
       "tokens": "Enrollment Tokens",
       "nodeName": "Node Name",
       "nodeNameHint": "The node registers under this name; immutable after enrollment",

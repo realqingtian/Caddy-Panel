@@ -173,7 +173,7 @@ export default function NodesPage() {
                 setEnrollOpen(true)
               }}
             >
-              {t('nodes.enroll')}
+              {t('nodes.enroll.action')}
             </Button>
           </Space>
         }
@@ -255,7 +255,7 @@ function EnrollModal({
 
   return (
     <Modal
-      title={t('nodes.enroll')}
+      title={t('nodes.enroll.action')}
       open={open}
       onCancel={onClose}
       footer={
