@@ -355,7 +355,11 @@
     "emptyHint": "在设置页开启 metrics 端点后,面板每 15 秒抓取一次 Caddy 指标,数据保留 24 小时;若刚开启,需对任意站点重新保存(或回滚/直编一次)触发重新下发,metrics 才会写入 Caddy 全局块。",
     "noSeries": "当前指标在所选窗口内无数据",
     "counterHint": "counter 类型指标为累计值;开启抓取约 15 分钟后曲线可见",
-    "loadFailed": "加载失败"
+    "loadFailed": "加载失败",
+    "group": {
+      "common": "常用指标",
+      "others": "其他指标(高级)"
+    }
   },
   "terminal": {
     "title": "Web 终端",

@@ -24,7 +24,7 @@ const palette = ['#1677ff', '#52c41a', '#faad14', '#eb2f96', '#722ed1', '#13c2c2
 
 /** 监控页:抓取样本折线图 + Prometheus 配置生成(FR-702)。 */
 export default function MetricsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { message, modal } = App.useApp()
   const [window, setWindow] = useState('1h')
   const [metric, setMetric] = useState('caddy_http_requests_total')
@@ -47,6 +47,44 @@ export default function MetricsPage() {
     const names = new Set((summaryQuery.data?.series ?? []).map((s) => s.name))
     return [...names].sort()
   }, [summaryQuery.data])
+
+  // 指标下拉用户友好化(I5 反馈):普通用户看不懂 caddy_http_* 原始名。
+  // 常用指标给中文名+原始名小字,分组"常用指标";其余收进"其他指标(高级)"。
+  const isZh = i18n.language?.startsWith('zh')
+  const FRIENDLY: Record<string, [string, string]> = {
+    caddy_http_requests_total: ['请求总数', 'Total requests'],
+    caddy_http_requests_in_flight: ['正在处理中的请求', 'Requests in flight'],
+    caddy_http_request_duration_seconds_sum: ['请求耗时合计', 'Request duration (sum)'],
+    caddy_http_request_duration_seconds_count: ['请求次数', 'Request count'],
+    caddy_http_response_duration_seconds_sum: ['响应耗时合计', 'Response duration (sum)'],
+    caddy_http_response_size_bytes_sum: ['响应大小合计', 'Response size (sum)'],
+    caddy_http_request_size_bytes_sum: ['请求大小合计', 'Request size (sum)'],
+  }
+  const metricOptions = useMemo(() => {
+    const known = metricNames.filter((n) => FRIENDLY[n])
+    const others = metricNames.filter((n) => !FRIENDLY[n])
+    const mk = (name: string) => {
+      const f = FRIENDLY[name]
+      return {
+        value: name,
+        searchText: (name + ' ' + (f ? f[isZh ? 0 : 1] : '')).toLowerCase(),
+        label: (
+          <div>
+            <div>{f ? f[isZh ? 0 : 1] : name}</div>
+            {f && (
+              <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                {name}
+              </Typography.Text>
+            )}
+          </div>
+        ),
+      }
+    }
+    const groups = []
+    if (known.length) groups.push({ label: t('metrics.group.common'), options: known.map(mk) })
+    if (others.length) groups.push({ label: t('metrics.group.others'), options: others.map(mk) })
+    return groups
+  }, [metricNames, isZh, t])
 
   const series = useMemo(
     () => (summaryQuery.data?.series ?? []).filter((s) => s.name === metric),
@@ -108,9 +146,10 @@ export default function MetricsPage() {
             <Select
               value={metric}
               onChange={setMetric}
-              style={{ minWidth: 280 }}
-              options={metricNames.map((name) => ({ value: name, label: name }))}
+              style={{ minWidth: 300 }}
+              options={metricOptions}
               showSearch
+              optionFilterProp="searchText"
             />
             <Button onClick={() => void showPromConfig()}>{t('metrics.promConfig')}</Button>
           </Space>
