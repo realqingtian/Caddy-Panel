@@ -79,7 +79,8 @@ services:
       PANEL_LOG_ACCESS_PATH: "/data/logs/access.log"
       PANEL_LOG_ERROR_PATH: "/data/logs/error.log"
     ports:
-      - "8080:8080"
+      # 只监听本机回环:外部访问一律走 Caddy 反代,8080 不应出现在任何外部接口(纵深防御)
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./data/panel:/data
       - ./data/logs:/data/logs
