@@ -299,7 +299,10 @@
       "deleteConfirm": "Delete this token? Clients using it stop working immediately",
       "plainTitle": "Token issued",
       "plainWarning": "Copy it now — the plaintext is shown only once; if lost, delete and reissue"
-    }
+    },
+    "smtpTest": "Send test email",
+    "smtpTestOk": "Test email sent, please check the inbox",
+    "smtpTestFailed": "Failed to send test email"
   },
   "logs": {
     "title": "Logs",

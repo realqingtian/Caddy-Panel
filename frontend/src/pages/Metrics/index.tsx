@@ -68,16 +68,8 @@ export default function MetricsPage() {
       return {
         value: name,
         searchText: (name + ' ' + (f ? f[isZh ? 0 : 1] : '')).toLowerCase(),
-        label: (
-          <div>
-            <div>{f ? f[isZh ? 0 : 1] : name}</div>
-            {f && (
-              <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                {name}
-              </Typography.Text>
-            )}
-          </div>
-        ),
+        // label 单行:选中框保持与工具栏同高;双行细节只在 optionRender(下拉列表)里展示
+        label: f ? f[isZh ? 0 : 1] : name,
       }
     }
     const groups = []
@@ -146,10 +138,23 @@ export default function MetricsPage() {
             <Select
               value={metric}
               onChange={setMetric}
-              style={{ minWidth: 300 }}
+              style={{ minWidth: 220 }}
               options={metricOptions}
               showSearch
               optionFilterProp="searchText"
+              optionRender={(option) => {
+                const f = FRIENDLY[String(option.value)]
+                return f ? (
+                  <div>
+                    <div>{f[isZh ? 0 : 1]}</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                      {String(option.value)}
+                    </Typography.Text>
+                  </div>
+                ) : (
+                  String(option.value)
+                )
+              }}
             />
             <Button onClick={() => void showPromConfig()}>{t('metrics.promConfig')}</Button>
           </Space>

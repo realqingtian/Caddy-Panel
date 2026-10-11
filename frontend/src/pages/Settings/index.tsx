@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
-  AutoComplete,
   App,
+  AutoComplete,
   Button,
   Card,
   Col,
@@ -24,11 +24,13 @@ import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '@/api/auth'
+import { apiClient } from '@/api/client'
+
 import { tablePagination } from '@/lib/tablePagination'
 
 import { useLocaleTag } from '@/hooks/useLocale'
 
-import { apiErrorMessage } from '@/api/auth'
 import { getSettings, updateSettings, type Settings } from '@/api/config'
 import { exportBackup, restoreBackup } from '@/api/backup'
 import { listTokens, createToken, deleteToken, type ApiToken } from '@/api/tokens'
@@ -361,6 +363,7 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
 /** 证书与通知:ACME 邮箱 / 到期 Webhook / SMTP 渠道(M2 起后端支持但 UI 首次补齐,见 iterations I3-4)。 */
 function NotifyPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
+  const { message } = App.useApp()
   return (
     <>
       <Row gutter={24}>
@@ -424,6 +427,17 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
+      <Button
+        style={{ marginBottom: 16 }}
+        onClick={() => {
+          void apiClient
+            .post('/settings/smtp/test')
+            .then(() => message.success(t('settings.smtpTestOk')))
+            .catch((error) => message.error(apiErrorMessage(error, t('settings.smtpTestFailed'))))
+        }}
+      >
+        {t('settings.smtpTest')}
+      </Button>
       <SaveButton pending={savePending} />
     </>
   )

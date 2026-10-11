@@ -221,9 +221,12 @@ func New(deps Deps) *gin.Engine {
 		model.SettingKeyGlobalExtra:       "",
 		model.SettingKeyGravatarMirrorURL: "", // 头像镜像(FR-901),默认官方源
 	})
+	notifyHandler := handler.NewNotify(service.NewSMTPMailer(deps.Store))
+
 	settingsHandler := handler.NewSettings(settingSvc)
 	pcFree.GET("/settings", settingsHandler.Get()) // 强制改密弹窗页面渲染依赖(§5 白名单)
 	enforced.PUT("/settings", reqPerm(model.PermSettingsWrite), settingsHandler.Update())
+	writePerm(model.PermSettingsWrite).POST("/settings/smtp/test", notifyHandler.SMTPTest())
 
 	// ── 备份与恢复(FR-706):导出/恢复独立权限点 ────────────────────────────
 	backupHandler := handler.NewBackup(service.NewBackup(deps.Store, settingSvc))

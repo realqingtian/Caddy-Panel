@@ -21,5 +21,6 @@
   "error.user_not_found": "用户不存在或已被删除",
   "error.username_conflict": "用户名已存在",
   "error.twofa_required": "需要两步验证码完成登录",
-  "error.log_read_failed": "读取日志文件失败,请检查文件权限(容器部署需 caddy 与 panel 共享日志卷且 panel 用户可读)"
+  "error.log_read_failed": "读取日志文件失败,请检查文件权限(容器部署需 caddy 与 panel 共享日志卷且 panel 用户可读)",
+  "error.smtp_test_failed": "测试邮件发送失败,请检查 SMTP 服务器/端口/授权码与网络"
 }

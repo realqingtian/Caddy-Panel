@@ -183,6 +183,7 @@ export function AdminLayout() {
 function HeaderActions() {
   const { t } = useTranslation()
   const { message } = App.useApp()
+  const { token } = theme.useToken()
   const navigate = useNavigate()
 
   const mode = useThemeStore((state) => state.mode)
@@ -311,12 +312,12 @@ function HeaderActions() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            padding: '4px 12px 4px 4px',
-            borderRadius: 20,
+            padding: '4px 10px',
+            borderRadius: token.borderRadius,
             cursor: 'pointer',
             transition: 'background 0.2s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(128,128,128,0.18)')}
+          onMouseEnter={(e) => (e.currentTarget.style.background = token.colorBgTextHover)}
           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
           <UserAvatar

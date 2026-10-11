@@ -299,7 +299,10 @@
       "deleteConfirm": "确认删除该 Token?使用它的客户端将立即失效",
       "plainTitle": "Token 已签发",
       "plainWarning": "请立即复制保存 —— 明文仅此一次显示,丢失只能删除重建"
-    }
+    },
+    "smtpTest": "发送测试邮件",
+    "smtpTestOk": "测试邮件已发送,请查收",
+    "smtpTestFailed": "测试邮件发送失败"
   },
   "logs": {
     "title": "日志",
