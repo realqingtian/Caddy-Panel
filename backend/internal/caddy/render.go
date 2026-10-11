@@ -28,6 +28,9 @@ type GlobalOptions struct {
 type RenderInput struct {
 	Sites  []model.Site
 	Global GlobalOptions
+	// TailBlocks 附加片段(logux-design §7):自包含合法块,原样追加到产物尾部
+	// (内容与顺序由 service 层加载传入,渲染器不读业务表)。
+	TailBlocks []string
 }
 
 // L4Route l4 站点的模板数据:全局 layer4 块下的一个 server(m3-design T3.4)。
@@ -94,6 +97,14 @@ func (templateRenderer) Render(input RenderInput) (string, error) {
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, "Caddyfile.tmpl", data); err != nil {
 		return "", fmt.Errorf("渲染 Caddyfile: %w", err)
+	}
+	for _, block := range input.TailBlocks {
+		trimmed := strings.TrimSpace(block)
+		if trimmed == "" {
+			continue
+		}
+		buf.WriteString("\n\n")
+		buf.WriteString(trimmed)
 	}
 	return buf.String(), nil
 }

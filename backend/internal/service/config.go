@@ -23,6 +23,8 @@ type ConfigRepo interface {
 	ListSites(ctx context.Context) ([]model.Site, error)
 	ReplaceNodeSites(ctx context.Context, nodeID string, sites []model.Site) error
 	CreateConfigVersion(ctx context.Context, version *model.ConfigVersion) error
+	UpdateConfigVersion(ctx context.Context, version *model.ConfigVersion) error // 版本备注(logux-design §8)
+	ReplaceAllSnippets(ctx context.Context, snippets []model.Snippet) error      // 回滚恢复片段表(logux-design §7)
 }
 
 // ConfigDeps config service 依赖。
@@ -30,6 +32,7 @@ type ConfigDeps struct {
 	Repo            ConfigRepo
 	Pipeline        *caddy.Pipeline
 	CaddyfilePathFn func() string // 与 pipeline 相同的路径解析(设置页优先)
+	Snippets        SnippetSnapshotLister // 版本快照片段表(可为 nil:单测便利)
 }
 
 // Config 配置中心业务。
@@ -37,11 +40,12 @@ type Config struct {
 	repo            ConfigRepo
 	pipeline        *caddy.Pipeline
 	caddyfilePathFn func() string
+	snippets        SnippetSnapshotLister
 }
 
 // NewConfig 构造配置中心服务。
 func NewConfig(d ConfigDeps) *Config {
-	return &Config{repo: d.Repo, pipeline: d.Pipeline, caddyfilePathFn: d.CaddyfilePathFn}
+	return &Config{repo: d.Repo, pipeline: d.Pipeline, caddyfilePathFn: d.CaddyfilePathFn, snippets: d.Snippets}
 }
 
 // ErrVersionNotFound / ErrVersionNotApplicable 回滚目标不可用。
@@ -97,6 +101,9 @@ func (s *Config) Rollback(ctx context.Context, id uint) (*model.ConfigVersion, e
 		return nil, &DeployError{Err: err}
 	}
 	if err := s.repo.ReplaceNodeSites(ctx, nodeID, snapshotSites); err != nil {
+		return nil, err
+	}
+	if err := s.restoreSnippets(ctx, version); err != nil {
 		return nil, err
 	}
 	applied := &model.ConfigVersion{
@@ -164,6 +171,34 @@ func (s *Config) CurrentJSON(ctx context.Context) (json.RawMessage, error) {
 	return s.pipeline.CurrentConfig(ctx, model.NodeIDLocal)
 }
 
+// restoreSnippets 回滚恢复片段表(logux-design §7):全量还原该版本快照的片段集
+// ("恢复当时状态"——快照后新建/修改的片段被覆盖,回滚确认弹窗已警告)。
+// 存量版本(片段快照为空)跳过恢复,保持现网片段不动。
+func (s *Config) restoreSnippets(ctx context.Context, version *model.ConfigVersion) error {
+	raw := strings.TrimSpace(version.SnippetsSnapshot)
+	if raw == "" || raw == "[]" {
+		return nil
+	}
+	var snippets []model.Snippet
+	if err := json.Unmarshal([]byte(raw), &snippets); err != nil {
+		return fmt.Errorf("解析版本 %d 片段快照: %w", version.ID, err)
+	}
+	return s.repo.ReplaceAllSnippets(ctx, snippets)
+}
+
+// UpdateVersionNotes 编辑版本备注(logux-design §8);空值清空备注。
+func (s *Config) UpdateVersionNotes(ctx context.Context, id uint, notes string) (*model.ConfigVersion, error) {
+	version, err := s.GetVersion(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	version.Notes = strings.TrimSpace(notes)
+	if err := s.repo.UpdateConfigVersion(ctx, version); err != nil {
+		return nil, err
+	}
+	return version, nil
+}
+
 // recordVersion 失败痕写入;与 site service 同语义,快照失败仅日志。
 func (s *Config) recordVersion(ctx context.Context, nodeID string, sites []model.Site, rendered string, applied bool, errMsg string) {
 	snapshot := mustJSON(sites)
@@ -174,6 +209,7 @@ func (s *Config) recordVersion(ctx context.Context, nodeID string, sites []model
 	version := &model.ConfigVersion{
 		NodeID:            nodeID,
 		SitesSnapshot:     string(snapshot),
+		SnippetsSnapshot:  snippetsSnapshotJSON(ctx, s.snippets),
 		RenderedCaddyfile: rendered,
 		Status:            status,
 		ErrorMsg:          errMsg,

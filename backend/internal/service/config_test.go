@@ -77,6 +77,75 @@ func (f *fakeSiteRepo) replaceNodeSitesImpl(sites []model.Site) error {
 	return nil
 }
 
+// ListAllSnippets 全量片段(内存版,备份导出/片段快照用)。
+func (f *fakeSiteRepo) ListAllSnippets(context.Context) ([]model.Snippet, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]model.Snippet, len(f.snippets))
+	copy(out, f.snippets)
+	return out, nil
+}
+
+// ListEnabledSnippets 启用片段(内存版,local 渲染输入用)。
+func (f *fakeSiteRepo) ListEnabledSnippets(context.Context) ([]model.Snippet, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]model.Snippet, 0, len(f.snippets))
+	for _, sn := range f.snippets {
+		if sn.Enabled {
+			out = append(out, sn)
+		}
+	}
+	return out, nil
+}
+
+// UpsertSnippetsFromBackup 片段备份导入:同名覆盖、现网独有保留(内存版)。
+func (f *fakeSiteRepo) UpsertSnippetsFromBackup(_ context.Context, snippets []model.Snippet) (imported, updated int, err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, in := range snippets {
+		replaced := false
+		for i := range f.snippets {
+			if f.snippets[i].Name == in.Name {
+				f.snippets[i].Content = in.Content
+				f.snippets[i].Enabled = in.Enabled
+				replaced = true
+				break
+			}
+		}
+		if replaced {
+			updated++
+			continue
+		}
+		cp := in
+		f.snippets = append(f.snippets, cp)
+		imported++
+	}
+	return imported, updated, nil
+}
+
+// UpdateConfigVersion 保存版本记录(备注编辑;内存覆盖)。
+func (f *fakeSiteRepo) UpdateConfigVersion(_ context.Context, version *model.ConfigVersion) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i := range f.versions {
+		if f.versions[i].ID == version.ID {
+			f.versions[i] = *version
+			return nil
+		}
+	}
+	return store.ErrNotFound
+}
+
+// ReplaceAllSnippets 全量替换片段表(回滚恢复;内存版)。
+func (f *fakeSiteRepo) ReplaceAllSnippets(_ context.Context, snippets []model.Snippet) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.snippets = make([]model.Snippet, len(snippets))
+	copy(f.snippets, snippets)
+	return nil
+}
+
 // recordVersionForTest 直接写入一条版本(绕过 service,构造历史数据)。
 func (f *fakeSiteRepo) recordVersionForTest(rendered string, status string, snapshot string) uint {
 	f.mu.Lock()

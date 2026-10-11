@@ -36,6 +36,29 @@ func (s *Store) GetConfigVersion(ctx context.Context, id uint) (*model.ConfigVer
 	return &version, nil
 }
 
+// UpdateConfigVersion 保存版本记录(备注编辑等全量更新)。
+func (s *Store) UpdateConfigVersion(ctx context.Context, version *model.ConfigVersion) error {
+	if err := s.db.WithContext(ctx).Save(version).Error; err != nil {
+		return fmt.Errorf("更新版本 %d: %w", version.ID, err)
+	}
+	return nil
+}
+
+// ReplaceAllSnippets 事务内全量替换片段表(版本回滚恢复片段快照用,logux-design §7)。
+func (s *Store) ReplaceAllSnippets(ctx context.Context, snippets []model.Snippet) error {
+	return s.Transaction(ctx, func(tx *gorm.DB) error {
+		if err := tx.Where("1 = 1").Delete(&model.Snippet{}).Error; err != nil {
+			return fmt.Errorf("清空片段表: %w", err)
+		}
+		for i := range snippets {
+			if err := tx.Create(&snippets[i]).Error; err != nil {
+				return fmt.Errorf("恢复片段 %s: %w", snippets[i].Name, err)
+			}
+		}
+		return nil
+	})
+}
+
 // ReplaceAllSites 事务内全量替换站点表(备份恢复用;多节点下为全中心语义)。
 func (s *Store) ReplaceAllSites(ctx context.Context, sites []model.Site) error {
 	return s.Transaction(ctx, func(tx *gorm.DB) error {

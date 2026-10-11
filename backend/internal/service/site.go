@@ -70,6 +70,7 @@ type SiteDeps struct {
 	Nodes    NodeGetter
 	Pipeline *caddy.Pipeline
 	Defaults SiteDefaults
+	Snippets SnippetSource // 启用片段渲染进 local 产物+版本快照片段表(可为 nil:单测便利)
 }
 
 // Site 站点业务服务。
@@ -78,11 +79,12 @@ type Site struct {
 	nodes     NodeGetter
 	pipeline  *caddy.Pipeline
 	defaults  SiteDefaults
+	snippets  SnippetSource
 }
 
 // NewSite 构造站点服务。
 func NewSite(d SiteDeps) *Site {
-	return &Site{repo: d.Repo, nodes: d.Nodes, pipeline: d.Pipeline, defaults: d.Defaults}
+	return &Site{repo: d.Repo, nodes: d.Nodes, pipeline: d.Pipeline, defaults: d.Defaults, snippets: d.Snippets}
 }
 
 // Get 查询单个站点(纯读,无下发)。
@@ -298,6 +300,7 @@ func (s *Site) recordVersion(ctx context.Context, nodeID string, sites []model.S
 	version := &model.ConfigVersion{
 		NodeID:            nodeID,
 		SitesSnapshot:     string(snapshot),
+		SnippetsSnapshot:  snippetsSnapshotJSON(ctx, s.snippets),
 		RenderedCaddyfile: rendered,
 		Status:            status,
 		ErrorMsg:          errMsg,

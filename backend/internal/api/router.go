@@ -161,6 +161,7 @@ func New(deps Deps) *gin.Engine {
 			AccessLogPath:  deps.Cfg.LogAccessPath,
 			MetricsEnabled: false, // metrics 默认关(FR-601),设置页可开
 		},
+		Snippets: deps.Store, // 启用片段渲染进 local 产物+版本快照(logux-design §7)
 	})
 	sites := handler.NewSite(siteSvc)
 	certSvc := service.NewCert(func() string {
@@ -187,6 +188,7 @@ func New(deps Deps) *gin.Engine {
 		Repo:            deps.Store,
 		Pipeline:        deps.Pipeline,
 		CaddyfilePathFn: deps.CaddyfilePathFn,
+		Snippets:        deps.Store, // 版本快照片段表+回滚恢复片段表(logux-design §7)
 	})
 	configHandler := handler.NewConfig(configSvc)
 	configRead := readPerm(model.PermConfigRead)
@@ -195,9 +197,19 @@ func New(deps Deps) *gin.Engine {
 	configRead.GET("/config/versions", configHandler.ListVersions())
 	configRead.GET("/config/versions/:id", configHandler.GetVersion())
 	configWrite.POST("/config/versions/:id/rollback", configHandler.Rollback())
+	// 版本备注仅 admin:挂在 direct-edit(高危、矩阵中仅 admin 持有)下实现"仅 admin"语义。
+	directEdit.PATCH("/config/versions/:id/notes", configHandler.UpdateVersionNotes())
 	configRead.GET("/config/caddyfile", configHandler.CurrentCaddyfile())
 	directEdit.POST("/config/caddyfile", configHandler.SaveCaddyfile())
 	configRead.GET("/config/current", configHandler.CurrentJSON())
+
+	// ── Caddyfile 附加片段(logux-design §7):变更触发下发,权限与回滚同级 ──
+	snippetSvc := service.NewSnippet(service.SnippetDeps{Repo: deps.Store, Deployer: siteSvc})
+	snippetHandler := handler.NewSnippet(snippetSvc)
+	configRead.GET("/config/snippets", snippetHandler.List())
+	configWrite.POST("/config/snippets", snippetHandler.Create())
+	configWrite.PUT("/config/snippets/:id", snippetHandler.Update())
+	configWrite.DELETE("/config/snippets/:id", snippetHandler.Delete())
 
 	// ── 系统设置(FR-601):读全角色(settings 渲染依赖),写 admin ───────────
 	settingSvc := service.NewSetting(deps.Store, map[string]string{

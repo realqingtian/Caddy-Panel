@@ -31,6 +31,7 @@ func allModels() []any {
 		model.Node{},
 		model.EnrollmentToken{},
 		model.Site{},
+		model.Snippet{}, // 附加片段(logux-design §7)
 		model.ConfigVersion{},
 		model.AuditLog{},
 		model.Setting{},

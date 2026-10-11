@@ -14,7 +14,8 @@ import (
 
 // backupFormatVersion 备份文件格式版本;结构不兼容时递增。
 // v2:新增 users/nodes(v1 文件仍可导入,仅恢复站点/版本/设置)。
-const backupFormatVersion = 2
+// v3:新增 snippets(片段,v2/v1 文件仍可导入,仅不恢复片段)。
+const backupFormatVersion = 3
 
 // BackupFile 备份文件结构(导出与导入同构)。
 type BackupFile struct {
@@ -25,6 +26,7 @@ type BackupFile struct {
 	Settings       map[string]string     `json:"settings"`
 	Users          []UserBackup          `json:"users,omitempty"`
 	Nodes          []NodeBackup          `json:"nodes,omitempty"`
+	Snippets       []model.Snippet       `json:"snippets,omitempty"`
 }
 
 // UserBackup 用户备份条目。密码为 bcrypt 哈希、TOTP 为 AES 密文
@@ -74,6 +76,10 @@ type BackupRepo interface {
 	CreateUserFromBackup(ctx context.Context, user *model.User) error
 	HasNodeByNodeID(ctx context.Context, nodeID string) (bool, error)
 	CreateNodeFromBackup(ctx context.Context, node *model.Node) error
+
+	// 片段备份(v3):同名以备份为准覆盖,现网独有片段保留(logux-design §7)。
+	ListAllSnippets(ctx context.Context) ([]model.Snippet, error)
+	UpsertSnippetsFromBackup(ctx context.Context, snippets []model.Snippet) (imported, updated int, err error)
 }
 
 // BackupService 备份恢复业务。
@@ -109,6 +115,10 @@ func (s *BackupService) Export(ctx context.Context) (*BackupFile, error) {
 	if err != nil {
 		return nil, err
 	}
+	snippets, err := s.repo.ListAllSnippets(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &BackupFile{
 		Version:        backupFormatVersion,
 		ExportedAt:     time.Now(),
@@ -117,18 +127,21 @@ func (s *BackupService) Export(ctx context.Context) (*BackupFile, error) {
 		Settings:       map[string]string(settings),
 		Users:          toUserBackups(users),
 		Nodes:          toNodeBackups(nodes),
+		Snippets:       snippets,
 	}, nil
 }
 
 // RestoreResult 恢复结果计数。
 type RestoreResult struct {
-	Sites         int `json:"sites"`
-	Versions      int `json:"versions"`
-	Settings      int `json:"settings"`
-	UsersImported int `json:"users_imported"`
-	UsersSkipped  int `json:"users_skipped"`
-	NodesImported int `json:"nodes_imported"`
-	NodesSkipped  int `json:"nodes_skipped"`
+	Sites            int `json:"sites"`
+	Versions         int `json:"versions"`
+	Settings         int `json:"settings"`
+	UsersImported    int `json:"users_imported"`
+	UsersSkipped     int `json:"users_skipped"`
+	NodesImported    int `json:"nodes_imported"`
+	NodesSkipped     int `json:"nodes_skipped"`
+	SnippetsImported int `json:"snippets_imported"`
+	SnippetsUpdated  int `json:"snippets_updated"`
 }
 
 // Restore 导入备份:轻校验后事务内替换站点/版本历史/设置;
@@ -201,6 +214,14 @@ func (s *BackupService) Restore(ctx context.Context, file *BackupFile, importUse
 			}
 			result.NodesImported++
 		}
+	}
+	if len(file.Snippets) > 0 {
+		imported, updated, err := s.repo.UpsertSnippetsFromBackup(ctx, file.Snippets)
+		if err != nil {
+			return nil, fmt.Errorf("导入片段: %w", err)
+		}
+		result.SnippetsImported = imported
+		result.SnippetsUpdated = updated
 	}
 	return result, nil
 }

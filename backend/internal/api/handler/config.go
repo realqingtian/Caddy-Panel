@@ -181,6 +181,44 @@ func (h *ConfigHandler) CurrentJSON() gin.HandlerFunc {
 	}
 }
 
+// UpdateVersionNotesBody 版本备注请求体。
+type UpdateVersionNotesBody struct {
+	Notes string `json:"notes" example:"接入示例站点前的可用版本"`
+}
+
+// UpdateVersionNotes godoc
+// @Summary 编辑版本备注
+// @Description 设置/清空版本备注;空字符串即清空(logux-design §8)
+// @Tags config
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "版本 ID"
+// @Param body body handler.UpdateVersionNotesBody true "备注内容"
+// @Success 200 {object} model.ConfigVersion
+// @Failure 400 {object} apierr.ErrorResponse
+// @Failure 404 {object} apierr.ErrorResponse
+// @Router /api/v1/config/versions/{id}/notes [patch]
+func (h *ConfigHandler) UpdateVersionNotes() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := parseID(c)
+		if !ok {
+			return
+		}
+		var body UpdateVersionNotesBody
+		if err := c.ShouldBindJSON(&body); err != nil {
+			apierr.RespondError(c, http.StatusBadRequest, apierr.CodeBadRequest, i18n.MsgBadRequest, nil, err.Error())
+			return
+		}
+		version, err := h.config.UpdateVersionNotes(c.Request.Context(), id, body.Notes)
+		if err != nil {
+			respondConfigError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, version)
+	}
+}
+
 // respondConfigError 配置中心业务错误 → 统一错误响应。
 func respondConfigError(c *gin.Context, err error) {
 	var deploy *service.DeployError

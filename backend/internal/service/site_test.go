@@ -20,6 +20,7 @@ type fakeSiteRepo struct {
 	nextID   uint
 	versions []model.ConfigVersion
 	settings map[string]string
+	snippets []model.Snippet
 }
 
 func newFakeSiteRepo() *fakeSiteRepo {

@@ -33,6 +33,7 @@ const (
 	CodeTwoFAInvalid               = "AUTH_TWO_FA_INVALID"
 	CodeUserNotFound               = "USER_NOT_FOUND"
 	CodeUsernameConflict           = "USERNAME_CONFLICT"
+	CodeSnippetNameTaken           = "SNIPPET_NAME_TAKEN"
 )
 
 // gin context 键:injectI18n 写入翻译包。
