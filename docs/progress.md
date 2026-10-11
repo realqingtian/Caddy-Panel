@@ -7,7 +7,8 @@
 
 ## 1. 当前状态
 
-**阶段:✅ 迭代 I6(通知渠道闭环+设置页重构)完成(2026-10-11)。**
+**阶段:📝 迭代 I7(UX 优化:日志可读性/命令展示/配置中心交互)设计评审中(2026-10-11)。**
+设计文档 [i7-ux-design.md](./i7-ux-design.md) 已落地,多轮确认无异议后开工。
 SMTP(465 TLS+测试按钮)与 Webhook 多渠道(飞书实测收到测试消息)双渠道闭环;设置页重构为 8 分类左侧导航并补 panel_public_url UI。
 M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺陷(D1–D16)全部修复并在验收服务器回归通过。
 服务器部署形态已升级:数据卷 bind mount 化(`/opt/caddy-panel/data/`)+ caddy/panel 用户权限对齐(见 ops/server.md)。
@@ -70,6 +71,7 @@ M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺�
 
 | 事项 | 状态 | 说明 |
 | --- | --- | --- |
+| I7 | UX 优化:日志结构化视图/命令步骤化组件/配置中心交互 | 📝 | 设计文档 [i7-ux-design.md](./i7-ux-design.md) 待评审 |
 | M4 遗留强化 | ✅ | TOTP 二段错码计数绑定用户名(换票据/换源不再重置锁定),回归测试覆盖,已部署 v0.2.0 |
 | I6 | SMTP/Webhook 通知渠道闭环 + 设置页重构 | ✅ | 2026-10-11 | SMTP ✅(465 TLS+测试邮件);Webhook 六渠道类型/自动识别/测试消息按钮 ✅(飞书实测 HTTP 200);设置页 8 分类左排导航+panel_public_url 补 UI;golden 测试锁六渠道 payload;明细见 [notify-channels-design.md](./notify-channels-design.md)/[settings-redesign.md](./settings-redesign.md) |
 | GHCR 正式镜像通道 | 🕐 搁置 | v0.2.0 已在 GHCR(多架构,Actions 构建验证通过);服务器暂用本地构建镜像交付,切 GHCR 需用户提供 read:packages PAT;workflow 已保留随时可启用 |
