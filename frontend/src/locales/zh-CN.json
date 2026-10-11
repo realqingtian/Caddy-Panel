@@ -256,7 +256,9 @@
       "smtpPassword": "密码",
       "smtpFrom": "发件地址",
       "smtpTo": "收件地址",
-      "gravatarMirror": "Gravatar 镜像"
+      "gravatarMirror": "Gravatar 镜像",
+      "panelPublic": "面板对外地址",
+      "notifyWebhookType": "Webhook 通知类型"
     },
     "hint": {
       "adminUrl": "面板连接 Caddy Admin API 的地址",
@@ -268,7 +270,8 @@
       "notifyWebhook": "剩余有效期不足 30 天时每日推送 JSON 提醒(随每日检查触发)",
       "smtpPassword": "保存后不回显;留空表示保留当前密码",
       "smtpTo": "多个收件人用英文逗号分隔;服务器/端口/收件人齐备即启用邮件渠道",
-      "gravatarMirror": "头像源;官方源不可达时可切换镜像,留空使用 gravatar.com"
+      "gravatarMirror": "头像源;官方源不可达时可切换镜像,留空使用 gravatar.com",
+      "panelPublic": "Agent 安装命令据此生成 ws 连接地址;留空用启动 env"
     },
     "saved": "设置已保存",
     "saveFailed": "设置保存失败",
@@ -302,7 +305,27 @@
     },
     "smtpTest": "发送测试邮件",
     "smtpTestOk": "测试邮件已发送,请查收",
-    "smtpTestFailed": "测试邮件发送失败"
+    "smtpTestFailed": "测试邮件发送失败",
+    "cat": {
+      "caddy": "Caddy 连接",
+      "paths": "路径",
+      "security": "安全",
+      "notify": "通知",
+      "avatar": "头像",
+      "advanced": "高级"
+    },
+    "webhookTest": "发送 Webhook 测试消息",
+    "webhookTestOk": "测试消息已发送,请在群内查看",
+    "webhookTestFailed": "Webhook 测试消息发送失败",
+    "webhookType": {
+      "auto": "自动识别",
+      "feishu": "飞书",
+      "dingtalk": "钉钉",
+      "wecom": "企业微信",
+      "slack": "Slack",
+      "discord": "Discord",
+      "json": "通用 JSON"
+    }
   },
   "logs": {
     "title": "日志",

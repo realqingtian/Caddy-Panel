@@ -256,7 +256,9 @@
       "smtpPassword": "Password",
       "smtpFrom": "From address",
       "smtpTo": "To addresses",
-      "gravatarMirror": "Gravatar mirror"
+      "gravatarMirror": "Gravatar mirror",
+      "panelPublic": "Panel public URL",
+      "notifyWebhookType": "Webhook channel type"
     },
     "hint": {
       "adminUrl": "Address the panel uses to reach the Caddy Admin API",
@@ -268,7 +270,8 @@
       "notifyWebhook": "JSON alert pushed daily when remaining validity drops below 30 days",
       "smtpPassword": "Not shown after saving; leave empty to keep the current password",
       "smtpTo": "Comma separated; the email channel activates when server/port/to are all set",
-      "gravatarMirror": "Avatar source; switch to a mirror if gravatar.com is unreachable, empty uses gravatar.com"
+      "gravatarMirror": "Avatar source; switch to a mirror if gravatar.com is unreachable, empty uses gravatar.com",
+      "panelPublic": "Agent install command derives its ws URL from this; empty uses the startup env"
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings",
@@ -302,7 +305,27 @@
     },
     "smtpTest": "Send test email",
     "smtpTestOk": "Test email sent, please check the inbox",
-    "smtpTestFailed": "Failed to send test email"
+    "smtpTestFailed": "Failed to send test email",
+    "cat": {
+      "caddy": "Caddy Connection",
+      "paths": "Paths",
+      "security": "Security",
+      "notify": "Notifications",
+      "avatar": "Avatar",
+      "advanced": "Advanced"
+    },
+    "webhookTest": "Send webhook test message",
+    "webhookTestOk": "Test message sent, please check the group",
+    "webhookTestFailed": "Failed to send webhook test message",
+    "webhookType": {
+      "auto": "Auto detect",
+      "feishu": "Feishu",
+      "dingtalk": "DingTalk",
+      "wecom": "WeCom",
+      "slack": "Slack",
+      "discord": "Discord",
+      "json": "Generic JSON"
+    }
   },
   "logs": {
     "title": "Logs",

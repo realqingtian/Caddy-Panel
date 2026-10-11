@@ -38,6 +38,7 @@ import { listTokens, createToken, deleteToken, type ApiToken } from '@/api/token
 interface SettingsFormValues {
   gravatar_mirror_url: string
   admin_url: string
+  panel_public_url: string
   caddy_admin_bind: string
   caddyfile_path: string
   log_access_path: string
@@ -47,6 +48,7 @@ interface SettingsFormValues {
   metrics_enabled: boolean
   acme_email: string
   notify_webhook_url: string
+  notify_webhook_type: string
   smtp_host: string
   smtp_port: string
   smtp_username: string
@@ -59,6 +61,7 @@ interface SettingsFormValues {
 const formKeys: (keyof SettingsFormValues)[] = [
   'gravatar_mirror_url',
   'admin_url',
+  'panel_public_url',
   'caddy_admin_bind',
   'caddyfile_path',
   'log_access_path',
@@ -68,6 +71,7 @@ const formKeys: (keyof SettingsFormValues)[] = [
   'metrics_enabled',
   'acme_email',
   'notify_webhook_url',
+  'notify_webhook_type',
   'smtp_host',
   'smtp_port',
   'smtp_username',
@@ -92,6 +96,7 @@ export default function SettingsPage() {
     form.setFieldsValue({
       gravatar_mirror_url: s.gravatar_mirror_url ?? '',
       admin_url: s.admin_url ?? '',
+      panel_public_url: s.panel_public_url ?? '',
       caddy_admin_bind: s.caddy_admin_bind ?? '',
       caddyfile_path: s.caddyfile_path ?? '',
       log_access_path: s.log_access_path ?? '',
@@ -101,6 +106,7 @@ export default function SettingsPage() {
       metrics_enabled: s.metrics_enabled === 'true',
       acme_email: s.acme_email ?? '',
       notify_webhook_url: s.notify_webhook_url ?? '',
+      notify_webhook_type: s.notify_webhook_type || 'auto',
       smtp_host: s.smtp_host ?? '',
       smtp_port: s.smtp_port ?? '',
       smtp_username: s.smtp_username ?? '',
@@ -178,15 +184,26 @@ export default function SettingsPage() {
           onFinish={(values) => saveMutation.mutate(values)}
         >
           <Tabs
+            tabPosition="left"
             items={[
               {
-                key: 'general',
-                label: t('settings.tab.general'),
-                children: <GeneralPane savePending={saveMutation.isPending} />,
+                key: 'caddy',
+                label: t('settings.cat.caddy'),
+                children: <CaddyPane savePending={saveMutation.isPending} />,
+              },
+              {
+                key: 'paths',
+                label: t('settings.cat.paths'),
+                children: <PathsPane savePending={saveMutation.isPending} />,
+              },
+              {
+                key: 'security',
+                label: t('settings.cat.security'),
+                children: <SecurityPane savePending={saveMutation.isPending} />,
               },
               {
                 key: 'notify',
-                label: t('settings.tab.notify'),
+                label: t('settings.cat.notify'),
                 forceRender: true,
                 children: <NotifyPane savePending={saveMutation.isPending} />,
               },
@@ -211,6 +228,16 @@ export default function SettingsPage() {
                 key: 'backup',
                 label: t('settings.backup.title'),
                 children: <BackupPane onRestore={restoreFile} />,
+              },
+              {
+                key: 'avatar',
+                label: t('settings.cat.avatar'),
+                children: <AvatarPane savePending={saveMutation.isPending} />,
+              },
+              {
+                key: 'advanced',
+                label: t('settings.cat.advanced'),
+                children: <AdvancedPane savePending={saveMutation.isPending} />,
               },
             ]}
           />
@@ -249,12 +276,11 @@ const GRAVATAR_PRESETS = [
   'https://loli.net',
 ]
 
-/** 常规:Caddy 连接 / 路径 / 登录安全 / metrics / 全局片段,双列布局。 */
-function GeneralPane({ savePending }: { savePending: boolean }) {
+/** Caddy 连接:Admin API 与 admin 监听地址、面板对外地址。 */
+function CaddyPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   return (
     <>
-      <Divider titlePlacement="start">{t('settings.group.connection')}</Divider>
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -274,8 +300,27 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
             <Input placeholder="localhost:2019" />
           </Form.Item>
         </Col>
+        <Col span={12}>
+          <Form.Item
+            name="panel_public_url"
+            label={t('settings.field.panelPublic')}
+            extra={t('settings.hint.panelPublic')}
+          >
+            <Input placeholder="https://panel.example.com" />
+          </Form.Item>
+        </Col>
+        <Col span={12} />
       </Row>
-      <Divider titlePlacement="start">{t('settings.group.paths')}</Divider>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+/** 路径:Caddyfile 落盘与日志 tail 目标。 */
+function PathsPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -306,7 +351,16 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <Divider titlePlacement="start">{t('settings.group.security')}</Divider>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+/** 安全:登录失败锁定(修改后立即生效)。 */
+function SecurityPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -327,10 +381,16 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <Form.Item name="metrics_enabled" label={t('settings.field.metrics')} valuePropName="checked">
-        <Switch />
-      </Form.Item>
-      <Divider titlePlacement="start">{t('settings.group.avatar')}</Divider>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+/** 头像:Gravatar 镜像(自定义上传头像在个人设置页)。 */
+function AvatarPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -347,7 +407,19 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
         </Col>
         <Col span={12} />
       </Row>
-      <Divider titlePlacement="start">{t('settings.group.advanced')}</Divider>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+/** 高级:metrics 开关与全局自定义片段。 */
+function AdvancedPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Form.Item name="metrics_enabled" label={t('settings.field.metrics')} valuePropName="checked">
+        <Switch />
+      </Form.Item>
       <Form.Item
         name="global_extra"
         label={t('settings.field.globalExtra')}
@@ -360,7 +432,6 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
   )
 }
 
-/** 证书与通知:ACME 邮箱 / 到期 Webhook / SMTP 渠道(M2 起后端支持但 UI 首次补齐,见 iterations I3-4)。 */
 function NotifyPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   const { message } = App.useApp()
@@ -377,6 +448,19 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
         <Col span={12}>
+          <Form.Item name="notify_webhook_type" label={t('settings.field.notifyWebhookType')}>
+            <Select
+              options={[
+                { value: 'auto', label: t('settings.webhookType.auto') },
+                { value: 'feishu', label: t('settings.webhookType.feishu') },
+                { value: 'dingtalk', label: t('settings.webhookType.dingtalk') },
+                { value: 'wecom', label: t('settings.webhookType.wecom') },
+                { value: 'slack', label: t('settings.webhookType.slack') },
+                { value: 'discord', label: t('settings.webhookType.discord') },
+                { value: 'json', label: t('settings.webhookType.json') },
+              ]}
+            />
+          </Form.Item>
           <Form.Item
             name="notify_webhook_url"
             label={t('settings.field.notifyWebhook')}
@@ -427,17 +511,30 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <Button
-        style={{ marginBottom: 16 }}
-        onClick={() => {
-          void apiClient
-            .post('/settings/smtp/test')
-            .then(() => message.success(t('settings.smtpTestOk')))
-            .catch((error) => message.error(apiErrorMessage(error, t('settings.smtpTestFailed'))))
-        }}
-      >
-        {t('settings.smtpTest')}
-      </Button>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          onClick={() => {
+            void apiClient
+              .post('/settings/webhook/test')
+              .then(() => message.success(t('settings.webhookTestOk')))
+              .catch((error) =>
+                message.error(apiErrorMessage(error, t('settings.webhookTestFailed'))),
+              )
+          }}
+        >
+          {t('settings.webhookTest')}
+        </Button>
+        <Button
+          onClick={() => {
+            void apiClient
+              .post('/settings/smtp/test')
+              .then(() => message.success(t('settings.smtpTestOk')))
+              .catch((error) => message.error(apiErrorMessage(error, t('settings.smtpTestFailed'))))
+          }}
+        >
+          {t('settings.smtpTest')}
+        </Button>
+      </Space>
       <SaveButton pending={savePending} />
     </>
   )
