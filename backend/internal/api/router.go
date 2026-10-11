@@ -278,8 +278,10 @@ func New(deps Deps) *gin.Engine {
 		}
 		return deps.Cfg.LogAccessPath
 	}
-	logsHandler := handler.NewLogs(service.NewLogs(logPathFn))
+	logsHandler := handler.NewLogs(service.NewLogs(logPathFn), []byte(deps.Cfg.JWTSecret), sessions, deps.Store)
 	readPerm(model.PermLogsRead).GET("/logs", logsHandler.Tail())
+	// SSE 实时流:自鉴权(查询参数 JWT,与终端 WS 同模式),不经 readPerm 中间件
+	r.GET("/api/v1/logs/stream", logsHandler.Stream())
 
 	driftChecker := service.NewDriftChecker(deps.Store, deps.Pipeline, deps.CaddyfilePathFn)
 	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Nodes: deps.Store, Drift: driftChecker})

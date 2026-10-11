@@ -31,7 +31,7 @@ func TestLogsTail_ReturnsLastLines(t *testing.T) {
 	content := "l1\nl2\nl3\nl4\nl5\n"
 	logs, _ := newLogsFixture(t, content)
 
-	result, err := logs.Tail(context.Background(), "access", 3)
+	result, err := logs.Tail(context.Background(), "access", 3, "", "")
 	if err != nil {
 		t.Fatalf("tail 失败: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestLogsTail_ReturnsLastLines(t *testing.T) {
 func TestLogsTail_MissingFileIsNotAnError(t *testing.T) {
 	logs, _ := newLogsFixture(t, "")
 
-	result, err := logs.Tail(context.Background(), "error", 200)
+	result, err := logs.Tail(context.Background(), "error", 200, "", "")
 	if err != nil {
 		t.Fatalf("文件不存在不应报错(FR-502): %v", err)
 	}
@@ -65,7 +65,7 @@ func TestLogsTail_LineCapAndInvalidKind(t *testing.T) {
 	}
 	logs, _ := newLogsFixture(t, strings.Join(lines, "\n")+"\n")
 
-	result, err := logs.Tail(context.Background(), "access", 5000)
+	result, err := logs.Tail(context.Background(), "access", 5000, "", "")
 	if err != nil {
 		t.Fatalf("tail 失败: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestLogsTail_LineCapAndInvalidKind(t *testing.T) {
 		t.Fatalf("行数应被强制上限 1000,实际 %d", len(result.Lines))
 	}
 
-	if _, err := logs.Tail(context.Background(), "other", 10); err == nil {
+	if _, err := logs.Tail(context.Background(), "other", 10, "", ""); err == nil {
 		t.Fatal("非法日志类型应报错")
 	}
 }
@@ -84,7 +84,7 @@ func TestLogsTail_TruncatesHalfLine(t *testing.T) {
 	content := longPrefix + "\ncomplete-line\n"
 	logs, _ := newLogsFixture(t, content)
 
-	result, err := logs.Tail(context.Background(), "access", 10)
+	result, err := logs.Tail(context.Background(), "access", 10, "", "")
 	if err != nil {
 		t.Fatalf("tail 失败: %v", err)
 	}

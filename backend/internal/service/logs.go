@@ -4,8 +4,10 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -29,15 +31,23 @@ func NewLogs(pathFn LogsPathsFn) *Logs {
 }
 
 // TailResult tail 读取结果;Exists 为 false 表示文件尚未生成(明确提示而非报错,FR-502)。
+// Keyword/Status 为服务端过滤参数(I7):keyword 子串匹配整行(忽略大小写),
+// status 为状态码前缀列表(如 ["4","5"],仅对含 status 字段的 JSON 行生效)。
 type TailResult struct {
 	Path      string   `json:"path"`
 	Exists    bool     `json:"exists"`
 	Lines     []string `json:"lines"`
 	Truncated bool     `json:"truncated"` // 因超出读取上限只展示了文件末尾部分
+	Keyword   string   `json:"keyword,omitempty"`
+	Status    string   `json:"status,omitempty"`
 }
 
-// Tail 返回日志文件末尾 lines 行(上限 1000)。
-func (s *Logs) Tail(_ context.Context, kind string, lines int) (*TailResult, error) {
+// Path 返回指定类型日志文件的当前路径(settings 优先,env 兜底)。
+func (s *Logs) Path(kind string) string { return s.pathFn(kind) }
+
+// Tail 返回日志文件末尾 lines 行(上限 1000),可按 keyword/status 服务端过滤(I7)。
+// 过滤仅在 tail 读取窗口(2MiB)内进行,窗口外更早的匹配行不回溯。
+func (s *Logs) Tail(_ context.Context, kind string, lines int, keyword, status string) (*TailResult, error) {
 	if kind != "access" && kind != "error" {
 		return nil, &InvalidInputError{Reason: fmt.Sprintf("日志类型非法: %s(仅 access/error)", kind)}
 	}
@@ -49,7 +59,7 @@ func (s *Logs) Tail(_ context.Context, kind string, lines int) (*TailResult, err
 	}
 
 	path := s.pathFn(kind)
-	result := &TailResult{Path: path, Lines: []string{}}
+	result := &TailResult{Path: path, Lines: []string{}, Keyword: keyword, Status: status}
 
 	data, truncated, err := readTail(path, maxTailBytes)
 	if os.IsNotExist(err) {
@@ -60,8 +70,93 @@ func (s *Logs) Tail(_ context.Context, kind string, lines int) (*TailResult, err
 	}
 	result.Exists = true
 	result.Truncated = truncated
-	result.Lines = lastLines(string(data), lines)
+	result.Lines = FilterLogLines(lastLines(string(data), maxTailLines), keyword, status)
+	if n := len(result.Lines); n > lines {
+		result.Lines = result.Lines[n-lines:]
+	}
 	return result, nil
+}
+
+// FilterLogLines 日志行服务端过滤:keyword 子串(忽略大小写)+ 状态码前缀
+// (仅对可解析出 status 字段的 JSON 行生效;指定 status 时无法解析的行被排除)。
+func FilterLogLines(lines []string, keyword, status string) []string {
+	kw := strings.ToLower(strings.TrimSpace(keyword))
+	prefixes := []string{}
+	for _, p := range strings.Split(status, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			prefixes = append(prefixes, p)
+		}
+	}
+	if kw == "" && len(prefixes) == 0 {
+		return lines
+	}
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if kw != "" && !strings.Contains(strings.ToLower(line), kw) {
+			continue
+		}
+		if len(prefixes) > 0 {
+			st, ok := logLineStatus(line)
+			if !ok {
+				continue
+			}
+			matched := false
+			for _, p := range prefixes {
+				if strings.HasPrefix(st, p) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+		out = append(out, line)
+	}
+	return out
+}
+
+// logLineStatus 从 JSON 日志行提取 status 字段(数字或字符串);非 JSON 行返回 false。
+func logLineStatus(line string) (string, bool) {
+	var m map[string]any
+	if err := json.Unmarshal([]byte(line), &m); err != nil {
+		return "", false
+	}
+	switch v := m["status"].(type) {
+	case float64:
+		return strconv.Itoa(int(v)), true
+	case string:
+		return v, true
+	}
+	return "", false
+}
+
+// ReadNew 增量读取:自 offset 起返回新增内容与新 offset(SSE 流式用,I7)。
+func ReadNew(path string, offset int64) (data []byte, newOffset int64, exists bool, err error) {
+	f, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, offset, false, nil
+		}
+		return nil, offset, true, err
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return nil, offset, true, err
+	}
+	// 文件被轮转/截断(offset 超过当前大小):回到文件头。
+	if info.Size() < offset {
+		offset = 0
+	}
+	if info.Size() == offset {
+		return nil, offset, true, nil
+	}
+	data = make([]byte, info.Size()-offset)
+	if _, err := f.ReadAt(data, offset); err != nil {
+		return nil, offset, true, err
+	}
+	return data, info.Size(), true, nil
 }
 
 // readTail 只读文件末尾 maxBytes;返回数据与是否发生截断。
