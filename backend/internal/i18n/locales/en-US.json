@@ -22,5 +22,6 @@
   "error.username_conflict": "Username already exists",
   "error.twofa_required": "A two-factor code is required to complete sign-in",
   "error.log_read_failed": "Failed to read the log file; check file permissions (in container deploys the caddy and panel log volumes must be shared and readable by the panel user)",
-  "error.smtp_test_failed": "Failed to send the test email; check SMTP host/port/credential and network"
+  "error.smtp_test_failed": "Failed to send the test email; check SMTP host/port/credential and network",
+  "error.webhook_test_failed": "Failed to send the webhook test message; check the URL and bot configuration"
 }

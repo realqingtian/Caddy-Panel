@@ -28,6 +28,7 @@ const (
 	MsgTwoFARequired        = "error.twofa_required"
 	MsgLogReadFailed        = "error.log_read_failed"
 	MsgSMTPTestFailed       = "error.smtp_test_failed"
+	MsgWebhookTestFailed    = "error.webhook_test_failed"
 )
 
 // FallbackText 各消息的中文兜底文案;英文文案只存在于语言包中。
@@ -56,4 +57,5 @@ var FallbackText = map[string]string{
 	MsgTwoFARequired:        "需要两步验证码完成登录",
 	MsgLogReadFailed:        "读取日志文件失败,请检查文件权限(容器部署需 caddy 与 panel 共享日志卷且 panel 用户可读)",
 	MsgSMTPTestFailed:       "测试邮件发送失败,请检查 SMTP 服务器/端口/授权码与网络",
+	MsgWebhookTestFailed:    "Webhook 测试消息发送失败,请检查 URL 与机器人配置",
 }

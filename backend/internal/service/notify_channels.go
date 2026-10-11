@@ -83,15 +83,12 @@ func IsPlatformSuccess(typ WebhookType, body string) (bool, string) {
 
 // platformCodeZero 判定 body JSON 中指定业务码字段是否为 0;非 JSON 响应视为失败。
 func platformCodeZero(body, field string) (bool, string) {
-	var m map[string]json.Number
+	var m map[string]any
 	if err := json.Unmarshal([]byte(body), &m); err != nil {
-		return false, body
+		return false, body // 非 JSON 响应视为失败
 	}
-	code, ok := m[field]
-	if !ok {
-		return false, body
-	}
-	return code.String() == "0", body
+	code, ok := m[field].(float64)
+	return ok && code == 0, body
 }
 
 // jsonString JSON 字符串转义(引号/换行等),用于手工拼装 payload。
