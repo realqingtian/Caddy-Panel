@@ -20,6 +20,7 @@ const (
 	SettingKeyMetricsEnabled    = "metrics_enabled"
 	SettingKeyAcmeEmail         = "acme_email"         // FR-703 渲染全局块 email 指令
 	SettingKeyNotifyWebhook     = "notify_webhook_url" // FR-703 证书到期提醒 Webhook
+	SettingKeyNotifyWebhookType = "notify_webhook_type" // I6 渠道类型 auto/feishu/dingtalk/wecom/slack/discord/json
 	SettingKeySMTPHost          = "smtp_host"
 	SettingKeySMTPPort          = "smtp_port"
 	SettingKeySMTPUsername      = "smtp_username"

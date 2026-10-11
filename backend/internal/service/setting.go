@@ -33,6 +33,7 @@ var editableSettingKeys = []string{
 	model.SettingKeyGlobalExtra,
 	model.SettingKeyAcmeEmail,
 	model.SettingKeyNotifyWebhook,
+	model.SettingKeyNotifyWebhookType,
 	model.SettingKeySMTPHost,
 	model.SettingKeySMTPPort,
 	model.SettingKeySMTPUsername,
@@ -95,6 +96,13 @@ var settingValidators = map[string]func(string) error{
 			return fmt.Errorf("ACME 邮箱格式非法")
 		}
 		return nil
+	},
+	model.SettingKeyNotifyWebhookType: func(v string) error {
+		switch WebhookType(v) {
+		case WebhookAuto, WebhookFeishu, WebhookDingTalk, WebhookWeCom, WebhookSlack, WebhookDiscord, WebhookJSON:
+			return nil
+		}
+		return fmt.Errorf("Webhook 类型非法(auto/feishu/dingtalk/wecom/slack/discord/json)")
 	},
 	model.SettingKeyNotifyWebhook: func(v string) error {
 		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") {

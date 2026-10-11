@@ -158,8 +158,10 @@ func (c *CertExpiryChecker) Check(ctx context.Context) int {
 }
 
 // notifyWebhook 推送 Webhook 提醒;失败仅日志。
+// 渠道类型按 settings notify_webhook_type 解析(auto/五渠道/通用 JSON,I6)。
 func (c *CertExpiryChecker) notifyWebhook(ctx context.Context, webhookURL, siteName, domain string, notAfter time.Time) {
-	payload, err := json.Marshal(map[string]any{
+	text := fmt.Sprintf("[Caddy Panel] 证书即将到期\n站点 %s 的证书 %s 将于 %s 到期。", siteName, domain, notAfter.Format("2006-01-02"))
+	rawEvent, err := json.Marshal(map[string]any{
 		"event":     "certificate_expiry",
 		"site":      siteName,
 		"domain":    domain,
@@ -169,6 +171,9 @@ func (c *CertExpiryChecker) notifyWebhook(ctx context.Context, webhookURL, siteN
 	if err != nil {
 		return
 	}
+	cfgType, _, _ := c.settings.GetSetting(ctx, model.SettingKeyNotifyWebhookType)
+	typ := ResolveWebhookType(cfgType, webhookURL)
+	payload := []byte(BuildWebhookPayload(typ, text, string(rawEvent)))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, webhookURL, bytes.NewReader(payload))
 	if err != nil {
 		return
