@@ -179,7 +179,8 @@
     },
     "node": {
       "local": "local(面板本机)"
-    }
+    },
+    "nodeLocal": "local(面板本机)"
   },
   "pages": {
     "dashboard": {
@@ -451,8 +452,8 @@
       "kick": "下线"
     },
     "confirm": {
-      "delete": "删除用户 {name}?软删除保留审计,用户名可复用",
-      "disable": "禁用用户 {name}?其全部会话将立即失效",
+      "delete": "删除用户 {{name}}?软删除保留审计,用户名可复用",
+      "disable": "禁用用户 {{name}}?其全部会话将立即失效",
       "reset": "重置密码?新密码首登强制改密,现有会话立即失效",
       "kick": "下线该会话?对应设备将需要重新登录"
     },
@@ -461,7 +462,7 @@
       "created": "用户已创建",
       "deleted": "用户已删除"
     },
-    "sessionsTitle": "{name} 的会话",
+    "sessionsTitle": "{{name}} 的会话",
     "error": {
       "self": "不能对当前登录账号执行该操作",
       "lastAdmin": "系统至少保留一个可用 admin"

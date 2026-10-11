@@ -262,3 +262,9 @@ body,
   border-radius: 8px;
   font-size: 15px;
 }
+
+/* 全项目表头治理(I5):表头永不换行,列宽由内容撑开,避免"Agent 版本"类换行
+   与表头/数据视觉错位;数据单元格维持默认换行行为(长域名仍受 ellipsis 控制)。 */
+.ant-table-thead > tr > th {
+  white-space: nowrap;
+}

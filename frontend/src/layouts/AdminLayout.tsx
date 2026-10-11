@@ -5,6 +5,7 @@ import {
   ClusterOutlined,
   CodeOutlined,
   ControlOutlined,
+  CheckOutlined,
   DashboardOutlined,
   DesktopOutlined,
   FileTextOutlined,
@@ -16,18 +17,7 @@ import {
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import {
-  App,
-  Button,
-  Dropdown,
-  Layout,
-  Menu,
-  Modal,
-  Segmented,
-  Space,
-  Typography,
-  theme,
-} from 'antd'
+import { App, Button, Dropdown, Layout, Menu, Modal, Space, Typography, theme } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -43,12 +33,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useThemeStore, type AppLocale, type ThemeMode } from '@/stores/theme'
 
 const { Sider, Header, Content } = Layout
-
-const themeOptions: { value: ThemeMode; icon: ReactNode }[] = [
-  { value: 'light', icon: <SunOutlined /> },
-  { value: 'dark', icon: <MoonOutlined /> },
-  { value: 'system', icon: <DesktopOutlined /> },
-]
 
 /** 管理后台布局:Sider 导航(权限显隐)+ Header(页面标题/主题/语言/用户)+ 强制改密闸门。 */
 export function AdminLayout() {
@@ -175,7 +159,8 @@ export function AdminLayout() {
   )
 }
 
-/** Header 右侧操作区:主题三态切换、语言切换、用户菜单(FR-603/604)。 */
+/** Header 右侧操作区:头像聚合菜单 —— 用户信息/外观/语言/个人设置/退出(I5,交互重组)。
+ *  主题与语言从 Header 常驻按钮收进下拉,降低视觉噪音;选项结构对齐主流面板习惯。 */
 function HeaderActions() {
   const { t } = useTranslation()
   const { message } = App.useApp()
@@ -183,20 +168,16 @@ function HeaderActions() {
 
   const mode = useThemeStore((state) => state.mode)
   const setMode = useThemeStore((state) => state.setMode)
+  const locale = useThemeStore((state) => state.locale)
   const setLocale = useThemeStore((state) => state.setLocale)
   const username = useAuthStore((state) => state.username)
   const nickname = useAuthStore((state) => state.nickname)
+  const role = useAuthStore((state) => state.role)
   const clear = useAuthStore((state) => state.clear)
   // 头像/邮箱来自 profile(react-query 缓存与 Profile 页共享,更新后自动同步)
   const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const email = profileQuery.data?.email
   const avatarURL = profileQuery.data?.avatar_url
-
-  // 语言选项显示语言自称(两种语言下文案一致,统一走 i18n 文件维护)。
-  const languageItems = [
-    { key: 'zh-CN', label: t('layout.langZhCN') },
-    { key: 'en-US', label: t('layout.langEnUS') },
-  ]
 
   const onLogout = async () => {
     // M4:退出为服务端动作(吊销当前会话),失败不阻塞本地退出。
@@ -206,25 +187,95 @@ function HeaderActions() {
     navigate('/login', { replace: true })
   }
 
+  const roleText = role ? t(`users.role.${role}`) : ''
+  const modeText = {
+    light: t('layout.themeLight'),
+    dark: t('layout.themeDark'),
+    system: t('layout.themeSystem'),
+  }[mode]
+  const localeText = locale === 'zh-CN' ? t('layout.langZhCN') : t('layout.langEnUS')
+
+  const themeChoice = (value: ThemeMode, icon: ReactNode) => ({
+    key: value,
+    icon: mode === value ? <CheckOutlined /> : icon,
+    label: t(`layout.theme${value[0].toUpperCase()}${value.slice(1)}`),
+    onClick: () => setMode(value),
+  })
+
   return (
     <div className="layout-header-actions">
-      <Segmented
-        aria-label={t('layout.theme')}
-        value={mode}
-        onChange={(value) => setMode(value as ThemeMode)}
-        options={themeOptions}
-      />
-      <Dropdown
-        menu={{ items: languageItems, onClick: ({ key }) => setLocale(key as AppLocale) }}
-        placement="bottomRight"
-      >
-        <Button icon={<GlobalOutlined />} title={t('layout.language')} />
-      </Dropdown>
       <Dropdown
         menu={{
           items: [
-            { key: 'profile', icon: <UserOutlined />, label: t('profile.title') },
+            {
+              key: 'who',
+              type: 'group',
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                  <UserAvatar
+                    username={username ?? ''}
+                    nickname={nickname ?? undefined}
+                    email={email ?? undefined}
+                    avatarURL={avatarURL ?? undefined}
+                    size={34}
+                  />
+                  <div>
+                    <div>{nickname || username || t('layout.user')}</div>
+                    {roleText && (
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        {roleText}
+                      </Typography.Text>
+                    )}
+                  </div>
+                </div>
+              ),
+            },
             { type: 'divider' },
+            {
+              key: 'theme',
+              icon: <SunOutlined />,
+              label: (
+                <span>
+                  {t('layout.theme')}
+                  <Typography.Text type="secondary" style={{ fontSize: 12, marginLeft: 16 }}>
+                    {modeText}
+                  </Typography.Text>
+                </span>
+              ),
+              children: [
+                themeChoice('light', <SunOutlined />),
+                themeChoice('dark', <MoonOutlined />),
+                themeChoice('system', <DesktopOutlined />),
+              ],
+            },
+            {
+              key: 'language',
+              icon: <GlobalOutlined />,
+              label: (
+                <span>
+                  {t('layout.language')}
+                  <Typography.Text type="secondary" style={{ fontSize: 12, marginLeft: 16 }}>
+                    {localeText}
+                  </Typography.Text>
+                </span>
+              ),
+              children: [
+                {
+                  key: 'zh-CN',
+                  icon: locale === 'zh-CN' ? <CheckOutlined /> : undefined,
+                  label: t('layout.langZhCN'),
+                  onClick: () => setLocale('zh-CN' as AppLocale),
+                },
+                {
+                  key: 'en-US',
+                  icon: locale === 'en-US' ? <CheckOutlined /> : undefined,
+                  label: t('layout.langEnUS'),
+                  onClick: () => setLocale('en-US' as AppLocale),
+                },
+              ],
+            },
+            { type: 'divider' },
+            { key: 'profile', icon: <UserOutlined />, label: t('profile.title') },
             { key: 'logout', icon: <LogoutOutlined />, label: t('layout.logout') },
           ],
           onClick: ({ key }) => {
@@ -233,6 +284,7 @@ function HeaderActions() {
           },
         }}
         placement="bottomRight"
+        trigger={['click']}
       >
         <Button
           icon={

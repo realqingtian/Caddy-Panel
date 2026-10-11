@@ -179,7 +179,8 @@
     },
     "node": {
       "local": "local (panel host)"
-    }
+    },
+    "nodeLocal": "local (this panel)"
   },
   "pages": {
     "dashboard": {
@@ -451,8 +452,8 @@
       "kick": "Sign out"
     },
     "confirm": {
-      "delete": "Delete user {name}? Soft-deleted with audit retained; username becomes reusable",
-      "disable": "Disable user {name}? All their sessions will be revoked immediately",
+      "delete": "Delete user {{name}}? Soft-deleted with audit retained; username becomes reusable",
+      "disable": "Disable user {{name}}? All their sessions will be revoked immediately",
       "reset": "Reset password? Password change will be forced on next sign-in; existing sessions revoked",
       "kick": "Sign out this session? That device will need to sign in again"
     },
@@ -461,7 +462,7 @@
       "created": "User created",
       "deleted": "User deleted"
     },
-    "sessionsTitle": "Sessions of {name}",
+    "sessionsTitle": "Sessions of {{name}}",
     "error": {
       "self": "Cannot perform this action on the current account",
       "lastAdmin": "At least one active admin is required"

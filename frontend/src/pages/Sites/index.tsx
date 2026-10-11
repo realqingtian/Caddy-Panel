@@ -11,6 +11,7 @@ import {
   Switch,
   Table,
   Tag,
+  Tooltip,
   Typography,
   Upload,
   type TableProps,
@@ -33,6 +34,7 @@ import {
 } from '@/api/sites'
 import { SiteForm } from '@/components/SiteForm'
 import { uploadCertificate } from '@/api/sites'
+import { listNodes } from '@/api/nodes'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
 
@@ -101,6 +103,13 @@ export default function SitesPage() {
   }
 
   const sitesQuery = useQuery({ queryKey: ['sites'], queryFn: listSites })
+  // 归属节点显示名称而非 node_id 原文(I5:node_id 是不可读的长串)
+  const nodesQuery = useQuery({ queryKey: ['nodes'], queryFn: listNodes })
+  const nodeNameOf = (nodeId: string): string => {
+    const id = nodeId || 'local'
+    if (id === 'local') return t('sites.nodeLocal')
+    return nodesQuery.data?.find((n) => n.node_id === id)?.name ?? id
+  }
 
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['sites'] })
 
@@ -138,8 +147,14 @@ export default function SitesPage() {
       title: t('sites.field.node'),
       dataIndex: 'node_id',
       key: 'node',
-      width: 120,
-      render: (v: string) => <Tag>{v || 'local'}</Tag>,
+      width: 130,
+      render: (v: string) => (
+        <Tooltip title={v || 'local'}>
+          <Tag style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {nodeNameOf(v)}
+          </Tag>
+        </Tooltip>
+      ),
     },
     {
       title: t('sites.field.enabled'),
