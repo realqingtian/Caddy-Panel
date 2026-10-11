@@ -1,12 +1,13 @@
 # 开发进度管控
 
 > 本文档是**进度与决策的唯一维护处**。每次开发会话开始先读本文接续上下文,结束前更新状态。
-> 任务定义见 [M1 设计第 8 节](./m1-design.md);需求验收标准见 [PRD](./requirements.md)。状态图例:⬜ 未开始 / 🔵 进行中 / ✅ 完成 / ⛔ 阻塞。
+> 任务定义见 [M1 设计第 8 节](./archive/m1-design.md);需求验收标准见 [PRD](./requirements.md)。状态图例:⬜ 未开始 / 🔵 进行中 / ✅ 完成 / ⛔ 阻塞。
 
 ## 1. 当前状态
 
 **阶段:🎉 M3(平台化)已完成 —— T3.1–T3.4 全部 ✅ 并通过真实验收(compose + agent 全链路联调,2026-10-11)。**
-M1/M2/M3 均已交付;后续演进方向见 m3-design §3.3 第 5 条(远程日志/上游状态)与 RBAC 细粒度(M4 预留)。
+M1/M2/M3 均已交付(设计文档已归档至 [docs/archive/](./archive/));迭代 I1(UI 走查 + 登录页优化)、I2(主界面布局壳优化)均已完成 ✅(详见 [iterations.md](./iterations.md))。
+后续演进方向见 [m3-design §3.3](./archive/m3-design.md) 第 5 条(远程日志/上游状态)与 RBAC 细粒度(M4 预留)。
 
 ## 2. 里程碑
 
@@ -17,13 +18,26 @@ M1/M2/M3 均已交付;后续演进方向见 m3-design §3.3 第 5 条(远程日�
 | M2 进阶 | T2.1–T2.6 完成,FR-701~706 验收通过 | ✅ |
 | M3 平台化 | T3.1–T3.4 完成,FR 验收通过 | ✅ |
 
+## 2.1 迭代看板
+
+> 里程碑之间的 UI 走查/优化/修复迭代;问题明细、根因与验证记录见 [iterations.md](./iterations.md)。
+
+| 迭代 | 任务 | 状态 | 完成日期 | 备注 |
+| --- | --- | --- | --- | --- |
+| I1 | 走查:静态扫描脚本 + 真实启动浏览器逐页实测(9 页 × 中英) | ✅ | 2026-10-11 | 脚本 `frontend/scripts/check-i18n.mjs`;zh/en 结构对齐,问题集中 Nodes 页 |
+| I1 | 文档治理:M1–M3 设计与调研文档归档 docs/archive/,全量引用修正 | ✅ | 2026-10-11 | m1/m2/m3-design、research-implementation-plan |
+| I1 | 修复 i18n 缺失 key(I1-1 nodes.enroll 叶子 / I1-2 common.cancel / I1-3 tokens.createFailed)+ 删除死代码 PlaceholderPage(I1-4) | ✅ | 2026-10-11 | 浏览器双语复验通过;扫描 274 key/300 条双向零缺失 |
+| I1 | 登录页视觉重设计(I1-5:分栏布局/品牌区/暗色适配) | ✅ | 2026-10-11 | 亮/暗 × 中/英截图验收;token 驱动自动跟随主题 |
+| I1 | lint + build + 浏览器复验,回写 iterations.md 验证段 | ✅ | 2026-10-11 | eslint/prettier/build 全绿;登录功能回归通过 |
+| I2 | 主界面布局壳优化:Header 页面标题/浅色化、Sider 品牌区(BrandMark)、Dashboard 统计卡语义图标 + 颜色 token 化 | ✅ | 2026-10-11 | 亮/暗 × 中/英截图验收;详见 iterations.md I2 |
+
 ## 3. 任务看板
 
 ### M0 — 设计与规划
 
 | ID | 任务 | 状态 | 完成日期 | 产出 |
 | --- | --- | --- | --- | --- |
-| T0.1 | 实现方案调研 | ✅ | 2026-10-10 | docs/research-implementation-plan.md |
+| T0.1 | 实现方案调研 | ✅ | 2026-10-10 | docs/archive/research-implementation-plan.md |
 | T0.2 | 技术栈定稿 + 架构与目录设计 | ✅ | 2026-10-10 | docs/tech-stack.md · docs/project-structure.md |
 | T0.3 | 架构评审与修复(service 分层、并发一致性、测试约定等) | ✅ | 2026-10-10 | 上述文档修订 |
 | T0.4 | PRD + 进度管控文档 | ✅ | 2026-10-10 | docs/requirements.md · docs/progress.md |
@@ -42,7 +56,7 @@ M1/M2/M3 均已交付;后续演进方向见 m3-design §3.3 第 5 条(远程日�
 | T8 | 启动漂移检测 + Dashboard | FR-202 | ✅ | 2026-10-10 | drift 三方对比:DB rendered vs 磁盘(文本)+ 运行态 vs 磁盘(站点指纹语义比较,规避 Caddy JSON 往返噪声);/status 聚合(Caddy 存活/适配器版本/站点计数/最近 5 次下发);启动检查日志留痕;前端 Dashboard 卡片 + 告警;联调:一致态 true、直编不误报 |
 | T9 | Docker 镜像与 compose 打磨 + README | NFR-104 | ✅ | 2026-10-10 | 多阶段镜像(bun→swag→CGO=0)+ 双容器 compose 多轮联调;README 重写(部署/配置/工程命令);FR-308 证书状态查看补齐(只读共享 caddy_data 卷);全量回归通过 |
 
-### M3 — 平台化(设计见 [m3-design.md](./m3-design.md))
+### M3 — 平台化(设计见 [m3-design.md](./archive/m3-design.md))
 
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 | --- | --- | --- | --- | --- | --- |
@@ -51,7 +65,7 @@ M1/M2/M3 均已交付;后续演进方向见 m3-design §3.3 第 5 条(远程日�
 | T3.3 | 多节点 Agent(反向连接) | M3 | ✅ | 2026-10-11 | agent/ 独立 module(反向 WS+心跳+本机执行);中心 Enrollment Token 接入(cen_ 一次性/24h/可撤销)→ 签发 cnd_ 节点密钥(仅存哈希);渲染按节点分组、pipeline 演进为 Applier 路由(local 直连/remote WS 指令,per-node 单写者锁);四表 node_id 回填 local;安装/卸载命令一键生成;心跳 30s/90s 离线扫描;指令 request_id+30s 超时不排队;协议版本握手;节点维度 Dashboard/metrics/审计;前端 Nodes 页+站点节点选择;agent 单测 + hub 真实 WS 回路测试 |
 | T3.4 | l4 转发(caddy-l4) | M3 | ✅ | 2026-10-11 | 站点类型 l4(监听地址端口/网络 tcp|udp/上游列表)渲染进全局 layer4 块,与 http 站点渲染互斥;仅 TCP/UDP 透传不做 TLS 终结;离线校验注册 caddy-l4 模块(layer4+l4proxy)使产物可离线适配;compose 镜像 xcaddy 追加插件;表单/类型标签/i18n;golden 更新 + 互斥断言 + 全量测试绿 |
 
-### M2 — 进阶(设计见 [m2-design.md](./m2-design.md))
+### M2 — 进阶(设计见 [m2-design.md](./archive/m2-design.md))
 
 | ID | 任务 | 需求覆盖 | 状态 | 完成日期 | 备注 |
 | --- | --- | --- | --- | --- | --- |
@@ -90,17 +104,20 @@ M1/M2/M3 均已交付;后续演进方向见 m3-design §3.3 第 5 条(远程日�
 | 2026-10-10 | Caddyfile 直编强制保留全局 admin 指令(缺失即 400):直编缺全局块会让 /load 后 Caddy 回落默认绑定导致面板失联;全局块属面板管辖,用户从预览载入编辑即可保留 | T6 联调确认的故障模式,防护成本一行正则 |
 | 2026-10-10 | 漂移检测的运行态对比采用站点指纹(host 集合+路由数)语义比较而非字节比较:Caddy /load 存储前对 JSON 做结构往返(键序/默认值),字节级必然误报;深层字段改动由站点操作全量渲染兜底 | T8 联调实测字节比较 100% 误报 |
 | 2026-10-10 | Oxlint 评估收尾:M1 后评估完毕,最终决定维持 ESLint 10 现状(不替代、不混用) | 用户拍板;插件生态刚性需求优先于 lint 速度 |
-| 2026-10-10 | M2 设计定稿与任务拆解(T2.1~T2.6,顺序:上游健康→访问控制→导入→备份→监控→证书),见 m2-design.md;图表库选 recharts | 复核 PRD 与调研;按依赖与风险排序,插件依赖项(限流/DNS challenge)只产出配置并标注 |
+| 2026-10-10 | M2 设计定稿与任务拆解(T2.1~T2.6,顺序:上游健康→访问控制→导入→备份→监控→证书),见 docs/archive/m2-design.md;图表库选 recharts | 复核 PRD 与调研;按依赖与风险排序,插件依赖项(限流/DNS challenge)只产出配置并标注 |
 | 2026-10-11 | Caddyfile 导入改用自研 Tokenize 块解析:caddyfile.Parse 会丢弃个别子指令行(实测 flush_interval -1 整行消失),导入必须无损保留原文 | T2.3 实测发现;契约测试与解析器测试双向覆盖 |
 | 2026-10-11 | 漂移运行态对比、metrics 解析等全部通过"产物契约/行为测试"先行验证后再接入;全 mock 单测无法发现生产装配漏注入(T2.1 的 deps.Client),冒烟冒烟兜底 | M2 期间缺陷均在测试/冒烟阶段拦截 |
 | 2026-10-11 | 插件支持落地:compose 默认构建带插件 Caddy(caddy-ratelimit + caddy-dns/cloudflare + caddy-l4),面板渲染限流(rate_limit,按 IP)与 DNS challenge(tls { dns ... {env.X} },凭据 {env.X} 占位不落库) | 用户拍板;凭据不落库原则延续 |
 | 2026-10-11 | SMTP 通知渠道落地:settings 可视化配置(host/port/username/password/from/to),密码脱敏(GET 不回显、PUT 空值保留);到期提醒 Webhook/SMTP 双渠道并存 | 用户拍板;渠道配置必须可视化而非 .env |
-| 2026-10-11 | M3 设计定稿与任务拆解(T3.1 API Token+RBAC → T3.2 Web 终端 → T3.3 多节点 Agent → T3.4 l4),见 m3-design.md;Agent 采用反向连接,Token 只存哈希,RBAC 先行 admin/viewer 两级 | 认证层增强(鉴权/token)是多节点与终端的前置依赖,故列首位 |
-| 2026-10-11 | M3 四项关键决策拍板:①节点接入用 Enrollment Token(一次性注册令牌,注册后签发节点密钥);②Agent 安装由面板生成安装命令(systemd);③l4 仅 TCP/UDP 透传不做 TLS 终结;④T3.3 先于 T3.4 | 用户确认(均选推荐项);已固化进 m3-design §3.1 |
+| 2026-10-11 | M3 设计定稿与任务拆解(T3.1 API Token+RBAC → T3.2 Web 终端 → T3.3 多节点 Agent → T3.4 l4),见 docs/archive/m3-design.md;Agent 采用反向连接,Token 只存哈希,RBAC 先行 admin/viewer 两级 | 认证层增强(鉴权/token)是多节点与终端的前置依赖,故列首位 |
+| 2026-10-11 | M3 四项关键决策拍板:①节点接入用 Enrollment Token(一次性注册令牌,注册后签发节点密钥);②Agent 安装由面板生成安装命令(systemd);③l4 仅 TCP/UDP 透传不做 TLS 终结;④T3.3 先于 T3.4 | 用户确认(均选推荐项);已固化进 docs/archive/m3-design.md §3.1 |
 | 2026-10-11 | 开工前需求审查:七点本地性语义确认(总原则"agent 自管本地,中心管策略":路径类设置/手动证书/终端/导入限 local,渲染按节点分组,每节点串行+跨节点并行,漂移与 metrics 由 agent 上报,站点创建时绑节点不可迁移,回滚按节点,备份全中心);PRD M3 需求正式化为 FR-801~804(801/802 已交付) | 用户确认(总原则选推荐);消除多节点下"本地性配置"归属歧义后才开工 |
 | 2026-10-11 | **M3 真实验收通过**(compose panel+插件 Caddy / 宿主机 agent+独立 Caddy 实例全链路):Enrollment 注册→密钥续连、30s 心跳(in_sync/站点计数上报)、远程站点下发(curl 实证转发)、离线下发失败不排队且零 DB 变更、重连自动恢复、节点级回滚、删除防护 409、令牌撤销拒绝、l4 TCP 端到端透传 + UDP 容器内验证(Docker Desktop UDP 端口发布限制,宿主机侧无法回包,实现无误)、WS 保活 3 分钟零断连、agent metrics 上报(node 维度 52 序列)、审计 node_id、优雅退出 2s。验收修复 7 缺陷:agent 心跳读写互吞(独立心跳 goroutine)、CaddyLocal 占位 host、优雅退出卡 90s(ReadJSON 不感知 ctx)、metrics_samples 表 M2 起从未建(allModels 漏登记)、WS 长静默假死(中心 ping/pong)、l4 域名必填误伤与监听地址可重复、Dockerfile 插件名错误(caddy-rate-limit→caddy-ratelimit,M2 遗留,曾被 layer 缓存掩盖) | 用户要求"完成后启动真实验收";全部缺陷当场修复并复验 |
 | 2026-10-11 | T3.3 实现定档:协议信封单结构(Message+Type 判别);agent in_sync 实现为"磁盘产物 vs 上次成功下发内容"字节比较(手改漂移检测;运行态深度对比仍由 local 漂移检测承担);凭证前缀 cen_(接入)/cnd_(节点密钥)与 cpt_ 并列;域名唯一性按节点判定(不同节点可服务同一域名);回滚恢复演进为节点级 ReplaceNodeSites(其他节点站点不受影响);备份/恢复保持全中心语义(含 nodes 表) | 按 §3.3 定稿实现中的具体技术取型;全部为设计语义的实现细节,不改变对外行为 |
 | 2026-10-11 | T3.3 最终审查(端到端生命周期推演)固化 8 项:节点名随安装命令填写、指令 request_id+30s 超时(离线即失败不排队)、心跳 30s/三倍判 offline、握手协议版本不匹配拒绝升级提示、远程节点日志与上游状态 M3 不做(页面标注仅 local)、有站点禁删节点、站点响应补 node_id 默认 local、agent 为独立 Go module(轻依赖,渲染留在中心) | 实现者视角端到端推演;全部有明确正确答案无需用户决策,需求就此定稿 |
+| 2026-10-11 | 文档治理:M1–M3 已完成里程碑的设计文档与调研文档归档至 `docs/archive/`(git mv 保留历史),活跃文档仅留 progress/requirements/tech-stack/project-structure + 新增 iterations.md;全仓库引用同步修正 | 用户要求"已完成的该归档就归档";历史仍有查证价值,与活跃文档分离降低必读负担 |
+| 2026-10-11 | 迭代记录制度:UI 走查/优化/修复以迭代为单位记录在 `docs/iterations.md`(问题清单+根因+方案+验证),看板状态在本文档 §2.1;先落文档后编码 | 用户要求"走查与优化有记录可查";I1(UI 全量走查 + 登录页优化)为首个迭代 |
+| 2026-10-11 | I1 走查结论:zh/en 语言文件结构完全对齐(288=288 条),裸 key 原因为**引用了不存在的 key**(nodes.enroll 对象节点当叶子用、common.cancel、settings.tokens.createFailed);新增可复用审查脚本 frontend/scripts/check-i18n.mjs | 静态扫描 + 真实启动浏览器逐页实测(中英双语);t() 传对象节点会把 i18next 报错串渲染进 UI,教训沉淀进 iterations.md |
 
 ## 5. 待决事项
 

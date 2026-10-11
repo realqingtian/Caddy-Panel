@@ -1,6 +1,6 @@
 # Caddy Panel — M3 详细设计
 
-> 前置:[PRD 第 5 节(M3 占位)](./requirements.md) · [M2 设计](./m2-design.md)
+> 前置:[PRD 第 5 节(M3 占位)](../requirements.md) · [M2 设计](./m2-design.md)
 > M2 已预留的演进边界继续生效:Client 方法签名不写死 host、sites/config_versions 预留 node_id 列(AutoMigrate + 一次性回填 local)、单实例约束。
 
 ## 1. 需求与任务拆解(顺序即执行顺序)

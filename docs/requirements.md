@@ -1,11 +1,11 @@
 # 需求规格说明书(PRD)
 
-> 版本 v1.0(2026-10-10)。本文档是需求的唯一维护处,回答"做什么、验收标准是什么";怎么实现见 [M1 详细设计](./m1-design.md)。
+> 版本 v1.0(2026-10-10)。本文档是需求的唯一维护处,回答"做什么、验收标准是什么";怎么实现见 [M1 详细设计](./archive/m1-design.md)。
 > 需求编号规则:`FR-<模块><序号>` 功能需求,`NFR-<序号>` 非功能需求。状态:✅ M1 范围 / 🕐 后续版本。
 
 ## 1. 背景与目标
 
-Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON Admin API 和手写 Caddyfile 两条路,现有开源面板均不成熟(见[调研](./research-implementation-plan.md))。本项目交付一个可视化面板,让不熟悉 Caddy 配置语法的用户也能安全地管理站点、证书与配置变更。
+Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON Admin API 和手写 Caddyfile 两条路,现有开源面板均不成熟(见[调研](./archive/research-implementation-plan.md))。本项目交付一个可视化面板,让不熟悉 Caddy 配置语法的用户也能安全地管理站点、证书与配置变更。
 
 **产品目标**:单机场景下,从零到"一个反代站点上线"不超过 3 分钟;任何配置变更可预检、可追溯、可一键回滚。
 
@@ -98,7 +98,7 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 | FR-705 ✅ | 导入现有 Caddyfile | 解析已部署的 Caddyfile,可识别部分映射为领域模型,不可识别部分保留为"自定义片段"原样输出 |
 | FR-706 ✅ | 备份与恢复 | 站点配置与版本历史一键导出/导入,用于迁移与灾备 |
 
-### M3(已完成;设计见 docs/m3-design.md)
+### M3(已完成;设计见 docs/archive/m3-design.md)
 
 | 编号 | 需求 | 验收标准 | 状态 |
 | --- | --- | --- | --- |
@@ -107,8 +107,8 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 | FR-803 ✅ | 多节点 Agent 管理 | 节点经 Enrollment Token 注册、反向连接中心;面板按节点下发配置/展示状态与漂移;站点创建时绑定节点(不可迁移);路径类本地配置由 agent 自管 | ✅ T3.3 |
 | FR-804 ✅ | TCP/UDP 转发(l4) | 站点类型扩展 l4(监听地址端口/上游),仅透传不做 l4 TLS 终结;需 caddy-l4 插件镜像 | ✅ T3.4 |
 
-多节点本地性语义(路径/证书/终端/导入限 local;漂移与 metrics 由 agent 上报)见 [m3-design §3.2](./m3-design.md)。
+多节点本地性语义(路径/证书/终端/导入限 local;漂移与 metrics 由 agent 上报)见 [docs/archive/m3-design.md §3.2](./archive/m3-design.md)。
 
 ## 6. 追溯矩阵(简版)
 
-需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,FR-601→T6,FR-602 随各 handler 注解,FR-603/604→T1(布局基建),NFR-104→T9。
+需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./archive/m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,FR-601→T6,FR-602 随各 handler 注解,FR-603/604→T1(布局基建),NFR-104→T9。

@@ -1,7 +1,7 @@
 # 技术栈选型明细
 
 > 状态:已实现并随项目演进(M1–M3 交付,2026-10-11);实际版本以后端 go.mod / 前端 package.json 为准。
-> 决策来源:[实现方案调研](./research-implementation-plan.md);版本为本机已验证或当前稳定版。
+> 决策来源:[实现方案调研](./archive/research-implementation-plan.md);版本为本机已验证或当前稳定版。
 
 ## 1. 总览
 
@@ -100,4 +100,4 @@ go get github.com/swaggo/swag/cmd/swag github.com/swaggo/gin-swagger github.com/
 
 - 前端:函数组件 + hooks;页面级目录自包含(pages/Sites/ 下放私有组件);API 层按域拆分文件,类型集中 `api/types.ts`;提交前 `bun run lint`(ESLint + Prettier)。
 - 后端:标准 Go 布局(cmd/internal),三层结构 **handler(协议转换)→ service(业务逻辑)→ store / caddy(数据与基础设施)**;handler 不写业务,业务全部落在 service;日志用 `slog`;错误统一 `{code,message,detail}`。
-- 两者接口契约:REST + JSON,见 [M1 设计第 5 节](./m1-design.md)。
+- 两者接口契约:REST + JSON,见 [M1 设计第 5 节](./archive/m1-design.md)。

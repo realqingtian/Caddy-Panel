@@ -1,6 +1,6 @@
 # Caddy Panel — M2 详细设计
 
-> 前置:[PRD 第 5 节(M2 需求)](./requirements.md) · [M1 设计](./m1-design.md) · [调研:插件与 metrics 预研](./research-implementation-plan.md)
+> 前置:[PRD 第 5 节(M2 需求)](../requirements.md) · [M1 设计](./m1-design.md) · [调研:插件与 metrics 预研](./research-implementation-plan.md)
 > 原则延续 M1:领域模型唯一事实源、全量渲染管道零特殊分支、raw_extra/global_extra 兜底不可识别内容、单写者下发。
 
 ## 1. 需求与任务拆解(顺序即执行顺序)
