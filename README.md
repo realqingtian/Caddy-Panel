@@ -146,9 +146,9 @@ cd frontend && bun run lint && bun run build   # 前端 lint + 构建(产物嵌�
 | [需求规格 PRD](docs/requirements.md) | 功能需求(编号化)与验收标准、非功能需求 |
 | [架构与目录设计](docs/project-structure.md) | 运行时架构、目录结构、关键数据流转、环境变量约定 |
 | [技术栈选型](docs/tech-stack.md) | 各层选型与版本、选型理由 |
-| [进度与决策日志](docs/progress.md) | 里程碑状态、任务看板、迭代看板、全部设计决策及理由 |
-| [迭代记录](docs/iterations.md) | UI 走查 / 优化 / 修复迭代的问题清单、根因、方案与验证记录 |
-| [归档:里程碑设计与调研](docs/archive/) | [M1 设计](docs/archive/m1-design.md) / [M2 设计](docs/archive/m2-design.md) / [M3 设计](docs/archive/m3-design.md) / [实现方案调研](docs/archive/research-implementation-plan.md)(已完成,仅供查证) |
+| [进度与决策日志](docs/progress.md) | 里程碑状态、任务看板、迭代看板、活跃期决策及理由 |
+| [M4 用户系统设计](docs/m4-users-design.md) | 多用户 / 权限点矩阵 / 可吊销会话 / TOTP 2FA 设计(进行中) |
+| [归档:里程碑与迭代](docs/archive/) | [M1 设计](docs/archive/m1-design.md) / [M2 设计](docs/archive/m2-design.md) / [M3 设计](docs/archive/m3-design.md) / [实现方案调研](docs/archive/research-implementation-plan.md) / [已完成里程碑与历史决策](docs/archive/completed-milestones.md) / [迭代明细](docs/archive/iterations.md)(仅供查证) |
 | [AGENTS.md](AGENTS.md) | AI 代理/贡献者协作须知(查阅 antd 6 文档姿势、工程约定、提交检查) |
 
 ## 安全注意事项

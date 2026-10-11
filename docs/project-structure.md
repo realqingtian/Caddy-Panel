@@ -1,7 +1,7 @@
 # 项目架构与目录设计
 
-> 状态:已实现(M1–M3 全部交付,2026-10-11)。本文档描述当前目录结构与各模块职责;演进差异以 [progress 决策日志](./progress.md) 为准。
-> 配套阅读:[技术栈明细](./tech-stack.md) · [M1 详细设计](./archive/m1-design.md)
+> 状态:随实现演进(M1–M3 交付,2026-10-11 校准至实际结构);本文档描述当前目录结构与各模块职责;演进差异以 [progress 决策日志](./progress.md) 为准。
+> 配套阅读:[技术栈明细](./tech-stack.md) · 归档:[M1 详细设计](./archive/m1-design.md)
 
 ## 1. 运行时架构
 
@@ -15,6 +15,8 @@
                                            │ 渲染产物落盘 ◄─────────────────────────────────┘
                                            ▼
                                 /etc/caddy/Caddyfile(重启恢复保障)
+
+  远程节点 agent(独立 Go module)──反向 WebSocket(心跳/指令/上报)──► Panel :8080 /api/v1/agent/*
 ```
 
 模块边界与数据流(handler → service → store / caddy 三层):
@@ -22,88 +24,67 @@
 1. **handler(api 层)**只做协议转换:参数绑定/校验、JWT 解析、统一响应格式,**不写业务**,一律调用 service;
 2. **service 层**承载全部业务逻辑:事务编排、审计语义;向下调 **store** 读写数据、调 **caddy 包**执行配置下发;接口先于实现定义,便于 mock 单测;
 3. **caddy 包(基础设施)**:**pipeline** 是下发核心编排 —— 领域模型 → **render**(Caddyfile)→ **validate**(离线 adapt 或 `POST /adapt`)→ **下发**(`/load`)→ **落盘** → 版本快照,任一步失败整体失败;**client** 是唯一与 Admin API 通信的出口;
-4. **store** 是唯一写库入口(GORM)。
-4. 前端经 `/api/v1` 访问,生产模式由 Go 用 `go:embed` 直接托管前端产物,开发模式由 Vite proxy。
+4. **store** 是唯一写库入口(GORM);
+5. **agent(独立 Go module,仓库根 `agent/`)**:反向连接中心,自管本机 Caddy(执行 WS 下发指令、上报心跳/漂移/metrics);协议信封定义在中心 `internal/agentproto`,agent 侧持同步副本。
 
-## 2. 目录结构(规划)
+## 2. 目录结构(2026-10-11 实际)
 
 ```
 Caddy-Panel/
-├── README.md
-├── docs/                          # 全部设计文档(已完成 4 篇)
+├── README.md  AGENTS.md  LICENSE
+├── docs/                          # 活跃:progress/requirements/tech-stack/project-structure/m4-users-design
+│   └── archive/                   # 归档:m1/m2/m3-design、research、completed-milestones、iterations
+│
+├── agent/                         # 多节点 agent(独立 Go module:caddy-panel/agent)
+│   ├── main.go  agent.go          # 反向 WS 连接、心跳(30s)、指令执行、协议握手
+│   ├── localcaddy.go              # 本机 Caddy 执行(下发指令调本地 Admin API)
+│   └── proto/ …                   # 与中心 internal/agentproto 同步的协议副本
 │
 ├── backend/                       # Go 后端
-│   ├── go.mod                     # module: caddy-panel/backend
-│   ├── cmd/panel/main.go          # 入口:读配置 → 初始化 store → 启动 API;graceful shutdown(等待进行中的下发完成)
-│   ├── templates/                 # Caddyfile 渲染模板(text/template)
-│   │   ├── global.tmpl            #   全局块:admin 绑定、log 输出、可选 metrics
-│   │   ├── site_proxy.tmpl        #   反代站点块
-│   │   ├── site_static.tmpl       #   静态站点块
-│   │   └── site_redirect.tmpl     #   重定向站点块
+│   ├── go.mod  go.sum
+│   ├── cmd/panel/main.go          # 入口:读配置 → 初始化 store → 启动 API;graceful shutdown
+│   ├── templates/                 # Caddyfile 渲染模板(text/template):global / site_proxy / site_static / site_redirect
 │   └── internal/
-│       ├── config/config.go       # 环境变量/启动参数:监听地址、Caddy admin 地址、Caddyfile 路径、JWT 密钥
-│       ├── model/                 # GORM 模型(与 M1 设计第 3 节数据模型一一对应)
-│       │   ├── user.go  site.go  config_version.go  audit_log.go  setting.go
-│       ├── store/
-│       │   ├── store.go           # 打开 SQLite、AutoMigrate(M1;后续引入 goose/golang-migrate 版本化迁移)、事务助手
-│       │   └── seed.go            # 首次启动创建管理员(用户名默认 admin):密码取 PANEL_ADMIN_PASSWORD,未设置则随机生成并打印到日志(仅一次)
-│       ├── caddy/
-│       │   ├── client.go          # Admin API client:Load/Adapt/GetConfig/Upstreams/Stop
-│       │   ├── render.go          # 模板渲染引擎:领域字段 → Caddyfile,含 raw_extra/global_extra 片段原样拼入
-│       │   ├── validate.go        # 校验:优先进程内 httpcaddyfile 适配,兜底 POST /adapt
-│       │   └── pipeline.go        # 编排:render → validate → load → 原子落盘(tmp+rename)→ 留版本快照;内置全局单写者锁,串行化所有下发
-│       ├── service/               # 业务逻辑层(全部业务在这里,可单测:mock store 与 caddy 接口)
-│       │   ├── auth.go           # 登录、JWT 签发、bcrypt 密码校验
-│       │   ├── site.go           # 站点 CRUD 业务:落库 → 触发下发管道(结果记入 config_versions)
-│       │   ├── config.go         # 版本查询/对比、回滚、Caddyfile 直接编辑
-│       │   ├── drift.go          # 漂移检测:DB 快照 / 磁盘 Caddyfile / GET /config 三方对比,启动与 Dashboard 触发
-│       │   ├── dashboard.go      # 状态聚合(Caddy 存活/版本/站点数/最近下发)
-│       │   └── logs.go           # 日志 tail 读取与轮询
-│       └── api/
-│           ├── router.go          # 路由注册 + 中间件挂载 + service 装配;/healthz 健康端点(供容器探活)
-│           ├── middleware/        # auth.go(JWT) audit.go(请求级审计:谁/何时/哪个API/结果码,唯一写入方) cors.go(gin-contrib) recover.go limiter.go(登录接口内存限速)
-│           └── handler/           # auth.go status.go sites.go config.go logs.go(仅参数绑定/校验/统一响应,不写业务)
+│       ├── config/config.go       # PANEL_* 环境变量(见 §4 环境约定)
+│       ├── model/                 # GORM 模型:user site config_version audit_log setting api_token node metrics
+│       ├── store/                 # 唯一写库入口:store.go(AutoMigrate)seed.go(首启管理员)
+│       ├── caddy/                 # client.go(Admin API 出口)render.go validate.go pipeline.go(单写者+原子落盘)
+│       ├── service/               # 全部业务(可 mock 单测):auth/jwt/login_guard、site(+render/validate)、
+│       │                          #   config、drift、dashboard、logs、setting、token、backup、cert(+expiry)、
+│       │                          #   metrics、smtp、importer、node(+heartbeat/install)
+│       ├── api/
+│       │   ├── router.go          # 路由 + 中间件挂载 + service 装配;/healthz
+│       │   ├── middleware/        # auth(JWT) audit(唯一写入方) cors recover limiter(登录限速)
+│       │   ├── handler/           # 协议转换:auth/sites/config/logs/settings/tokens/backup/cert/metrics/
+│       │   │                      #   upstreams/node/terminal/import/dashboard/agent_ws/agent_report
+│       │   └── agent_ws.go 等     # agent 反向 WS hub + 上报接收
+│       ├── agentconn/  agentproto/# agent 连接管理与协议信封(与 agent/ 侧同步)
+│       ├── apierr/  i18n/  version/ # 统一错误 {code,message,detail}、后端消息中英、版本号
+│       └── web/                   # go:embed 前端产物(生产单二进制)
 │
 ├── frontend/                      # React 19 + Vite + TS + Antd 6(依赖管理:Bun)
-│   ├── package.json               # scripts: dev/build/lint(bun run ...)
-│   ├── bun.lock                   # Bun 锁文件(提交入库)
-│   ├── vite.config.ts             # react 插件;/api proxy → http://localhost:8080
-│   ├── tsconfig.json  index.html
+│   ├── package.json  bun.lock  vite.config.ts(/api proxy → :8080)
+│   ├── scripts/check-i18n.mjs     # i18n 静态审查(迭代 I1 沉淀,发版前执行)
 │   └── src/
-│       ├── main.tsx               # QueryClientProvider + RouterProvider + AntdConfigProvider(zh_CN)
-│       ├── router.tsx             # 路由表 + 登录守卫(未登录重定向 /login)
-│       ├── api/
-│       │   ├── client.ts          # axios 实例:baseURL、JWT 拦截器、401 跳登录、错误归一化
-│       │   ├── types.ts           # 与后端契约对应的 TS 类型(Site、ConfigVersion、Status...)
-│       │   └── auth.ts  sites.ts  config.ts  logs.ts
-│       ├── stores/                # Zustand:auth.ts(token/当前用户)、theme.ts(语言/主题偏好)
-│       ├── locales/               # i18n 文案:zh-CN.json、en-US.json、index.ts(react-i18next 初始化)
-│       ├── hooks/                 # 通用 hooks(usePolling 日志轮询、useAuth)
-│       ├── layouts/AdminLayout.tsx# Sider 菜单 + Header(用户菜单/退出)
-│       ├── pages/
-│       │   ├── Login/             # 登录表单
-│       │   ├── Dashboard/         # 状态卡片 + 最近下发记录
-│       │   ├── Sites/             # 列表 Table + SiteForm Drawer(按 type 动态字段)
-│       │   ├── ConfigEditor/      # Monaco 编辑 + 版本历史 + DiffViewer + 回滚
-│       │   ├── Logs/              # access/error Tab + 轮询 tail
-│       │   └── Settings/          # M1 仅展示与修改基础设置
-│       └── components/            # SiteForm、CaddyfileEditor(Monaco+Caddyfile 高亮)、VersionDiff
+│       ├── main.tsx               # QueryClientProvider + ConfigProvider(antd locale)+ RouterProvider
+│       ├── router.tsx  index.css  # 路由 + 登录守卫;全局样式(登录页/布局壳/终端)
+│       ├── api/                   # axios client + 按域拆分(auth/sites/config/logs/nodes/metrics/tokens/backup/upstreams/dashboard)+ types.ts
+│       ├── stores/                # zustand:auth.ts(token/用户/角色)、theme.ts(语言/主题,persist)
+│       ├── locales/               # zh-CN.json、en-US.json、index.ts(react-i18next)
+│       ├── hooks/  components/    # usePolling 等;BrandMark、SiteForm、CaddyfileEditor 等
+│       ├── layouts/AdminLayout.tsx# 应用壳:Sider(固定)+ Header(页面标题/主题/语言/用户)+ 内容区独立滚动
+│       └── pages/                 # Login Dashboard Sites Upstreams Nodes ConfigEditor Logs Metrics Settings Terminal
 │
-├── deploy/
-│   ├── docker-compose.yml         # caddy + panel 两服务;panel 依赖 caddy 健康
-│   ├── panel.Dockerfile           # 多阶段:bun build 前端 → go build 单二进制
-│   └── caddy/Caddyfile.initial    # Caddy 引导配置(admin :2019、日志输出到文件)
-│
-└── scripts/dev.sh                 # 一键起本地开发(可选)
+└── deploy/
+    ├── docker-compose.yml         # panel + caddy(含插件镜像)两服务
+    ├── panel.Dockerfile           # 多阶段:bun build 前端 → swag → go build 单二进制
+    └── caddy/                     # Caddy 引导配置(admin :2019、日志落文件)
 ```
 
-**M2/M3 扩展点(先留边界、不建目录,演进路径已定):**
+**演进说明:**
 
-- **多节点 Agent(M3,已落地)**:`agent/` 独立 Go module(反向 WS + 心跳 + 指令执行);中心 `pipeline` 演进为 `Applier` 出口路由(local=本机 Admin API,remote=WS 指令,per-node 单写者锁);`sites`/`config_versions`/`audit_logs`/`metrics_samples` 已加 `node_id` 列并回填 `local`;协议见 `internal/agentproto`(agent 侧为同步副本);
-- **upstream 独立配置(M2)**:`upstreams` 当前为逗号分隔 TEXT;M2 引入健康检查/权重时拆 `site_upstreams` 子表(AutoMigrate + 一次性回填),渲染产物不变;
-- **监控(M2)**:全局模板已预留 metrics 位,开关在设置页(FR-601),M2 只需补抓取与图表;
-- **导入与复杂配置(M2)**:`sites.raw_extra` / `settings.global_extra` 片段通道 M1 已预留,M2 导入 Caddyfile 时不可识别内容落入片段,渲染管道零改动;
-- **Web 终端(M3)**:后端 WebSocket handler + xterm.js;
+- M2/M3 扩展点(上游子表、监控、导入、终端、多节点)均已落地,落地记录见 [archive/completed-milestones.md](./archive/completed-milestones.md);
+- **M4 用户系统扩展点**:`users` 加列(disabled/totp_*)、新增 `sessions` 表、权限点矩阵替换两级 role 判断,设计见 [m4-users-design.md](./m4-users-design.md);
 - **版本对齐**:Panel 内嵌的离线适配器(import 的 caddy 库版本)须与部署的 Caddy 保持同一 minor 序列(compose 中两者同步升级),避免"离线校验通过、`/load` 被运行时拒绝"的版本偏差。
 
 ## 3. 关键流转(以"新建反代站点"为例)
@@ -129,6 +110,7 @@ Caddy-Panel/
 | 变量 | 默认(开发) | 说明 |
 | --- | --- | --- |
 | `PANEL_LISTEN` | `:8080` | Panel API 监听 |
+| `PANEL_MODE` | `debug` | Gin 运行模式(`release` 用于生产/镜像) |
 | `PANEL_DB_PATH` | `./data/panel.db` | SQLite 路径 |
 | `PANEL_ADMIN_URL` | `http://localhost:2019` | Caddy Admin API;生产推荐 `unix:///run/caddy/admin.sock`(client 以 unix socket dial) |
 | `PANEL_CADDY_ADMIN_BIND` | `localhost:2019` | 渲染全局块的 Caddy admin 监听地址(Caddy 重启恢复依赖此绑定);compose 中为 `caddy:2019` |
@@ -138,6 +120,8 @@ Caddy-Panel/
 | `PANEL_LOGIN_MAX_FAILS` | `5` | 登录连续失败锁定阈值;设置页可改,立即生效 |
 | `PANEL_LOGIN_LOCK_WINDOW` | `1m` | 登录锁定时长;设置页可改,立即生效 |
 | `PANEL_LOG_ACCESS_PATH` / `PANEL_LOG_ERROR_PATH` | `./data/access.log` / `./data/error.log` | 日志 tail 读取目标 |
+| `PANEL_CERT_STORAGE_PATH` | `/data/caddy` | Caddy 证书存储根目录(只读展示,FR-308;compose 中共享 caddy_data 卷) |
+| `PANEL_PANEL_PUBLIC_URL` | 空 | 面板对外可达地址(agent 安装命令生成 ws URL 用);可在设置页覆盖 |
 
 > 优先级:env 提供**默认值**;路径类与登录锁定参数可在设置页(FR-601)修改并持久化到 `settings` 表,运行时以 settings 为准;`PANEL_JWT_TTL` 与 `PANEL_JWT_SECRET` 仅 env/启动侧管理。
 

@@ -87,7 +87,7 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 
 ## 5. 后续版本需求
 
-### M2(已完成,见 [progress 看板](./progress.md))
+### M2(已完成;任务表见 [归档](./archive/completed-milestones.md))
 
 | 编号 | 需求 | 要点 |
 | --- | --- | --- |
@@ -109,6 +109,16 @@ Caddy 是默认自动 HTTPS 的现代 Web 服务器/反代,但官方只有 JSON 
 
 多节点本地性语义(路径/证书/终端/导入限 local;漂移与 metrics 由 agent 上报)见 [docs/archive/m3-design.md §3.2](./archive/m3-design.md)。
 
+### M4(进行中;设计见 [docs/m4-users-design.md](./m4-users-design.md))
+
+| 编号 | 需求 | 验收标准 | 状态 |
+| --- | --- | --- | --- |
+| FR-901 🔵 | 多用户管理 | admin 可创建/编辑/禁用/删除用户并分配角色;重置他人密码、角色变更、禁用立即吊销其全部会话;不能操作自己;系统至少保留一个可用 admin | ⬜ T4.3 |
+| FR-902 🔵 | 细粒度权限 | 权限点(`<资源>:<操作>`)路由级校验;内置 admin(全权)/editor(业务读写,无用户管理与终端)/viewer(全只读)三角色;越权返回 403 本地化文案;菜单与按钮按权限显隐 | ⬜ T4.2/T4.3 |
+| FR-903 🔵 | 可吊销会话 | 会话落库(设备/IP/时间);用户可查看本人会话并下线指定设备;改密/禁用/吊销后旧 token 下一次请求即 401;过期/吊销会话自动清扫 | ⬜ T4.1/T4.4 |
+| FR-904 🔵 | TOTP 两步验证 | 用户自助绑定(二维码 + 验证码确认),启用后登录需二段验证;10 个一次性恢复码;解绑需当前密码 + 验证码;绑定/解绑/恢复码登录入审计 | ⬜ T4.5 |
+| FR-905 🔵 | 开放 API 兼容 | `cpt_` Token 的 read/write 行为与 M3 验收一致;write 恒不含 `users:manage` 与终端;现有功能回归通过 | ⬜ T4.6 |
+
 ## 6. 追溯矩阵(简版)
 
-需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./archive/m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ [进度看板](./progress.md)任务编号(T1–T9)。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,FR-601→T6,FR-602 随各 handler 注解,FR-603/604→T1(布局基建),NFR-104→T9。
+需求 ↔ 设计 ↔ 任务:FR 编号 ↔ [M1 设计](./archive/m1-design.md)章节(第 3 节数据模型 / 第 5 节 API / 第 6 节前端)↔ 任务编号(T1–T9,已归档见 [completed-milestones.md](./archive/completed-milestones.md))。模块对应:FR-10x→T2,FR-20x→T3/T8,FR-30x→T4/T5,FR-40x→T4/T6,FR-50x→T7,FR-601→T6,FR-602 随各 handler 注解,FR-603/604→T1(布局基建),NFR-104→T9;M3:FR-801~804→T3.1~T3.4;M4:FR-901~905→T4.1~T4.6(见 [m4-users-design.md](./m4-users-design.md))。

@@ -2,9 +2,9 @@
 
 Caddy Panel:可视化管理 Caddy 的面板(Go + Gin 后端 / React 19 + Ant Design 6 前端 / Bun 包管理)。
 
-**必读文档**(按顺序):[进度管控(含迭代看板)](docs/progress.md) · [需求规格 PRD](docs/requirements.md) · [迭代记录](docs/iterations.md) · [技术栈明细](docs/tech-stack.md) · [项目架构与目录设计](docs/project-structure.md)
+**必读文档**(按顺序):[进度管控(含迭代看板)](docs/progress.md) · [需求规格 PRD](docs/requirements.md) · [M4 用户系统设计](docs/m4-users-design.md) · [技术栈明细](docs/tech-stack.md) · [项目架构与目录设计](docs/project-structure.md)
 
-**归档文档**(已完成的 M1/M2/M3 设计与调研,仅供查证):[docs/archive/](docs/archive/) —— m1-design.md · m2-design.md · m3-design.md · research-implementation-plan.md
+**归档文档**(已完成里程碑/迭代明细/历史决策,仅供查证):[docs/archive/](docs/archive/) —— completed-milestones.md(任务表与历史决策)· iterations.md(迭代明细)· m1-design.md · m2-design.md · m3-design.md · research-implementation-plan.md
 
 **会话流程**:开发会话开始先读 `docs/progress.md` 接续上下文,按看板下一任务开工;会话结束前更新进度看板与决策日志。
 

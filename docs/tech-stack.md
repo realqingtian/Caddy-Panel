@@ -36,7 +36,7 @@
 **为什么 Bun 只做包管理、构建仍用 Vite?**
 Bun 的 install/脚本执行比 npm 快且本机已就绪;但 Vite 插件生态(React Fast Refresh、Monaco worker 处理)最成熟,风险最低。后续如需可平滑切 `bun build`。
 
-**为什么 React 19 + Vite 7?**
+**为什么 React 19 + Vite 8?**
 当前稳定大版本组合,生态(TanStack Query v5、React Router v7、zustand v5、antd 6)全部就绪;Vite 仍是 React 社区构建工具的主流默认选,dev 启动快、插件生态全。
 
 **为什么 SQLite + glebarez 驱动?**
@@ -51,7 +51,7 @@ Go 生态事实标准的 Web 框架(star/下载量最高,资料与中间件生�
 **为什么 Caddyfile 校验优先离线?**
 import `github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile` 可在 Panel 进程内完成 Caddyfile→JSON 适配,校验不依赖 Caddy 存活;Caddy 未运行时仍可"保存但不下发"。代价是引入较重的 caddy 依赖(可接受,同生态)。在线兜底:`POST /adapt`。
 
-## 3. 依赖清单
+## 3. 依赖清单(M1 初始化清单;实际版本与 M2+ 新增依赖 —— recharts、@xterm/*、pquerna/otp 等 —— 以 go.mod / package.json 为准)
 
 ### 前端(Bun)
 
@@ -59,7 +59,7 @@ import `github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile` 可在 Panel 
 bun add react react-dom antd@6 react-router-dom @tanstack/react-query zustand axios dayjs \
   i18next react-i18next
 bun add -d typescript vite @vitejs/plugin-react @types/react @types/react-dom \
-  @monaco-editor/react monaco-editor eslint@9 prettier vitest
+  @monaco-editor/react monaco-editor eslint@10 prettier vitest
 ```
 
 ### 后端(Go)
