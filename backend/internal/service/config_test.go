@@ -219,6 +219,33 @@ func TestSettingUpdate_ValidatesAndPersists(t *testing.T) {
 	}
 }
 
+func TestSettingUpdate_NotificationKeys(t *testing.T) {
+	repo := newFakeSiteRepo()
+	svc := NewSetting(repo, map[string]string{})
+
+	// 通知键在白名单内,合法值写入(I3-4:此前白名单漏登记,PUT 一律 400)。
+	if err := svc.Update(context.Background(), map[string]string{
+		model.SettingKeyAcmeEmail: "ops@example.com",
+		model.SettingKeySMTPPort:  "465",
+	}); err != nil {
+		t.Fatalf("通知键合法更新失败: %v", err)
+	}
+	if v, _, _ := repo.GetSetting(context.Background(), model.SettingKeySMTPPort); v != "465" {
+		t.Fatalf("SMTP 端口未持久化: %q", v)
+	}
+	// 可空键空值跳过格式校验(存空串 = 回落 env 默认)。
+	if err := svc.Update(context.Background(), map[string]string{
+		model.SettingKeyAcmeEmail: "",
+		model.SettingKeySMTPTo:    "",
+	}); err != nil {
+		t.Fatalf("可空键空值应放行: %v", err)
+	}
+	// 非空仍校验格式。
+	if err := svc.Update(context.Background(), map[string]string{model.SettingKeySMTPPort: "abc"}); err == nil {
+		t.Fatal("SMTP 端口非法值应被拒绝")
+	}
+}
+
 func TestSettingAll_MergesDefaults(t *testing.T) {
 	repo := newFakeSiteRepo()
 	svc := NewSetting(repo, map[string]string{model.SettingKeyLoginMaxFails: "5", model.SettingKeyAdminURL: "http://localhost:2019"})

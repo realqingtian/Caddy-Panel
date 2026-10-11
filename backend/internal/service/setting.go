@@ -18,6 +18,8 @@ type SettingRepo interface {
 }
 
 // editableSettingKeys 设置页可读写的键(FR-601);JWT 密钥/有效期不在其列。
+// 证书通知类(FR-703)曾遗漏登记:校验器与脱敏逻辑齐备但白名单未加,
+// 导致 GET 不返回、PUT 拒绝 —— I3-4 修复(前端 UI 同步首次落地)。
 var editableSettingKeys = []string{
 	model.SettingKeyAdminURL,
 	model.SettingKeyCaddyAdminBind,
@@ -29,6 +31,26 @@ var editableSettingKeys = []string{
 	model.SettingKeyMetricsEnabled,
 	model.SettingKeyPanelPublicURL,
 	model.SettingKeyGlobalExtra,
+	model.SettingKeyAcmeEmail,
+	model.SettingKeyNotifyWebhook,
+	model.SettingKeySMTPHost,
+	model.SettingKeySMTPPort,
+	model.SettingKeySMTPUsername,
+	model.SettingKeySMTPPassword,
+	model.SettingKeySMTPFrom,
+	model.SettingKeySMTPTo,
+}
+
+// optionalSettingKeys 可空键:空值跳过格式校验(存空串,All 语义下回落 env 默认)。
+// 必填/开关类键(metrics、登录锁定)不在其列,空值仍报错。
+var optionalSettingKeys = map[string]bool{
+	model.SettingKeyAcmeEmail:     true,
+	model.SettingKeyNotifyWebhook: true,
+	model.SettingKeySMTPHost:      true,
+	model.SettingKeySMTPPort:      true,
+	model.SettingKeySMTPUsername:  true,
+	model.SettingKeySMTPFrom:      true,
+	model.SettingKeySMTPTo:        true,
 }
 
 // secretSettingKeys 脱敏键:All 返回空值;Update 空值保留旧值(密码类)。
@@ -142,6 +164,9 @@ func (s *SettingService) Update(ctx context.Context, values map[string]string) e
 		}
 		if secretSettingKeys[key] && value == "" {
 			continue // 脱敏键空值 = 保留旧密码
+		}
+		if value == "" && optionalSettingKeys[key] {
+			continue // 可空键空值 = 清除覆盖,回落 env 默认(仍写入空串)
 		}
 		if validate := settingValidators[key]; validate != nil {
 			if err := validate(value); err != nil {
