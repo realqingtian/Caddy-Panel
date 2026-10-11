@@ -68,5 +68,6 @@ M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺�
 
 | 事项 | 状态 | 说明 |
 | --- | --- | --- |
+| I6 | SMTP/Webhook 通知渠道闭环 | 🔵 | SMTP:465 隐式 TLS 支持+测试邮件按钮已上线(163 实测链路通,535 等待用户改用授权码);Webhook 多渠道适配(飞书/钉钉/企业微信/Slack/Discord)已立项待实施 |
 | GHCR 正式镜像通道 | 🕐 搁置 | v0.2.0 已在 GHCR(多架构,Actions 构建验证通过);服务器暂用本地构建镜像交付,切 GHCR 需用户提供 read:packages PAT;workflow 已保留随时可启用 |
 | M4 验收遗留测试数据 | 🕐 低优先 | 验收服务器 users 表残留 M4 验收用户(tmpuser/sess-test/2fatest 等),可在用户管理页清理 |
