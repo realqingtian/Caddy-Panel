@@ -7,7 +7,7 @@
 
 ## 1. 当前状态
 
-**阶段:📝 迭代 I7(UX 优化:日志可读性/命令展示/配置中心交互)设计评审中(2026-10-11)。**
+**阶段:📝 迭代「日志与配置中心体验优化」设计评审中(2026-10-11)。**
 设计文档 [i7-ux-design.md](./i7-ux-design.md) 已落地并按用户确认扩充三项(日志后端检索+SSE 流式/配置中心片段管理/版本备注),非目标最终定稿,待最终确认开工。
 SMTP(465 TLS+测试按钮)与 Webhook 多渠道(飞书实测收到测试消息)双渠道闭环;设置页重构为 8 分类左侧导航并补 panel_public_url UI。
 M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺陷(D1–D16)全部修复并在验收服务器回归通过。
@@ -38,10 +38,10 @@ M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺�
 > 已完成迭代(I1 UI 走查+登录页、I2 布局壳、I3 体验打磨):状态见 [归档 §3](./archive/completed-milestones.md),明细见 [archive/iterations.md](./archive/iterations.md)。
 > **制度**:进行中的迭代明细直接写在本节下方;迭代完成时,明细整段迁入归档卷(整单元迁移)。
 
-| 迭代 | 任务 | 状态 | 备注 |
+| 迭代主题 | 任务 | 状态 | 备注 |
 | --- | --- | --- | --- |
-| I4 | 全项目全面验收:界面轨(全部页面 × 中英 × 亮暗)+ 功能轨(M1–M4 全部 FR 逐条对 PRD 验收标准);缺陷分级修复后回归 | ✅ | 2026-10-11 | 环境:验收服务器 caddy-panel.realqingtian.com;16 缺陷(D1–D16)修复清零,回归全过;部署形态升级 bind mount(见决策日志) |
-| I5 | UI 走查补课:用户反馈的二级面板/表格/交互收纳问题;深度走查方法修正(所有 Drawer/Modal 逐个打开+长数据压布局) | ✅ | 2026-10-11 | ①语言文件单花括号占位符 6 处(会话 Drawer 标题/删除与禁用确认框显示原文);②站点页归属节点列显示节点名+Tooltip 截断;③Header 主题/语言收进头像下拉(用户信息/子菜单带勾选/退出);④全局表头 nowrap 治理("Agent 版本"类换行清零);⑤头像触发器对齐 antd 官方模式并补昵称横排(hover 淡背景);⑥侧栏菜单按功能域分组重排加分隔线、折叠图标换 MenuFold/MenuUnfold;⑦全项目 8 个数据表统一分页(默认 10 条/页,lib/tablePagination);已部署服务器浏览器逐项验证 |
+| 全项目全面验收 |界面轨(全部页面 × 中英 × 亮暗)+ 功能轨(M1–M4 全部 FR 逐条对 PRD 验收标准);缺陷分级修复后回归 | ✅ | 2026-10-11 | 环境:验收服务器 caddy-panel.realqingtian.com;16 缺陷(D1–D16)修复清零,回归全过;部署形态升级 bind mount(见决策日志) |
+| UI 走查补课 |用户反馈的二级面板/表格/交互收纳问题;深度走查方法修正(所有 Drawer/Modal 逐个打开+长数据压布局) | ✅ | 2026-10-11 | ①语言文件单花括号占位符 6 处(会话 Drawer 标题/删除与禁用确认框显示原文);②站点页归属节点列显示节点名+Tooltip 截断;③Header 主题/语言收进头像下拉(用户信息/子菜单带勾选/退出);④全局表头 nowrap 治理("Agent 版本"类换行清零);⑤头像触发器对齐 antd 官方模式并补昵称横排(hover 淡背景);⑥侧栏菜单按功能域分组重排加分隔线、折叠图标换 MenuFold/MenuUnfold;⑦全项目 8 个数据表统一分页(默认 10 条/页,lib/tablePagination);已部署服务器浏览器逐项验证 |
 
 ## 4. 决策日志(活跃期)
 
@@ -71,8 +71,8 @@ M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺�
 
 | 事项 | 状态 | 说明 |
 | --- | --- | --- |
-| I7 | UX 优化:日志结构化视图+后端检索+SSE 流式/命令步骤化组件/配置中心交互+片段管理+版本备注 | 📝 | 设计文档 [i7-ux-design.md](./i7-ux-design.md) 已按确认扩充,待最终确认开工 |
+| 日志与配置中心体验优化 | UX 优化:日志结构化视图+后端检索+SSE 流式/命令步骤化组件/配置中心交互+片段管理+版本备注 | 📝 | 设计文档 [20261011-logux-design.md](./20261011-logux-design.md) 已按确认扩充,待最终确认开工 |
 | M4 遗留强化 | ✅ | TOTP 二段错码计数绑定用户名(换票据/换源不再重置锁定),回归测试覆盖,已部署 v0.2.0 |
-| I6 | SMTP/Webhook 通知渠道闭环 + 设置页重构 | ✅ | 2026-10-11 | SMTP ✅(465 TLS+测试邮件);Webhook 六渠道类型/自动识别/测试消息按钮 ✅(飞书实测 HTTP 200);设置页 8 分类左排导航+panel_public_url 补 UI;golden 测试锁六渠道 payload;明细见 [notify-channels-design.md](./notify-channels-design.md)/[settings-redesign.md](./settings-redesign.md) |
+| 通知渠道与设置页重构 | SMTP/Webhook 通知渠道闭环 + 设置页重构 | ✅ | 2026-10-11 | SMTP ✅(465 TLS+测试邮件);Webhook 六渠道类型/自动识别/测试消息按钮 ✅(飞书实测 HTTP 200);设置页 8 分类左排导航+panel_public_url 补 UI;golden 测试锁六渠道 payload;明细见 [notify-channels-design.md](./notify-channels-design.md)/[settings-redesign.md](./settings-redesign.md) |
 | GHCR 正式镜像通道 | 🕐 搁置 | v0.2.0 已在 GHCR(多架构,Actions 构建验证通过);服务器暂用本地构建镜像交付,切 GHCR 需用户提供 read:packages PAT;workflow 已保留随时可启用 |
 | M4 验收遗留测试数据 | 🕐 低优先 | 验收服务器 users 表残留 M4 验收用户(tmpuser/sess-test/2fatest 等),可在用户管理页清理 |
