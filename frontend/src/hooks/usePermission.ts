@@ -45,7 +45,8 @@ function permissionsOf(role: string | null): string[] {
     case 'editor':
       return ALL.filter((p) => !EDITOR_DENIED.includes(p))
     case 'viewer':
-      return ALL.filter((p) => p.endsWith(':read'))
+      // settings:read 不派发(设置页整页不可见,§3.4)
+      return ALL.filter((p) => p.endsWith(':read') && p !== Perm.SettingsRead)
     default:
       return []
   }

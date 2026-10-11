@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -66,6 +67,9 @@ func (s *SessionService) Issue(ctx context.Context, userID uint, ip, userAgent s
 	return sid, nil
 }
 
+// ErrSessionInvalid 会话不存在/已吊销/已过期(统一错误,由中间件按 401 处理)。
+var ErrSessionInvalid = errors.New("session invalid")
+
 // Verify 校验会话有效性:存在、未吊销、未过期。由鉴权中间件每请求调用。
 func (s *SessionService) Verify(ctx context.Context, sid string) (*model.Session, error) {
 	session, err := s.repo.GetSessionBySid(ctx, sid)
@@ -73,8 +77,7 @@ func (s *SessionService) Verify(ctx context.Context, sid string) (*model.Session
 		return nil, err
 	}
 	if !session.Alive(s.now()) {
-		// 无效会话与不存在同义:上抛错误,由中间件统一按 401 处理。
-		return nil, err
+		return nil, ErrSessionInvalid
 	}
 	return session, nil
 }

@@ -219,21 +219,21 @@ func (s *Store) TouchSession(ctx context.Context, id uint, at time.Time) error {
 
 // RevokeSession 吊销单个会话(已吊销的保持幂等)。
 func (s *Store) RevokeSession(ctx context.Context, sid string, at time.Time) error {
-	return s.revoke(ctx, "sid = ?", sid, at)
+	return s.revoke(ctx, "sid = ?", []any{sid}, at)
 }
 
 // RevokeUserSessions 吊销用户全部会话;exceptSid 非空时跳过该会话(下线其他设备)。
 func (s *Store) RevokeUserSessions(ctx context.Context, userID uint, exceptSid string, at time.Time) error {
 	if exceptSid != "" {
-		return s.revoke(ctx, "user_id = ? AND sid <> ? AND revoked_at IS NULL", userID, exceptSid, at)
+		return s.revoke(ctx, "user_id = ? AND sid <> ?", []any{userID, exceptSid}, at)
 	}
-	return s.revoke(ctx, "user_id = ? AND revoked_at IS NULL", userID, at)
+	return s.revoke(ctx, "user_id = ?", []any{userID}, at)
 }
 
-func (s *Store) revoke(ctx context.Context, cond string, args ...any) error {
+func (s *Store) revoke(ctx context.Context, cond string, args []any, at time.Time) error {
 	err := s.db.WithContext(ctx).Model(&model.Session{}).
-		Where(cond, args...).Where("revoked_at IS NULL").
-		Update("revoked_at", time.Now()).Error
+		Where(cond, args...).
+		Update("revoked_at", at).Error
 	if err != nil {
 		return fmt.Errorf("吊销会话: %w", err)
 	}

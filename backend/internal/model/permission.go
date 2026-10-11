@@ -85,9 +85,11 @@ func RolePermissions(role string) []string {
 		}
 		return out
 	case RoleViewer:
+		// settings:read 不派发给 viewer(设置页整页不可见,§3.4;
+		// 设置项含 SMTP/路径等运维敏感信息);audit:read 本就未入矩阵。
 		out := make([]string, 0, len(activePerms))
 		for _, p := range activePerms {
-			if strings.HasSuffix(p, ":read") {
+			if strings.HasSuffix(p, ":read") && p != PermSettingsRead {
 				out = append(out, p)
 			}
 		}

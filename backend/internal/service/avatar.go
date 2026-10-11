@@ -56,17 +56,17 @@ func (s *AvatarStore) Save(userID uint, header *multipart.FileHeader) (string, e
 	}
 	defer func() { _ = src.Close() }()
 
+	// 部分读取头部做内容嗅探(小文件不足 512B 属正常,ReadFull 会误报 EOF)。
 	head := make([]byte, 512)
-	if _, err := io.ReadFull(src, head); err != nil {
-		return "", fmt.Errorf("读取头像内容: %w", err)
-	}
+	n, _ := io.ReadFull(src, head)
+	head = head[:n]
 	kind, _ := filetype.Match(head)
 	mimeType := kind.MIME.Value
 	ext, ok := avatarExts[mimeType]
 	if !ok {
 		return "", fmt.Errorf("仅支持 png/jpeg/webp 图片")
 	}
-	// 回Seek:文件指针归零后整体写盘(含已嗅探的前 512 字节)。
+	// 回Seek:文件指针归零后整体写盘(含已嗅探的头部字节)。
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
 		return "", fmt.Errorf("回读头像文件: %w", err)
 	}

@@ -124,9 +124,12 @@ func New(deps Deps) *gin.Engine {
 	pcFree.POST("/auth/logout", authHandler.Logout())
 	pcFree.POST("/auth/change-password", profileHandler.ChangePassword())
 	pcFree.GET("/auth/sessions", sessionHandler.ListMine())
+	pcFree.DELETE("/auth/sessions/:sid", sessionHandler.DeleteMine())
+	pcFree.POST("/auth/sessions/others", sessionHandler.DeleteOthers())
 	pcFree.POST("/auth/2fa/setup", twoFAHandler.Setup())
 	pcFree.POST("/auth/2fa/enable", twoFAHandler.Enable())
 	pcFree.POST("/auth/2fa/recovery", twoFAHandler.RegenerateRecovery())
+	pcFree.DELETE("/auth/2fa", twoFAHandler.Disable())
 	pcFree.GET("/me", authHandler.Me())
 
 	// 强制改密闸门组:白名单外的全部业务路由。
