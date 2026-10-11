@@ -147,6 +147,23 @@ func run() error {
 		default:
 			slog.Info("启动漂移检测:DB / 磁盘 / Caddy 运行态一致")
 		}
+
+		// 周期性自愈(用户拍板):覆盖 caddy 单独重启的场景(面板不重启则启动自愈不会触发)。
+		// 每 5 分钟检测一次;仅当 DB/磁盘一致且运行态落后时才重下发,其他漂移仍留给人工。
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if repaired, err := checker.Repair(ctx); err != nil {
+					slog.Warn("周期自愈:下发失败", "error", err)
+				} else if repaired {
+					slog.Info("周期自愈:Caddy 运行态落后于 DB,已自动重新下发恢复")
+				}
+			}
+		}
 	}()
 
 	srv := &http.Server{

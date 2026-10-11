@@ -2,4 +2,4 @@
 package version
 
 // Version 面板版本,发版时更新。
-const Version = "0.1.0-dev"
+const Version = "0.2.0"
