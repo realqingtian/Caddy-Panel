@@ -38,7 +38,8 @@ type CreateEnrollTokenResponse struct {
 
 // UninstallCommandResponse 卸载命令响应。
 type UninstallCommandResponse struct {
-	Command string `json:"command"`
+	Command string                 `json:"command"`
+	Steps   []service.UninstallStep `json:"steps"`
 }
 
 // List godoc
@@ -194,7 +195,7 @@ func (h *NodeHandler) DeleteEnrollToken() gin.HandlerFunc {
 // @Router /api/v1/nodes/uninstall-command [get]
 func (h *NodeHandler) UninstallCommand() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, UninstallCommandResponse{Command: service.UninstallCommand()})
+		c.JSON(http.StatusOK, UninstallCommandResponse{Command: service.UninstallCommand(), Steps: service.UninstallSteps()})
 	}
 }
 

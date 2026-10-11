@@ -56,6 +56,23 @@ rm -rf /var/lib/caddy-panel-agent
 '`
 }
 
+// UninstallStep 卸载单步(结构化展示用,I7)。
+type UninstallStep struct {
+	Desc    string `json:"desc"`
+	Command string `json:"command"`
+}
+
+// UninstallSteps 卸载步骤数组:与 UninstallCommand 语义一致,供前端步骤化展示。
+func UninstallSteps() []UninstallStep {
+	return []UninstallStep{
+		{Desc: "停止并禁用 agent 服务(已停止则跳过)", Command: "sudo systemctl disable --now caddy-panel-agent 2>/dev/null || true"},
+		{Desc: "移除 systemd 服务文件", Command: "sudo rm -f /etc/systemd/system/caddy-panel-agent.service"},
+		{Desc: "重载 systemd 配置", Command: "sudo systemctl daemon-reload"},
+		{Desc: "移除 agent 二进制", Command: "sudo rm -f /usr/local/bin/caddy-panel-agent"},
+		{Desc: "清理状态目录(密钥与快照)", Command: "sudo rm -rf /var/lib/caddy-panel-agent"},
+	}
+}
+
 // wsCenterURL 面板 http(s) 地址 → agent 连接地址(ws(s)://host/api/v1/agent/ws)。
 func wsCenterURL(raw string) string {
 	raw = strings.TrimSpace(raw)
