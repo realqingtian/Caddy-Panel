@@ -1,7 +1,8 @@
 services:
   caddy:
-    # 带插件构建:限流(caddy-ratelimit)、DNS challenge(cloudflare)与 l4 转发(caddy-l4)。
-    # 不需要插件时可改回 image: caddy:2。
+    # 带插件镜像(GH Actions 构建推 GHCR,服务器 pull 部署);
+    # build 段保留:本地/离线场景可 `docker compose build` 自行构建。
+    image: ghcr.io/realqingtian/caddy-plugins:${CADDY_IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: caddy/Dockerfile
@@ -21,6 +22,8 @@ services:
       - caddy_logs:/data/logs
 
   panel:
+    # 面板镜像(GH Actions 构建推 GHCR);build 段保留为本地构建备选。
+    image: ghcr.io/realqingtian/caddy-panel:${PANEL_IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: deploy/panel.Dockerfile

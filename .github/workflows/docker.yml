@@ -1,0 +1,88 @@
+name: Docker
+
+# 构建并推送面板/插件 Caddy 镜像到 GHCR;验收服务器直接 pull 部署(2C2G 不做本地构建)。
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "镜像标签(留空使用 latest)"
+        required: false
+        default: "latest"
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: realqingtian
+
+jobs:
+  panel:
+    name: Build panel image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Derive tags
+        id: tags
+        run: |
+          TAGS="$REGISTRY/$OWNER/caddy-panel:latest"
+          if [ -n "${GITHUB_REF_NAME:-}" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            TAGS="$TAGS,$REGISTRY/$OWNER/caddy-panel:${GITHUB_REF_NAME#v}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.tag }}" != "latest" ]; then
+            TAGS="$REGISTRY/$OWNER/caddy-panel:${{ inputs.tag }}"
+          else
+            TAGS="$TAGS,$REGISTRY/$OWNER/caddy-panel:main-${GITHUB_SHA::7}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/panel.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha,scope=panel
+          cache-to: type=gha,scope=panel,mode=max
+
+  caddy:
+    name: Build caddy (plugins) image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Derive tags
+        id: tags
+        run: |
+          TAGS="$REGISTRY/$OWNER/caddy-plugins:latest"
+          if [ -n "${GITHUB_REF_NAME:-}" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            TAGS="$TAGS,$REGISTRY/$OWNER/caddy-plugins:${GITHUB_REF_NAME#v}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.tag }}" != "latest" ]; then
+            TAGS="$REGISTRY/$OWNER/caddy-plugins:${{ inputs.tag }}"
+          else
+            TAGS="$TAGS,$REGISTRY/$OWNER/caddy-plugins:main-${GITHUB_SHA::7}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/caddy/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha,scope=caddy
+          cache-to: type=gha,scope=caddy,mode=max
