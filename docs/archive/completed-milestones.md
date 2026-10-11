@@ -55,7 +55,7 @@
 | --- | --- | --- | --- | --- | --- |
 | T3.1 | 开放 API Token + RBAC(admin/viewer) | M3 | ✅ | 2026-10-11 | api_tokens 表(仅 sha256,前缀展示,过期/last_used);Bearer cpt_* 与 JWT 双轨认证;scope 路由级校验(读=read,写=write);users.role 启用 viewer(JWT 空 role 兼容 admin);token 管理仅限 JWT+admin;Settings 页 token 管理卡片(明文一次性展示) |
 | T3.2 | Web 终端(xterm.js + WebSocket) | M3 | ✅ | 2026-10-11 | WS 端点(查询参数传 JWT —— 浏览器无法自定义 WS 头)+ creack/pty;二进制帧数据 + 文本帧 resize 控制;仅 JWT+admin;打开事件审计;前端 xterm 页(暗色同步/自适应尺寸/会话结束横幅);菜单 admin 显隐;登录响应带 role |
-| T3.3 | 多节点 Agent(反向连接) | M3 | ✅ | 2026-10-11 | agent/ 独立 module(反向 WS+心跳+本机执行);中心 Enrollment Token 接入(cen_ 一次性/24h/可撤销)→ 签发 cnd_ 节点密钥(仅存哈希);渲染按节点分组、pipeline 演进为 Applier 路由(local 直连/remote WS 指令,per-node 单写者锁);四表 node_id 回填 local;安装/卸载命令一键生成;心跳 30s/90s 离线扫描;指令 request_id+30s 超时不排队;协议版本握手;节点维度 Dashboard/metrics/审计;前端 Nodes 页+站点节点选择;agent 单测 + hub 真实 WS 回路测试 |
+| T3.3 | 多节点 Agent(反向连接) | M3 | ✅ | 2026-10-11 | agent/ 独立 module(反向 WS+心跳+本机执行);中心 Enrollment Token 接入(`cen_` 一次性/24h/可撤销)→ 签发 `cnd_` 节点密钥(仅存哈希);渲染按节点分组、pipeline 演进为 Applier 路由(local 直连/remote WS 指令,per-node 单写者锁);四表 node_id 回填 local;安装/卸载命令一键生成;心跳 30s/90s 离线扫描;指令 request_id+30s 超时不排队;协议版本握手;节点维度 Dashboard/metrics/审计;前端 Nodes 页+站点节点选择;agent 单测 + hub 真实 WS 回路测试 |
 | T3.4 | l4 转发(caddy-l4) | M3 | ✅ | 2026-10-11 | 站点类型 l4(监听地址端口/网络 tcp\|udp/上游列表)渲染进全局 layer4 块,与 http 站点渲染互斥;仅 TCP/UDP 透传不做 TLS 终结;离线校验注册 caddy-l4 模块(layer4+l4proxy)使产物可离线适配;compose 镜像 xcaddy 追加插件;表单/类型标签/i18n;golden 更新 + 互斥断言 + 全量测试绿 |
 
 ## 3. 已完成迭代(状态镜像,明细见 [iterations.md](./iterations.md))

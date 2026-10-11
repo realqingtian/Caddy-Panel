@@ -5,7 +5,7 @@
 
 ## 1. 运行时架构
 
-```
+```text
 ┌─────────────┐  HTTPS + JWT   ┌────────────────────────┐ unix socket / 127.0.0.1:2019 ┌─────────┐
 │   浏览器     │ ─────────────► │      Panel 后端 (Go)    │ ────────────────────────────► │  Caddy  │
 │ React SPA   │                │  Gin API + 静态资源托管  │   POST /adapt   配置预检        │         │
@@ -29,7 +29,7 @@
 
 ## 2. 目录结构(2026-10-11 实际)
 
-```
+```text
 Caddy-Panel/
 ├── README.md  AGENTS.md  LICENSE
 ├── docs/                          # 活跃:progress/requirements/tech-stack/project-structure/m4-users-design

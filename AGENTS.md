@@ -6,6 +6,8 @@ Caddy Panel:可视化管理 Caddy 的面板(Go + Gin 后端 / React 19 + Ant Des
 
 **归档文档**(已完成里程碑/迭代明细/历史决策,仅供查证):[docs/archive/](docs/archive/) —— completed-milestones.md(任务表与历史决策)· iterations.md(迭代明细)· m1-design.md · m2-design.md · m3-design.md · research-implementation-plan.md
 
+**本地运维目录**(不入库):`ops/` —— 验收服务器连接信息、密钥副本与部署/维护操作日志(DEPLOY-LOG.md);**每次对服务器的部署或维护操作必须登记该日志**。
+
 **会话流程**:开发会话开始先读 `docs/progress.md` 接续上下文,按看板下一任务开工;会话结束前更新进度看板与决策日志。
 
 ## 铁律
