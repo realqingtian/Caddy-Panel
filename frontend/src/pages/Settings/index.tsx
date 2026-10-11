@@ -17,6 +17,7 @@ import {
   Switch,
   Table,
   Tabs,
+  theme,
   Typography,
   Upload,
   type FormInstance,
@@ -289,6 +290,7 @@ function CaddyPane({ savePending, form }: { savePending: boolean; form: FormInst
   )
   return (
     <>
+      <SaveButton pending={savePending} />
       <Alert
         type="info"
         showIcon
@@ -308,7 +310,6 @@ function CaddyPane({ savePending, form }: { savePending: boolean; form: FormInst
         </Col>
         <Col span={12} />
       </Row>
-      <SaveButton pending={savePending} />
       <Divider titlePlacement="start">{t('settings.cat.deployment')}</Divider>
       <Row gutter={24}>
         {ro(t('settings.field.adminUrl'), String(form.getFieldValue('admin_url') || ''))}
@@ -326,6 +327,7 @@ function SecurityPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   return (
     <>
+      <SaveButton pending={savePending} />
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -346,7 +348,6 @@ function SecurityPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <SaveButton pending={savePending} />
     </>
   )
 }
@@ -356,6 +357,7 @@ function AvatarPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   return (
     <>
+      <SaveButton pending={savePending} />
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
@@ -372,7 +374,6 @@ function AvatarPane({ savePending }: { savePending: boolean }) {
         </Col>
         <Col span={12} />
       </Row>
-      <SaveButton pending={savePending} />
     </>
   )
 }
@@ -382,6 +383,7 @@ function AdvancedPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
   return (
     <>
+      <SaveButton pending={savePending} />
       <Form.Item name="metrics_enabled" label={t('settings.field.metrics')} valuePropName="checked">
         <Switch />
       </Form.Item>
@@ -392,7 +394,6 @@ function AdvancedPane({ savePending }: { savePending: boolean }) {
       >
         <Input.TextArea rows={4} placeholder={'servers {\n\tprotocols h1 h2\n}'} />
       </Form.Item>
-      <SaveButton pending={savePending} />
     </>
   )
 }
@@ -426,6 +427,7 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
 
   return (
     <>
+      <SaveButton pending={savePending} />
       {/* 事件源配置:ACME 账号 + 到期 Webhook 地址 */}
       <Row gutter={24}>
         <Col span={12}>
@@ -450,17 +452,13 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
 
       {/* Webhook 渠道:类型与测试按钮同区 */}
       <Divider titlePlacement="start">{t('settings.webhookChannel')}</Divider>
-      <Row gutter={24} align="middle">
+      <Row gutter={24} align="bottom">
         <Col span={12}>
-          <Form.Item
-            name="notify_webhook_type"
-            label={t('settings.field.notifyWebhookType')}
-            style={{ marginBottom: 8 }}
-          >
+          <Form.Item name="notify_webhook_type" label={t('settings.field.notifyWebhookType')}>
             <Select options={typeOptions} />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col span={12} style={{ marginBottom: 24, display: 'flex' }}>
           <Button onClick={testWebhook}>{t('settings.webhookTest')}</Button>
         </Col>
       </Row>
@@ -510,19 +508,33 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
       <Button style={{ marginBottom: 24 }} onClick={testSMTP}>
         {t('settings.smtpTest')}
       </Button>
-      <div>
-        <SaveButton pending={savePending} />
-      </div>
     </>
   )
 }
 
+/** 保存栏:吸顶右对齐——长表单滚动时保存始终可见,不再沉在页面底部(I6 体验反馈)。 */
 function SaveButton({ pending }: { pending: boolean }) {
   const { t } = useTranslation()
+  const { token } = theme.useToken()
   return (
-    <Button type="primary" htmlType="submit" loading={pending}>
-      {t('common.save')}
-    </Button>
+    <div
+      style={{
+        position: 'sticky',
+        top: -16,
+        zIndex: 10,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        padding: '8px 12px',
+        margin: '-8px -12px 16px',
+        background: token.colorBgContainer,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+      }}
+    >
+      <Button type="primary" htmlType="submit" loading={pending}>
+        {t('common.save')}
+      </Button>
+    </div>
   )
 }
 
