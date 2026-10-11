@@ -20,10 +20,10 @@
 git clone https://github.com/realqingtian/Caddy-Panel.git
 cd Caddy-Panel/deploy
 
-# 建议预置管理员密码(不设置则首次启动随机生成,打印在面板启动日志里,只出现一次)
-export PANEL_ADMIN_PASSWORD=your-password
+cp .env.example .env
+vim .env                # 至少修改 PANEL_ADMIN_PASSWORD;公网部署再填 PANEL_PUBLIC_URL
 
-docker compose up -d   # 首次启动需本地构建镜像(含带插件的 Caddy),约几分钟
+docker compose up -d    # 首次启动需本地构建镜像(含带插件的 Caddy),约几分钟
 ```
 
 然后:
@@ -88,7 +88,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o caddy-panel-agent .
 
 ## 配置参考
 
-面板通过 `PANEL_*` 环境变量配置;除 JWT 相关系外,均可事后在「设置」页修改(env 只作首次默认值)。
+面板通过 `PANEL_*` 环境变量配置。**推荐方式**:复制 `deploy/.env.example` 为 `deploy/.env`(全量变量与中文注释都在里面),compose 会自动读取;除 JWT 相关系外,均可事后在「设置」页修改(env 只作初始默认值)。
 
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |

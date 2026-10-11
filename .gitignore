@@ -31,3 +31,6 @@ backend/internal/web/dist/*
 
 # ZCode 本地工具配置
 .zcodeignore
+
+# 本地环境配置(含管理员密码,勿提交)
+deploy/.env
