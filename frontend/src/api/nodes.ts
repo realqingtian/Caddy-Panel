@@ -85,6 +85,8 @@ export interface UninstallStep {
 
 /** 卸载命令(对称生成):script 整体复制用,steps 步骤化展示用(I7)。 */
 export async function getUninstallCommand(): Promise<{ command: string; steps: UninstallStep[] }> {
-  const res = await apiClient.get<{ command: string; steps: UninstallStep[] }>('/nodes/uninstall-command')
+  const res = await apiClient.get<{ command: string; steps: UninstallStep[] }>(
+    '/nodes/uninstall-command',
+  )
   return res.data
 }
