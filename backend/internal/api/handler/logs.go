@@ -114,7 +114,9 @@ func (h *LogsHandler) Stream() gin.HandlerFunc {
 			return
 		}
 
-		var offset int64
+		// 从当前文件末尾订阅:实时流只推连接之后的新行;从 0 回放会淹没前端
+		// 并对大文件整读(I7 验收发现的历史回放缺陷)。
+		offset := h.logs.Size(kind)
 		if data, off, exists, err := service.ReadNew(h.logs.Path(kind), offset); err == nil && exists && len(data) > 0 {
 			writeSSELines(c, flusher, service.FilterLogLines(strings.Split(string(data), "\n"), keyword, status))
 			offset = off

@@ -45,6 +45,16 @@ type TailResult struct {
 // Path 返回指定类型日志文件的当前路径(settings 优先,env 兜底)。
 func (s *Logs) Path(kind string) string { return s.pathFn(kind) }
 
+// Size 返回日志文件当前字节数(不存在返回 0):流式订阅从该偏移起步,
+// 只推连接建立之后的新行,不回放历史(logux-design §6)。
+func (s *Logs) Size(kind string) int64 {
+	fi, err := os.Stat(s.Path(kind))
+	if err != nil {
+		return 0
+	}
+	return fi.Size()
+}
+
 // Tail 返回日志文件末尾 lines 行(上限 1000),可按 keyword/status 服务端过滤(I7)。
 // 过滤仅在 tail 读取窗口(2MiB)内进行,窗口外更早的匹配行不回溯。
 func (s *Logs) Tail(_ context.Context, kind string, lines int, keyword, status string) (*TailResult, error) {

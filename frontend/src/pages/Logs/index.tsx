@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { streamLog, tailLog, type LogKind, type LogTail } from '@/api/logs'
+import { useLocaleTag } from '@/hooks/useLocale'
 import { apiErrorMessage } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
@@ -41,11 +42,12 @@ interface LogRow {
 let keySeq = 0
 
 /** 解析单行:Caddy JSON(access/error)→ 字段化;非 JSON 行回退原始展示。 */
-function parseLine(raw: string): LogRow {
+function parseLine(raw: string, localeTag: string): LogRow {
   const row: LogRow = { key: ++keySeq, raw, ts: '' }
   try {
     const j = JSON.parse(raw) as Record<string, unknown>
-    if (typeof j.ts === 'number') row.ts = new Date(j.ts * 1000).toLocaleString()
+    // 时间格式跟随面板语言而非浏览器语言(FR-603/I4-D1)
+    if (typeof j.ts === 'number') row.ts = new Date(j.ts * 1000).toLocaleString(localeTag)
     else if (typeof j.ts === 'string') row.ts = j.ts
     if (typeof j.level === 'string') row.level = j.level
     if (typeof j.msg === 'string') row.msg = j.msg
@@ -84,11 +86,13 @@ export default function LogsPage() {
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [view, setView] = useState<'structured' | 'raw'>('structured')
   const [paused, setPaused] = useState(false)
-  const [streamed, setStreamed] = useState<LogRow[]>([])
+  // 流式行带筛选键:连接与筛选一一对应,旧连接(筛选变化瞬间的在途批)渲染期自动失效
+  const [streamed, setStreamed] = useState<{ key: string; rows: LogRow[] } | null>(null)
   const [detail, setDetail] = useState<LogRow | null>(null)
   const kwTimer = useRef<number | undefined>(undefined)
 
   const statusKey = statusFilter.join(',')
+  const filterKey = `${kind}|${lines}|${debouncedKw}|${statusKey}`
   const tailQuery = useQuery({
     queryKey: ['logtail', kind, lines, debouncedKw, statusKey],
     queryFn: () => tailLog(kind, lines, { keyword: debouncedKw, status: statusKey }),
@@ -97,7 +101,11 @@ export default function LogsPage() {
   const tail: LogTail | null = tailQuery.data ?? null
   const loadError = tailQuery.error ? apiErrorMessage(tailQuery.error, t('logs.loadFailed')) : ''
 
-  const parsedTail = useMemo(() => (tail?.lines ?? []).map(parseLine), [tail])
+  const localeTag = useLocaleTag()
+  const parsedTail = useMemo(
+    () => (tail?.lines ?? []).map((l) => parseLine(l, localeTag)),
+    [tail, localeTag],
+  )
 
   // 流式(SSE,默认):增量行;暂停即关闭连接;筛选变化时由处理器清空增量。
   const closeRef = useRef<(() => void) | undefined>(undefined)
@@ -113,25 +121,30 @@ export default function LogsPage() {
       token ?? '',
       (batch) => {
         setStreamed((prev) => {
-          const next = prev.concat(batch.map(parseLine))
-          return next.length > 1000 ? next.slice(next.length - 1000) : next
+          const base = prev && prev.key === filterKey ? prev.rows : []
+          const next = base.concat(batch.map((l) => parseLine(l, localeTag)))
+          return {
+            key: filterKey,
+            rows: next.length > 1000 ? next.slice(next.length - 1000) : next,
+          }
         })
       },
     )
     return () => closeRef.current?.()
-  }, [kind, debouncedKw, statusKey, paused, token])
+  }, [filterKey, kind, debouncedKw, statusKey, paused, token, localeTag])
 
   // 结构化视图展示:全量 tail + 流式增量(SSE 只推新行,与全量不重复)。
   const rows = useMemo(() => {
-    if (streamed.length === 0) return parsedTail
-    return [...parsedTail, ...streamed].slice(-1000)
-  }, [parsedTail, streamed])
+    const liveStreamed = streamed && streamed.key === filterKey ? streamed.rows : []
+    if (liveStreamed.length === 0) return parsedTail
+    return [...parsedTail, ...liveStreamed].slice(-1000)
+  }, [parsedTail, streamed, filterKey])
 
   const resetView = () => {
     setKeyword('')
     setDebouncedKw('')
     setStatusFilter([])
-    setStreamed([])
+    setStreamed(null)
   }
 
   const columns = [
@@ -212,7 +225,7 @@ export default function LogsPage() {
             value={statusFilter}
             onChange={(v) => {
               setStatusFilter(v)
-              setStreamed([])
+              setStreamed(null)
             }}
             options={['2', '3', '4', '5'].map((pfx) => ({ value: pfx, label: `${pfx}xx` }))}
           />
@@ -226,14 +239,14 @@ export default function LogsPage() {
               setKeyword(v)
               window.clearTimeout(kwTimer.current)
               kwTimer.current = window.setTimeout(() => setDebouncedKw(v), 400)
-              setStreamed([])
+              setStreamed(null)
             }}
           />
           <Select
             value={lines}
             onChange={(v) => {
               setLines(v)
-              setStreamed([])
+              setStreamed(null)
             }}
             options={lineOptions.map((n) => ({ value: n, label: `${n} ${t('logs.lines')}` }))}
             style={{ width: 110 }}
