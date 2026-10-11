@@ -343,7 +343,29 @@
     "missingHint": "未找到 {{path}};产生访问/错误日志后此处会自动显示内容",
     "truncated": "文件较大,仅展示末尾部分",
     "empty": "(暂无内容)",
-    "loadFailed": "日志读取失败"
+    "loadFailed": "日志读取失败",
+    "col": {
+      "time": "时间",
+      "method": "方法",
+      "uri": "URI",
+      "status": "状态",
+      "duration": "耗时",
+      "size": "大小",
+      "ip": "来源 IP",
+      "level": "级别",
+      "message": "消息"
+    },
+    "view": {
+      "structured": "结构化",
+      "raw": "原始"
+    },
+    "filter": {
+      "status": "状态码",
+      "keyword": "关键字(URI/IP/内容)"
+    },
+    "detailTitle": "日志行详情",
+    "copyJson": "复制 JSON",
+    "webhookChannel": "Webhook 渠道"
   },
   "dashboard": {
     "stat": {

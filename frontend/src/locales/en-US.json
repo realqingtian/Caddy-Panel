@@ -343,7 +343,29 @@
     "missingHint": "{{path}} not found; content appears here once access/error logs are produced",
     "truncated": "File is large, showing the tail only",
     "empty": "(empty)",
-    "loadFailed": "Failed to load logs"
+    "loadFailed": "Failed to load logs",
+    "col": {
+      "time": "Time",
+      "method": "Method",
+      "uri": "URI",
+      "status": "Status",
+      "duration": "Duration",
+      "size": "Size",
+      "ip": "Source IP",
+      "level": "Level",
+      "message": "Message"
+    },
+    "view": {
+      "structured": "Structured",
+      "raw": "Raw"
+    },
+    "filter": {
+      "status": "Status",
+      "keyword": "Keyword (URI/IP/content)"
+    },
+    "detailTitle": "Log entry detail",
+    "copyJson": "Copy JSON",
+    "webhookChannel": "Webhook channel"
   },
   "dashboard": {
     "stat": {
