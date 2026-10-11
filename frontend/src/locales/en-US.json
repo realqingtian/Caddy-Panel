@@ -60,7 +60,9 @@
     "cancel": "Cancel",
     "localOnly": "Local node only",
     "done": "Done",
-    "tableTotal": "{{total}} items in total"
+    "tableTotal": "{{total}} items in total",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "sites": {
     "title": "Sites",
@@ -463,7 +465,8 @@
     "inSync": "Sync",
     "deleted": "Node deleted",
     "deleteFailed": "Failed to delete node",
-    "deleteConfirm": "Deleting revokes the node secret; the agent must re-enroll. Delete?"
+    "deleteConfirm": "Deleting revokes the node secret; the agent must re-enroll. Delete?",
+    "uninstallCopyAll": "Copy full script"
   },
   "users": {
     "title": "Users",

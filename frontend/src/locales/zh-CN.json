@@ -60,7 +60,9 @@
     "cancel": "取消",
     "localOnly": "仅本机(local 节点)",
     "done": "完成",
-    "tableTotal": "共 {{total}} 条"
+    "tableTotal": "共 {{total}} 条",
+    "copy": "复制",
+    "copied": "已复制"
   },
   "sites": {
     "title": "站点管理",
@@ -463,7 +465,8 @@
     "inSync": "同步",
     "deleted": "节点已删除",
     "deleteFailed": "删除节点失败",
-    "deleteConfirm": "删除后节点密钥即吊销,agent 需重新接入。确认删除?"
+    "deleteConfirm": "删除后节点密钥即吊销,agent 需重新接入。确认删除?",
+    "uninstallCopyAll": "复制完整脚本"
   },
   "users": {
     "title": "用户管理",

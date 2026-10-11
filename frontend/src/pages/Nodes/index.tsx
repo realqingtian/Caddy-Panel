@@ -3,6 +3,7 @@ import {
   App,
   Button,
   Card,
+  Divider,
   Form,
   Input,
   Modal,
@@ -27,6 +28,7 @@ import {
   deleteEnrollToken,
   deleteNode,
   getUninstallCommand,
+  type UninstallStep,
   listEnrollTokens,
   listNodes,
   revokeEnrollToken,
@@ -52,7 +54,8 @@ export default function NodesPage() {
   const [enrollOpen, setEnrollOpen] = useState(false)
   const [enrollResult, setEnrollResult] = useState<{ token: string; install: string } | null>(null)
   const [uninstallOpen, setUninstallOpen] = useState(false)
-  const [uninstallCmd, setUninstallCmd] = useState('')
+  const [uninstallSteps, setUninstallSteps] = useState<UninstallStep[]>([])
+  const [uninstallScript, setUninstallScript] = useState('')
 
   const nodeColumns: TableProps<Node>['columns'] = [
     { title: t('nodes.field.name'), dataIndex: 'name' },
@@ -160,7 +163,9 @@ export default function NodesPage() {
   }
 
   const showUninstall = async () => {
-    setUninstallCmd(await getUninstallCommand())
+    const res = await getUninstallCommand()
+    setUninstallSteps(res.steps)
+    setUninstallScript(res.command)
     setUninstallOpen(true)
   }
 
@@ -219,8 +224,36 @@ export default function NodesPage() {
         onCancel={() => setUninstallOpen(false)}
       >
         <Paragraph type="secondary">{t('nodes.uninstallHint')}</Paragraph>
-        <Paragraph copyable style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-          {uninstallCmd}
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          {uninstallSteps.map((step, i) => (
+            <div key={i}>
+              <Typography.Text strong>
+                {i + 1}. {step.desc}
+              </Typography.Text>
+              <Paragraph
+                copyable={{ text: step.command, tooltips: [t('common.copy'), t('common.copied')] }}
+                style={{
+                  margin: '4px 0 0',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  background: 'rgba(128,128,128,0.10)',
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}
+              >
+                {step.command}
+              </Paragraph>
+            </div>
+          ))}
+        </Space>
+        <Divider style={{ margin: '16px 0 8px' }} />
+        <Paragraph
+          copyable={{ text: uninstallScript, tooltips: [t('common.copy'), t('common.copied')] }}
+          style={{ margin: 0 }}
+        >
+          {t('nodes.uninstallCopyAll')}
         </Paragraph>
       </Modal>
     </Space>

@@ -76,8 +76,15 @@ export async function deleteEnrollToken(id: number): Promise<void> {
   await apiClient.delete(`/nodes/enrollment-tokens/${id}`)
 }
 
-/** 卸载命令(对称生成)。 */
-export async function getUninstallCommand(): Promise<string> {
-  const res = await apiClient.get<{ command: string }>('/nodes/uninstall-command')
-  return res.data.command
+export interface UninstallStep {
+  /** 步骤说明(本地化文案)。 */
+  desc: string
+  /** 该步命令。 */
+  command: string
+}
+
+/** 卸载命令(对称生成):script 整体复制用,steps 步骤化展示用(I7)。 */
+export async function getUninstallCommand(): Promise<{ command: string; steps: UninstallStep[] }> {
+  const res = await apiClient.get<{ command: string; steps: UninstallStep[] }>('/nodes/uninstall-command')
+  return res.data
 }
