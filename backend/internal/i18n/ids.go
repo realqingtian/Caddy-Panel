@@ -20,6 +20,12 @@ const (
 	MsgListenConflict       = "error.listen_conflict"
 	MsgNodeNotFound         = "error.node_not_found"
 	MsgNodeHasSites         = "error.node_has_sites"
+	MsgAccountDisabled      = "error.account_disabled"
+	MsgPasswordChangeRequired = "error.password_change_required"
+	MsgTwoFAInvalid         = "error.twofa_invalid"
+	MsgUserNotFound         = "error.user_not_found"
+	MsgUsernameConflict     = "error.username_conflict"
+	MsgTwoFARequired        = "error.twofa_required"
 )
 
 // FallbackText 各消息的中文兜底文案;英文文案只存在于语言包中。
@@ -40,4 +46,10 @@ var FallbackText = map[string]string{
 	MsgListenConflict:       "监听地址已被该节点上的其他 l4 站点占用",
 	MsgNodeNotFound:         "节点不存在",
 	MsgNodeHasSites:         "节点名下仍有站点,请先删除站点",
+	MsgAccountDisabled:      "账号已被禁用,请联系管理员",
+	MsgPasswordChangeRequired: "请先修改密码后再执行该操作",
+	MsgTwoFAInvalid:         "验证码或恢复码错误",
+	MsgUserNotFound:         "用户不存在或已被删除",
+	MsgUsernameConflict:     "用户名已存在",
+	MsgTwoFARequired:        "需要两步验证码完成登录",
 }

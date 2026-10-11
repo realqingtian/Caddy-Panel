@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -24,12 +25,30 @@ func (f *fakeAuditStore) CreateAuditLog(_ context.Context, log *model.AuditLog) 
 	return nil
 }
 
+// fakeSessions 会话校验桩:alwaysAlive 控制双检结果。
+type fakeSessions struct{ alive bool }
+
+func (f *fakeSessions) Verify(_ context.Context, _ string) (*model.Session, error) {
+	if !f.alive {
+		return nil, errors.New("session invalid")
+	}
+	return &model.Session{ID: 1, UserID: 1}, nil
+}
+
+// fakeUsers 用户读取桩。
+type fakeUsers struct{ user *model.User }
+
+func (f *fakeUsers) GetUserByID(_ context.Context, _ uint) (*model.User, error) {
+	return f.user, nil
+}
+
 // dialTerminal 起 WS 终端服务(gin engine,升级需真实 Hijacker)并拨号。
 func dialTerminal(t *testing.T, jwtSecret, token string) (*websocket.Conn, *httptest.Server, int) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
-	engine.GET("/api/v1/terminal/ws", NewTerminal([]byte(jwtSecret), &fakeAuditStore{}).WS())
+	engine.GET("/api/v1/terminal/ws", NewTerminal([]byte(jwtSecret), &fakeAuditStore{},
+		&fakeSessions{alive: true}, &fakeUsers{user: &model.User{ID: 1, Role: model.RoleAdmin}}).WS())
 	server := httptest.NewServer(engine)
 	t.Cleanup(server.Close)
 
@@ -48,11 +67,23 @@ func dialTerminal(t *testing.T, jwtSecret, token string) (*websocket.Conn, *http
 
 func testJWT(t *testing.T, secret, role string) string {
 	t.Helper()
-	token, err := service.SignJWT([]byte(secret), time.Hour, 1, "admin", role)
+	token, err := service.SignJWT([]byte(secret), time.Hour, 1, "admin", role, "sid-test")
 	if err != nil {
 		t.Fatalf("签发测试 JWT: %v", err)
 	}
 	return token
+}
+
+func TestTerminal_RejectsLegacyTokenWithoutSID(t *testing.T) {
+	// M4 存量迁移:无 sid 的旧格式 JWT 即使签名合法也必须拒绝(§4)。
+	legacy, err := service.SignJWT([]byte("secret"), time.Hour, 1, "admin", model.RoleAdmin, "")
+	if err != nil {
+		t.Fatalf("签发旧格式 JWT: %v", err)
+	}
+	_, _, status := dialTerminal(t, "secret", legacy)
+	if status != 401 {
+		t.Fatalf("无 sid 的存量 token 期望 401,实际 %d", status)
+	}
 }
 
 func TestTerminal_Unauthorized(t *testing.T) {

@@ -39,18 +39,20 @@ var editableSettingKeys = []string{
 	model.SettingKeySMTPPassword,
 	model.SettingKeySMTPFrom,
 	model.SettingKeySMTPTo,
+	model.SettingKeyGravatarMirrorURL,
 }
 
 // optionalSettingKeys 可空键:空值跳过格式校验(存空串,All 语义下回落 env 默认)。
 // 必填/开关类键(metrics、登录锁定)不在其列,空值仍报错。
 var optionalSettingKeys = map[string]bool{
-	model.SettingKeyAcmeEmail:     true,
-	model.SettingKeyNotifyWebhook: true,
-	model.SettingKeySMTPHost:      true,
-	model.SettingKeySMTPPort:      true,
-	model.SettingKeySMTPUsername:  true,
-	model.SettingKeySMTPFrom:      true,
-	model.SettingKeySMTPTo:        true,
+	model.SettingKeyAcmeEmail:         true,
+	model.SettingKeyNotifyWebhook:     true,
+	model.SettingKeySMTPHost:          true,
+	model.SettingKeySMTPPort:          true,
+	model.SettingKeySMTPUsername:      true,
+	model.SettingKeySMTPFrom:          true,
+	model.SettingKeySMTPTo:            true,
+	model.SettingKeyGravatarMirrorURL: true,
 }
 
 // secretSettingKeys 脱敏键:All 返回空值;Update 空值保留旧值(密码类)。

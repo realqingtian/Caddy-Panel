@@ -7,7 +7,7 @@ import (
 
 func TestJWT_RoundTrip(t *testing.T) {
 	secret := []byte("unit-secret")
-	token, err := SignJWT(secret, time.Hour, 7, "admin", "admin")
+	token, err := SignJWT(secret, time.Hour, 7, "admin", "admin", "sid-1")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestJWT_RoundTrip(t *testing.T) {
 }
 
 func TestJWT_RejectsTamperedToken(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin")
+	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin", "sid-1")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestJWT_RejectsTamperedToken(t *testing.T) {
 }
 
 func TestJWT_RejectsExpired(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), -time.Minute, 1, "admin", "admin")
+	token, err := SignJWT([]byte("unit-secret"), -time.Minute, 1, "admin", "admin", "sid-1")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestJWT_RejectsExpired(t *testing.T) {
 }
 
 func TestJWT_RejectsWrongSecret(t *testing.T) {
-	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin")
+	token, err := SignJWT([]byte("unit-secret"), time.Hour, 1, "admin", "admin", "sid-1")
 	if err != nil {
 		t.Fatalf("签发失败: %v", err)
 	}

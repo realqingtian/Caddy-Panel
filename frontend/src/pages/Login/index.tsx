@@ -13,7 +13,7 @@ import { App, Button, Dropdown, Form, Input, Segmented, theme, Typography } from
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import { login, apiErrorMessage } from '@/api/auth'
+import { login, login2FA, apiErrorMessage } from '@/api/auth'
 import { BrandMark } from '@/components/BrandMark'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore, type AppLocale, type ThemeMode } from '@/stores/theme'
@@ -37,13 +37,50 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((state) => state.setSession)
   const [submitting, setSubmitting] = useState(false)
+  // 两步验证状态:ticket 非空即处于二段验证输入(设计 §5)。
+  const [ticket, setTicket] = useState<string | null>(null)
+
+  const completeLogin = (result: {
+    token: string
+    user_id: number
+    username: string
+    nickname: string
+    role: string
+    must_change_password: boolean
+  }) => {
+    setSession(
+      result.token,
+      result.user_id,
+      result.username,
+      result.role,
+      result.nickname,
+      result.must_change_password,
+    )
+    navigate('/', { replace: true })
+  }
 
   const onFinish = async (values: LoginValues) => {
     setSubmitting(true)
     try {
       const result = await login(values.username, values.password)
-      setSession(result.token, result.username, result.role)
-      navigate('/', { replace: true })
+      if (result.require_2fa && result.ticket) {
+        setTicket(result.ticket)
+        return
+      }
+      completeLogin(result)
+    } catch (error) {
+      message.error(apiErrorMessage(error, t('login.failed')))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onFinish2FA = async (values: { code: string }) => {
+    if (!ticket) return
+    setSubmitting(true)
+    try {
+      const result = await login2FA(ticket, values.code)
+      completeLogin(result)
     } catch (error) {
       message.error(apiErrorMessage(error, t('login.failed')))
     } finally {
@@ -107,25 +144,48 @@ export default function LoginPage() {
           <Typography.Text type="secondary">
             <p style={{ marginBottom: 24 }}>{t('login.welcomeHint')}</p>
           </Typography.Text>
-          <Form<LoginValues> onFinish={onFinish} layout="vertical" requiredMark={false}>
-            <Form.Item
-              name="username"
-              label={t('login.username')}
-              rules={[{ required: true, message: t('login.usernameRequired') }]}
-            >
-              <Input autoComplete="username" placeholder={t('login.username')} />
-            </Form.Item>
-            <Form.Item
-              name="password"
-              label={t('login.password')}
-              rules={[{ required: true, message: t('login.passwordRequired') }]}
-            >
-              <Input.Password autoComplete="current-password" placeholder={t('login.password')} />
-            </Form.Item>
-            <Button type="primary" htmlType="submit" block loading={submitting}>
-              {t('login.submit')}
-            </Button>
-          </Form>
+          {ticket ? (
+            <Form<{ code: string }> onFinish={onFinish2FA} layout="vertical" requiredMark={false}>
+              <Typography.Title level={4} style={{ marginBottom: 12 }}>
+                {t('login.twofaTitle')}
+              </Typography.Title>
+              <Typography.Paragraph type="secondary" style={{ marginBottom: 16 }}>
+                {t('login.twofaHint')}
+              </Typography.Paragraph>
+              <Form.Item name="code" rules={[{ required: true, message: t('login.code') }]}>
+                <Input
+                  autoFocus
+                  inputMode="numeric"
+                  maxLength={29}
+                  placeholder={t('login.code')}
+                  style={{ textAlign: 'center', letterSpacing: 6, fontSize: 16 }}
+                />
+              </Form.Item>
+              <Button type="primary" htmlType="submit" block loading={submitting}>
+                {t('login.verify')}
+              </Button>
+            </Form>
+          ) : (
+            <Form<LoginValues> onFinish={onFinish} layout="vertical" requiredMark={false}>
+              <Form.Item
+                name="username"
+                label={t('login.username')}
+                rules={[{ required: true, message: t('login.usernameRequired') }]}
+              >
+                <Input autoComplete="username" placeholder={t('login.username')} />
+              </Form.Item>
+              <Form.Item
+                name="password"
+                label={t('login.password')}
+                rules={[{ required: true, message: t('login.passwordRequired') }]}
+              >
+                <Input.Password autoComplete="current-password" placeholder={t('login.password')} />
+              </Form.Item>
+              <Button type="primary" htmlType="submit" block loading={submitting}>
+                {t('login.submit')}
+              </Button>
+            </Form>
+          )}
           <Typography.Text
             type="secondary"
             style={{ display: 'block', marginTop: 20, fontSize: 12 }}

@@ -27,6 +27,12 @@ const (
 	CodeSettingInvalid             = "SETTING_INVALID"
 	CodeNodeNotFound               = "NODE_NOT_FOUND"
 	CodeNodeHasSites               = "NODE_HAS_SITES"
+	CodePasswordChangeRequired     = "PASSWORD_CHANGE_REQUIRED"
+	CodeAccountDisabled            = "AUTH_ACCOUNT_DISABLED"
+	CodeTwoFARequired              = "AUTH_TWO_FA_REQUIRED"
+	CodeTwoFAInvalid               = "AUTH_TWO_FA_INVALID"
+	CodeUserNotFound               = "USER_NOT_FOUND"
+	CodeUsernameConflict           = "USERNAME_CONFLICT"
 )
 
 // gin context 键:injectI18n 写入翻译包。

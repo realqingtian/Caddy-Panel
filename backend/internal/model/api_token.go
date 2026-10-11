@@ -9,11 +9,7 @@ const (
 	ScopeWrite = "write"
 )
 
-// 用户角色(users.role;M1 预留字段,本任务启用)。
-const (
-	RoleAdmin  = "admin"
-	RoleViewer = "viewer"
-)
+// 用户角色常量已移至 user.go(M4 新增 RoleEditor)。
 
 // ApiToken 开放 API Token;仅存 sha256 哈希,明文创建时一次性返回。
 type ApiToken struct {

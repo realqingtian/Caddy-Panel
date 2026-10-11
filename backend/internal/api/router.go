@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -55,7 +56,6 @@ func New(deps Deps) *gin.Engine {
 	// 开发态 API 文档(FR-602);随单二进制部署保留,便于前后端契约对照。
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	jwtSecret := []byte(deps.Cfg.JWTSecret)
 	unauthorized := func(c *gin.Context, status int) {
 		apierr.RespondError(c, status, apierr.CodeUnauthorized, i18n.MsgUnauthorized, nil, nil)
 	}
@@ -66,26 +66,88 @@ func New(deps Deps) *gin.Engine {
 	apiV1 := r.Group("/api/v1")
 	apiV1.Use(apierr.InjectI18n(deps.Bundle), middleware.Language(), middleware.Audit(deps.Store))
 
-	authSvc := service.NewAuth(
+	// ── M4 用户系统 service 装配 ─────────────────────────────────────────────
+	sessions := service.NewSession(deps.Store, deps.Cfg.JWTTTL)
+	avatarStore, err := service.NewAvatarStore(filepath.Dir(deps.Cfg.DBPath))
+	if err != nil {
+		slog.Error("构造头像存储失败", "error", err)
+	}
+	users := service.NewUser(deps.Store, sessions, avatarStore.URLPath)
+	totpSvc, err := service.NewTOTPService(deps.Store, deps.Cfg.JWTSecret, sessions)
+	if err != nil {
+		slog.Error("构造 TOTP service 失败", "error", err)
+	}
+
+	localVerifier := service.NewLocalVerifier(deps.Store)
+	guard := service.NewLoginGuard()
+	authSvc, err := service.NewAuth(
 		deps.Store,
-		service.NewLoginGuard(),
+		localVerifier,
+		guard,
+		sessions,
 		deps.Cfg.JWTSecret,
 		deps.Cfg.JWTTTL,
 		deps.Cfg.LoginMaxFails,
 		deps.Cfg.LoginLockWindow,
 	)
+	if err != nil {
+		slog.Error("构造 auth service 失败", "error", err)
+	}
 	authHandler := handler.NewAuth(authSvc)
+	profileHandler := handler.NewProfile(users, deps.Store, avatarStore)
+	sessionHandler := handler.NewSession(sessions, users)
+	twoFAHandler := handler.NewTwoFA(totpSvc)
+	userHandler := handler.NewUser(users, sessions)
 
+	// 登录链路(公开):直登 / 两段登录。
 	apiV1.POST("/auth/login", authHandler.Login())
+	apiV1.POST("/auth/login/2fa", authHandler.Login2FA())
 
-	// 认证(JWT / API Token 双轨)+ RBAC:读路由要求 read,写路由要求 write,
-	// Token 管理仅限"JWT + admin"(API Token 不得自我管理)。
-	authorized := apiV1.Group("", middleware.Authenticate(jwtSecret, deps.TokenService, unauthorized))
-	write := authorized.Group("", middleware.RequireScope(model.ScopeWrite, forbidden))
-	authorized.GET("/me", authHandler.Me())
+	// 自定义头像静态服务:文件名不可猜测,不挂鉴权(<img> 无法带 JWT,设计 §4.1)。
+	r.GET("/avatars/:file", handler.ServeAvatar(avatarStore))
 
-	// 站点管理:渲染参数 settings 优先、env 默认兜底(FR-601);
-	// 多节点下路径类参数对远程节点取 agent 上报值(site_render.go)。
+	// ── 认证(M4 权限点双轨)+ 强制改密闸门 ─────────────────────────────────
+	authorized := apiV1.Group("", middleware.Authenticate(middleware.AuthDeps{
+		JWTSecret:    []byte(deps.Cfg.JWTSecret),
+		Tokens:       deps.TokenService,
+		Sessions:     sessions,
+		Users:        deps.Store,
+		Unauthorized: unauthorized,
+	}))
+
+	// 强制改密白名单:改密相关 + 页面渲染依赖的只读接口(§5 服务端强制)。
+	pcFree := authorized.Group("")
+	pcFree.GET("/auth/profile", profileHandler.Get())
+	pcFree.PATCH("/auth/profile", profileHandler.PatchProfile())
+	pcFree.POST("/auth/avatar", profileHandler.PostAvatar())
+	pcFree.DELETE("/auth/avatar", profileHandler.DeleteAvatar())
+	pcFree.POST("/auth/logout", authHandler.Logout())
+	pcFree.POST("/auth/change-password", profileHandler.ChangePassword())
+	pcFree.GET("/auth/sessions", sessionHandler.ListMine())
+	pcFree.POST("/auth/2fa/setup", twoFAHandler.Setup())
+	pcFree.POST("/auth/2fa/enable", twoFAHandler.Enable())
+	pcFree.POST("/auth/2fa/recovery", twoFAHandler.RegenerateRecovery())
+	pcFree.GET("/me", authHandler.Me())
+
+	// 强制改密闸门组:白名单外的全部业务路由。
+	enforced := authorized.Group("", middleware.RequirePasswordChanged(
+		func(c *gin.Context, status int, code string) {
+			apierr.RespondError(c, status, code, i18n.MsgPasswordChangeRequired, nil, nil)
+		},
+	))
+
+	// 权限点辅助:read/write 路由组按资源域声明。
+	reqPerm := func(perm string) gin.HandlerFunc {
+		return middleware.RequirePermission(perm, forbidden)
+	}
+	readPerm := func(perm string) *gin.RouterGroup {
+		return enforced.Group("", reqPerm(perm))
+	}
+	writePerm := func(perm string) *gin.RouterGroup {
+		return enforced.Group("", reqPerm(perm))
+	}
+
+	// ── 站点管理(FR-30x):渲染参数 settings 优先、env 默认兜底 ────────────
 	siteSvc := service.NewSite(service.SiteDeps{
 		Repo:     deps.Store,
 		Nodes:    deps.Store,
@@ -101,86 +163,97 @@ func New(deps Deps) *gin.Engine {
 	certHandler := handler.NewCert(service.NewCert(func() string {
 		return deps.Cfg.CertStoragePath
 	}, deps.Store))
-	write.POST("/sites", sites.Create())
-	authorized.GET("/sites", sites.List())
-	authorized.GET("/sites/:id", sites.Get())
-	write.PUT("/sites/:id", sites.Update())
-	write.DELETE("/sites/:id", sites.Delete())
-	write.POST("/sites/:id/enable", sites.Enable())
-	write.POST("/sites/:id/disable", sites.Disable())
-	authorized.GET("/sites/:id/certificate", certHandler.SiteCertificate())
-	authorized.POST("/sites/:id/certificate/upload", certHandler.UploadCertificate())
+	sitesRead := readPerm(model.PermSitesRead)
+	sitesWrite := writePerm(model.PermSitesWrite)
+	sitesWrite.POST("/sites", sites.Create())
+	sitesRead.GET("/sites", sites.List())
+	sitesRead.GET("/sites/:id", sites.Get())
+	sitesWrite.PUT("/sites/:id", sites.Update())
+	sitesWrite.DELETE("/sites/:id", sites.Delete())
+	sitesWrite.POST("/sites/:id/enable", sites.Enable())
+	sitesWrite.POST("/sites/:id/disable", sites.Disable())
+	sitesRead.GET("/sites/:id/certificate", certHandler.SiteCertificate())
+	sitesWrite.POST("/sites/:id/certificate/upload", certHandler.UploadCertificate())
 
-	// 配置中心:版本历史/回滚/直编/当前配置(FR-40x)。
+	// ── 配置中心(FR-40x):直编为高危权限点,仅 admin ────────────────────────
 	configSvc := service.NewConfig(service.ConfigDeps{
 		Repo:            deps.Store,
 		Pipeline:        deps.Pipeline,
 		CaddyfilePathFn: deps.CaddyfilePathFn,
 	})
 	configHandler := handler.NewConfig(configSvc)
-	authorized.GET("/config/versions", configHandler.ListVersions())
-	authorized.GET("/config/versions/:id", configHandler.GetVersion())
-	write.POST("/config/versions/:id/rollback", configHandler.Rollback())
-	authorized.GET("/config/caddyfile", configHandler.CurrentCaddyfile())
-	write.POST("/config/caddyfile", configHandler.SaveCaddyfile())
-	authorized.GET("/config/current", configHandler.CurrentJSON())
+	configRead := readPerm(model.PermConfigRead)
+	configWrite := writePerm(model.PermConfigRollback)
+	directEdit := writePerm(model.PermConfigDirectEdit)
+	configRead.GET("/config/versions", configHandler.ListVersions())
+	configRead.GET("/config/versions/:id", configHandler.GetVersion())
+	configWrite.POST("/config/versions/:id/rollback", configHandler.Rollback())
+	configRead.GET("/config/caddyfile", configHandler.CurrentCaddyfile())
+	directEdit.POST("/config/caddyfile", configHandler.SaveCaddyfile())
+	configRead.GET("/config/current", configHandler.CurrentJSON())
 
-	// 系统设置:env 默认 + settings 表覆盖(FR-601)。
+	// ── 系统设置(FR-601):读全角色(settings 渲染依赖),写 admin ───────────
 	settingSvc := service.NewSetting(deps.Store, map[string]string{
-		model.SettingKeyAdminURL:        deps.Cfg.AdminURL,
-		model.SettingKeyCaddyAdminBind:  deps.Cfg.CaddyAdminBind,
-		model.SettingKeyCaddyfilePath:   deps.Cfg.CaddyfilePath,
-		model.SettingKeyLogAccessPath:   deps.Cfg.LogAccessPath,
-		model.SettingKeyLogErrorPath:    deps.Cfg.LogErrorPath,
-		model.SettingKeyLoginMaxFails:   strconv.Itoa(deps.Cfg.LoginMaxFails),
-		model.SettingKeyLoginLockWindow: deps.Cfg.LoginLockWindow.String(),
-		model.SettingKeyMetricsEnabled:  "false",
-		model.SettingKeyAcmeEmail:       "",
-		model.SettingKeyNotifyWebhook:   "",
-		model.SettingKeyPanelPublicURL:  deps.Cfg.PanelPublicURL,
-		model.SettingKeyGlobalExtra:     "",
+		model.SettingKeyAdminURL:          deps.Cfg.AdminURL,
+		model.SettingKeyCaddyAdminBind:    deps.Cfg.CaddyAdminBind,
+		model.SettingKeyCaddyfilePath:     deps.Cfg.CaddyfilePath,
+		model.SettingKeyLogAccessPath:     deps.Cfg.LogAccessPath,
+		model.SettingKeyLogErrorPath:      deps.Cfg.LogErrorPath,
+		model.SettingKeyLoginMaxFails:     strconv.Itoa(deps.Cfg.LoginMaxFails),
+		model.SettingKeyLoginLockWindow:   deps.Cfg.LoginLockWindow.String(),
+		model.SettingKeyMetricsEnabled:    "false",
+		model.SettingKeyAcmeEmail:         "",
+		model.SettingKeyNotifyWebhook:     "",
+		model.SettingKeySMTPHost:          "",
+		model.SettingKeySMTPPort:          "",
+		model.SettingKeySMTPUsername:      "",
+		model.SettingKeySMTPPassword:      "",
+		model.SettingKeySMTPFrom:          "",
+		model.SettingKeySMTPTo:            "",
+		model.SettingKeyPanelPublicURL:    deps.Cfg.PanelPublicURL,
+		model.SettingKeyGlobalExtra:       "",
+		model.SettingKeyGravatarMirrorURL: "", // 头像镜像(FR-901),默认官方源
 	})
 	settingsHandler := handler.NewSettings(settingSvc)
-	authorized.GET("/settings", settingsHandler.Get())
-	authorized.PUT("/settings", settingsHandler.Update())
+	pcFree.GET("/settings", settingsHandler.Get()) // 强制改密弹窗页面渲染依赖(§5 白名单)
+	enforced.PUT("/settings", reqPerm(model.PermSettingsWrite), settingsHandler.Update())
 
-	// 备份与恢复(FR-706):复用 settings service(env 默认 + 白名单校验)。
+	// ── 备份与恢复(FR-706):导出/恢复独立权限点 ────────────────────────────
 	backupHandler := handler.NewBackup(service.NewBackup(deps.Store, settingSvc))
-	authorized.GET("/backup", backupHandler.Export())
-	write.POST("/restore", backupHandler.Restore())
+	readPerm(model.PermBackupExport).GET("/backup", backupHandler.Export())
+	writePerm(model.PermBackupRestore).POST("/restore", backupHandler.Restore())
 
-	// Web 终端(M3):WS 无法带自定义头,认证在 handler 内以查询参数完成
-	// (仅 JWT + admin);不进 authorized 组。
-	r.GET("/api/v1/terminal/ws", handler.NewTerminal(jwtSecret, deps.Store).WS())
+	// ── Web 终端(T3.2):WS 查询参数认证(含 M4 会话双检),仅 JWT+admin ────
+	r.GET("/api/v1/terminal/ws", handler.NewTerminal([]byte(deps.Cfg.JWTSecret), deps.Store, sessions, deps.Store).WS())
 
-	// Agent 接入(T3.3):WS 握手与 metrics 上报,凭证在 hello 帧内,
-	// 不进 authorized 组(非用户会话,无 scope 语义)。
+	// ── Agent 接入(T3.3):非用户会话,无 scope 语义 ─────────────────────────
 	r.GET("/api/v1/agent/ws", handler.NewAgentWS(deps.Nodes, deps.Hub).WS())
 	r.POST("/api/v1/agent/metrics", apierr.InjectI18n(deps.Bundle),
 		handler.NewAgentReport(deps.Store, deps.Collector).Metrics())
 
-	// API Token 管理(M3):仅 JWT + admin。
+	// ── API Token 管理(M3):tokens:manage 权限点(API Token 权限集恒不含)──
 	tokenSvc := service.NewTokenService(deps.Store)
-	tokenAdmin := authorized.Group("/tokens", middleware.RequireJWTAdmin(forbidden))
+	tokenAdmin := enforced.Group("/tokens", reqPerm(model.PermTokensManage))
 	tokenAdmin.GET("", handler.NewToken(tokenSvc).List())
 	tokenAdmin.POST("", handler.NewToken(tokenSvc).Create())
 	tokenAdmin.DELETE("/:id", handler.NewToken(tokenSvc).Delete())
 
-	// 节点管理(T3.3):列表/删除/接入令牌/安装命令;写操作需 write scope。
+	// ── 节点管理(T3.3)───────────────────────────────────────────────────────
 	nodeHandler := handler.NewNode(deps.Nodes)
-	authorized.GET("/nodes", nodeHandler.List())
-	write.DELETE("/nodes/:nodeId", nodeHandler.Delete())
-	authorized.GET("/nodes/enrollment-tokens", nodeHandler.ListEnrollTokens())
-	write.POST("/nodes/enrollment-tokens", nodeHandler.CreateEnrollToken())
-	write.POST("/nodes/enrollment-tokens/:id/revoke", nodeHandler.RevokeEnrollToken())
-	write.DELETE("/nodes/enrollment-tokens/:id", nodeHandler.DeleteEnrollToken())
-	authorized.GET("/nodes/uninstall-command", nodeHandler.UninstallCommand())
+	nodesRead := readPerm(model.PermNodesRead)
+	nodesWrite := writePerm(model.PermNodesWrite)
+	nodesRead.GET("/nodes", nodeHandler.List())
+	nodesWrite.DELETE("/nodes/:nodeId", nodeHandler.Delete())
+	nodesRead.GET("/nodes/enrollment-tokens", nodeHandler.ListEnrollTokens())
+	nodesWrite.POST("/nodes/enrollment-tokens", nodeHandler.CreateEnrollToken())
+	nodesWrite.POST("/nodes/enrollment-tokens/:id/revoke", nodeHandler.RevokeEnrollToken())
+	nodesWrite.DELETE("/nodes/enrollment-tokens/:id", nodeHandler.DeleteEnrollToken())
+	nodesRead.GET("/nodes/uninstall-command", nodeHandler.UninstallCommand())
 
-	// 监控查询(FR-702);抓取循环在 main 启动,此处仅查询。
-	authorized.GET("/metrics/summary", handler.NewMetrics(deps.Collector).Summary())
-	authorized.GET("/metrics/prometheus-config", handler.NewMetrics(deps.Collector).PrometheusConfig())
+	// ── 监控 / 日志 / Dashboard / 上游 / 导入 ─────────────────────────────────
+	readPerm(model.PermMetricsRead).GET("/metrics/summary", handler.NewMetrics(deps.Collector).Summary())
+	readPerm(model.PermMetricsRead).GET("/metrics/prometheus-config", handler.NewMetrics(deps.Collector).PrometheusConfig())
 
-	// 日志查看:路径解析与渲染参数同源(settings 优先,FR-502)。
 	logPathFn := func(kind string) string {
 		key := model.SettingKeyLogAccessPath
 		if kind == "error" {
@@ -195,20 +268,27 @@ func New(deps Deps) *gin.Engine {
 		return deps.Cfg.LogAccessPath
 	}
 	logsHandler := handler.NewLogs(service.NewLogs(logPathFn))
-	authorized.GET("/logs", logsHandler.Tail())
+	readPerm(model.PermLogsRead).GET("/logs", logsHandler.Tail())
 
-	// Dashboard:状态聚合 + 漂移检测(FR-201/202)+ 远程节点摘要(T3.3)。
 	driftChecker := service.NewDriftChecker(deps.Store, deps.Pipeline, deps.CaddyfilePathFn)
 	dashboardSvc := service.NewDashboard(service.DashboardDeps{Repo: deps.Store, Nodes: deps.Store, Drift: driftChecker})
-	authorized.GET("/status", handler.NewDashboard(dashboardSvc).Status())
+	enforced.GET("/status", handler.NewDashboard(dashboardSvc).Status())
 
-	// 上游状态透传(FR-701)。
-	authorized.GET("/upstreams", handler.NewUpstreams(deps.Client).List())
+	readPerm(model.PermUpstreamsRead).GET("/upstreams", handler.NewUpstreams(deps.Client).List())
 
-	// Caddyfile 导入(FR-705)。
+	// Caddyfile 导入(FR-705):映射为站点写。
 	importHandler := handler.NewImport(deps.Store)
-	write.POST("/import/preview", importHandler.Preview())
-	write.POST("/import/apply", importHandler.Apply())
+	sitesWrite.POST("/import/preview", importHandler.Preview())
+	sitesWrite.POST("/import/apply", importHandler.Apply())
+
+	// ── 用户管理(M4):users:manage(高危,API Token 权限集恒不含)──────────
+	usersRead := enforced.Group("/users", reqPerm(model.PermUsersManage))
+	usersRead.GET("", userHandler.List())
+	usersRead.POST("", userHandler.Create())
+	usersRead.PATCH("/:id", userHandler.Update())
+	usersRead.DELETE("/:id", userHandler.Delete())
+	usersRead.GET("/:id/sessions", sessionHandler.ListForUser())
+	usersRead.DELETE("/:id/sessions/:sid", sessionHandler.DeleteForUser())
 
 	mountFrontend(r, deps.Bundle)
 
@@ -223,7 +303,7 @@ func mountFrontend(r *gin.Engine, bundle *i18n.Bundle) {
 	if web.HasIndex() {
 		sub, err := web.FS()
 		if err != nil {
-			slog.Error("读取前端产物失败,SPA 托管不可用", "error", err)
+			slog.Error("读取前端产物失败", "error", err)
 		} else {
 			staticFS = sub
 		}

@@ -29,6 +29,7 @@ import { exportBackup, restoreBackup } from '@/api/backup'
 import { listTokens, createToken, deleteToken, type ApiToken } from '@/api/tokens'
 
 interface SettingsFormValues {
+  gravatar_mirror_url: string
   admin_url: string
   caddy_admin_bind: string
   caddyfile_path: string
@@ -49,6 +50,7 @@ interface SettingsFormValues {
 }
 
 const formKeys: (keyof SettingsFormValues)[] = [
+  'gravatar_mirror_url',
   'admin_url',
   'caddy_admin_bind',
   'caddyfile_path',
@@ -81,6 +83,7 @@ export default function SettingsPage() {
     if (!settingsQuery.data) return
     const s = settingsQuery.data
     form.setFieldsValue({
+      gravatar_mirror_url: s.gravatar_mirror_url ?? '',
       admin_url: s.admin_url ?? '',
       caddy_admin_bind: s.caddy_admin_bind ?? '',
       caddyfile_path: s.caddyfile_path ?? '',

@@ -23,15 +23,22 @@ type AuditStore interface {
 	CreateAuditLog(ctx context.Context, log *model.AuditLog) error
 }
 
+// SessionVerifier 会话校验依赖(*service.SessionService);WS 查询参数认证同样走会话双检。
+type SessionVerifier interface {
+	Verify(ctx context.Context, sid string) (*model.Session, error)
+}
+
 // TerminalHandler Web 终端接口。
 type TerminalHandler struct {
 	jwtSecret []byte
 	store     AuditStore
+	sessions  SessionVerifier
+	users     UserLookup
 }
 
 // NewTerminal 构造终端 handler。
-func NewTerminal(jwtSecret []byte, store AuditStore) *TerminalHandler {
-	return &TerminalHandler{jwtSecret: jwtSecret, store: store}
+func NewTerminal(jwtSecret []byte, store AuditStore, sessions SessionVerifier, users UserLookup) *TerminalHandler {
+	return &TerminalHandler{jwtSecret: jwtSecret, store: store, sessions: sessions, users: users}
 }
 
 // upgrader 保持同源校验(默认):开发经 vite 代理、生产同源部署均满足。
@@ -60,9 +67,19 @@ func shellCommand() *exec.Cmd {
 func (h *TerminalHandler) WS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 认证:WS 无法携带自定义头,改用查询参数传 JWT。
+		// M4 双检:JWT 签名(须含 sid)→ 会话有效 → 用户可用;缺 sid 的存量 token 拒绝。
 		claims, err := service.ParseJWT(h.jwtSecret, c.Query("token"))
-		if err != nil {
+		if err != nil || claims.SID == "" {
 			c.String(http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		if _, err := h.sessions.Verify(c.Request.Context(), claims.SID); err != nil {
+			c.String(http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		user, err := h.users.GetUserByID(c.Request.Context(), claims.UserID)
+		if err != nil || user.Disabled || user.MustChangePassword {
+			c.String(http.StatusForbidden, "admin only")
 			return
 		}
 		role := claims.Role

@@ -14,5 +14,11 @@
   "error.caddy_unreachable": "Caddy Admin API is unreachable, please check whether Caddy is running",
   "error.node_not_found": "Node not found or already deleted",
   "error.node_has_sites": "The node still has sites; delete them before deleting the node",
-  "error.listen_conflict": "Listen address {{.listen}} is already used by another L4 site on this node"
+  "error.listen_conflict": "Listen address {{.listen}} is already used by another L4 site on this node",
+  "error.account_disabled": "This account has been disabled, contact the administrator",
+  "error.password_change_required": "Change your password before performing this action",
+  "error.twofa_invalid": "Invalid verification or recovery code",
+  "error.user_not_found": "User not found or already deleted",
+  "error.username_conflict": "Username already exists",
+  "error.twofa_required": "A two-factor code is required to complete sign-in"
 }

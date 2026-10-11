@@ -13,17 +13,19 @@ import (
 type Claims struct {
 	UserID   uint   `json:"uid"`
 	Username string `json:"name"`
-	Role     string `json:"role"` // admin | viewer;空值视为 admin(历史会话兼容)
+	Role     string `json:"role"` // admin | editor | viewer;空值视为 admin(历史会话兼容)
+	SID      string `json:"sid"`  // 会话 ID(M4);空 = 存量 token,一律 401(会话双检强制)
 	jwt.RegisteredClaims
 }
 
-// SignJWT 签发 HS256 Token;过期时间取 now+ttl。
-func SignJWT(secret []byte, ttl time.Duration, userID uint, username, role string) (string, error) {
+// SignJWT 签发 HS256 Token;过期时间取 now+ttl。sid 关联 sessions 表行(可吊销会话)。
+func SignJWT(secret []byte, ttl time.Duration, userID uint, username, role, sid string) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
 		Role:     role,
+		SID:      sid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   username,
 			IssuedAt:  jwt.NewNumericDate(now),

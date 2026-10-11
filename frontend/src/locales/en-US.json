@@ -11,7 +11,8 @@
     "upstreams": "Upstreams",
     "metrics": "Metrics",
     "terminal": "Terminal",
-    "nodes": "Nodes"
+    "nodes": "Nodes",
+    "users": "Users"
   },
   "layout": {
     "theme": "Theme",
@@ -42,7 +43,11 @@
     "pointCertTitle": "Automatic HTTPS & certificates",
     "pointCertDesc": "ACME auto-issuance, manual upload and expiry alerts",
     "pointRollbackTitle": "Every change is rollback-able",
-    "pointRollbackDesc": "Each deploy snapshots a version — diff and roll back in one click"
+    "pointRollbackDesc": "Each deploy snapshots a version — diff and roll back in one click",
+    "twofaTitle": "Two-factor verification",
+    "twofaHint": "Enter the 6-digit code from your authenticator, or use a recovery code",
+    "code": "Code / recovery code",
+    "verify": "Verify & sign in"
   },
   "common": {
     "save": "Save",
@@ -247,7 +252,8 @@
       "smtpUsername": "Username",
       "smtpPassword": "Password",
       "smtpFrom": "From address",
-      "smtpTo": "To addresses"
+      "smtpTo": "To addresses",
+      "gravatarMirror": "Gravatar mirror"
     },
     "hint": {
       "adminUrl": "Address the panel uses to reach the Caddy Admin API",
@@ -258,7 +264,8 @@
       "acmeEmail": "Rendered into the global block email directive for ACME account registration",
       "notifyWebhook": "JSON alert pushed daily when remaining validity drops below 30 days",
       "smtpPassword": "Not shown after saving; leave empty to keep the current password",
-      "smtpTo": "Comma separated; the email channel activates when server/port/to are all set"
+      "smtpTo": "Comma separated; the email channel activates when server/port/to are all set",
+      "gravatarMirror": "Avatar source; switch to a mirror if gravatar.com is unreachable, empty uses gravatar.com"
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings",
@@ -398,5 +405,125 @@
     "deleted": "Node deleted",
     "deleteFailed": "Failed to delete node",
     "deleteConfirm": "Deleting revokes the node secret; the agent must re-enroll. Delete?"
+  },
+  "users": {
+    "title": "Users",
+    "create": "New User",
+    "edit": "Edit User",
+    "col": {
+      "username": "Username",
+      "nickname": "Nickname",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "twofa": "2FA",
+      "sessions": "Sessions",
+      "lastActive": "Last Active",
+      "createdAt": "Created"
+    },
+    "role": {
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "status": {
+      "normal": "Active",
+      "disabled": "Disabled"
+    },
+    "createTitle": "New User",
+    "field": {
+      "username": "Username (3-64 chars, immutable)",
+      "initialPassword": "Initial password (min 8 chars)",
+      "nickname": "Nickname (optional)",
+      "email": "Email (optional, used for avatar)",
+      "role": "Role",
+      "mustChange": "Force password change on first sign-in",
+      "newPassword": "Reset password (min 8 chars, empty to keep)"
+    },
+    "action": {
+      "resetPassword": "Reset password",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete",
+      "sessions": "Sessions",
+      "kick": "Sign out"
+    },
+    "confirm": {
+      "delete": "Delete user {name}? Soft-deleted with audit retained; username becomes reusable",
+      "disable": "Disable user {name}? All their sessions will be revoked immediately",
+      "reset": "Reset password? Password change will be forced on next sign-in; existing sessions revoked",
+      "kick": "Sign out this session? That device will need to sign in again"
+    },
+    "msg": {
+      "saved": "User saved",
+      "created": "User created",
+      "deleted": "User deleted"
+    },
+    "sessionsTitle": "Sessions of {name}",
+    "error": {
+      "self": "Cannot perform this action on the current account",
+      "lastAdmin": "At least one active admin is required"
+    }
+  },
+  "profile": {
+    "title": "Personal Settings",
+    "section": {
+      "profile": "Profile",
+      "password": "Change Password",
+      "twofa": "Two-Factor Verification",
+      "sessions": "Devices"
+    },
+    "field": {
+      "username": "Username",
+      "role": "Role",
+      "nickname": "Nickname",
+      "nicknameHint": "Empty shows username",
+      "email": "Email (used for Gravatar avatar)",
+      "avatar": "Avatar",
+      "oldPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "avatar": {
+      "upload": "Upload",
+      "remove": "Remove",
+      "hint": "png/jpeg/webp up to 2MiB; falls back to Gravatar by email (mirror configurable)"
+    },
+    "pwd": {
+      "save": "Change password",
+      "hint": "At least 8 chars and different from the current one; all devices will be signed out",
+      "mismatch": "The two new passwords do not match",
+      "done": "Password changed, please sign in again"
+    },
+    "profileSaved": "Profile updated",
+    "twofa": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "enable": "Enable 2FA",
+      "disable": "Unbind",
+      "scan": "Scan the QR code with an authenticator app",
+      "enterCode": "Enter the 6-digit code to finish binding",
+      "confirmEnable": "Confirm",
+      "codes": "Recovery codes (shown once, store them safely)",
+      "codesCopy": "Copy all",
+      "regenerate": "Regenerate recovery codes",
+      "regenCode": "Enter the current code to regenerate",
+      "disableHint": "Unbinding needs the current password and code; all devices will be signed out"
+    },
+    "sessions": {
+      "device": "Device",
+      "ip": "IP",
+      "lastSeen": "Last active",
+      "createdAt": "Signed in",
+      "current": "This device",
+      "revoke": "Sign out",
+      "revokeOthers": "Sign out other devices",
+      "confirmRevoke": "Sign out this device? It will need to sign in again",
+      "confirmRevokeOthers": "Sign out all other devices? This one stays signed in"
+    },
+    "forced": {
+      "title": "Change the initial password",
+      "desc": "An initial password was set by the administrator; set a new one for security"
+    }
   }
 }
