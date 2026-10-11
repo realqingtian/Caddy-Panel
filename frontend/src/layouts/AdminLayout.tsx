@@ -17,7 +17,7 @@ import {
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { App, Button, Dropdown, Layout, Menu, Modal, Space, Typography, theme } from 'antd'
+import { App, Dropdown, Layout, Menu, Modal, Space, Typography, theme } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -286,19 +286,29 @@ function HeaderActions() {
         placement="bottomRight"
         trigger={['click']}
       >
-        <Button
-          icon={
-            <UserAvatar
-              username={username ?? ''}
-              nickname={nickname ?? undefined}
-              email={email ?? undefined}
-              avatarURL={avatarURL ?? undefined}
-              size={18}
-            />
-          }
+        {/* 官方模式:无边框圆形头像直接作触发器,hover 淡出背景,不再用大按钮包裹(I5 反馈) */}
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(128,128,128,0.18)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
         >
-          {nickname || username || t('layout.user')}
-        </Button>
+          <UserAvatar
+            username={username ?? ''}
+            nickname={nickname ?? undefined}
+            email={email ?? undefined}
+            avatarURL={avatarURL ?? undefined}
+            size={32}
+          />
+        </span>
       </Dropdown>
     </div>
   )
