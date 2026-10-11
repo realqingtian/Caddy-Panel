@@ -7,8 +7,8 @@
 
 ## 1. 当前状态
 
-**阶段:🔨 迭代 I6(通知渠道闭环+设置页重构)进行中(2026-10-11)。**
-SMTP 已验收通过;Webhook 多渠道(飞书/钉钉/企微/Slack/Discord)+ 设置页左侧分类导航重构已评审开工,设计见 [notify-channels-design.md](./notify-channels-design.md) 与 [settings-redesign.md](./settings-redesign.md)。
+**阶段:✅ 迭代 I6(通知渠道闭环+设置页重构)完成(2026-10-11)。**
+SMTP(465 TLS+测试按钮)与 Webhook 多渠道(飞书实测收到测试消息)双渠道闭环;设置页重构为 8 分类左侧导航并补 panel_public_url UI。
 M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺陷(D1–D16)全部修复并在验收服务器回归通过。
 服务器部署形态已升级:数据卷 bind mount 化(`/opt/caddy-panel/data/`)+ caddy/panel 用户权限对齐(见 ops/server.md)。
 
@@ -70,6 +70,6 @@ M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺�
 | 事项 | 状态 | 说明 |
 | --- | --- | --- |
 | M4 遗留强化 | ✅ | TOTP 二段错码计数绑定用户名(换票据/换源不再重置锁定),回归测试覆盖,已部署 v0.2.0 |
-| I6 | SMTP/Webhook 通知渠道闭环 | 🔵 | SMTP:✅ 验收通过(163 授权码实测:测试邮件成功送达 QQ 邮箱;465 隐式 TLS 支持为本次真实缺陷修复);Webhook 多渠道:设计文档已落 [notify-channels-design.md](./notify-channels-design.md)(含可视化配置与测试连通性);设置页整体重构设计已落 [settings-redesign.md](./settings-redesign.md)(左侧分类导航);两份待评审后同批开工 |
+| I6 | SMTP/Webhook 通知渠道闭环 + 设置页重构 | ✅ | 2026-10-11 | SMTP ✅(465 TLS+测试邮件);Webhook 六渠道类型/自动识别/测试消息按钮 ✅(飞书实测 HTTP 200);设置页 8 分类左排导航+panel_public_url 补 UI;golden 测试锁六渠道 payload;明细见 [notify-channels-design.md](./notify-channels-design.md)/[settings-redesign.md](./settings-redesign.md) |
 | GHCR 正式镜像通道 | 🕐 搁置 | v0.2.0 已在 GHCR(多架构,Actions 构建验证通过);服务器暂用本地构建镜像交付,切 GHCR 需用户提供 read:packages PAT;workflow 已保留随时可启用 |
 | M4 验收遗留测试数据 | 🕐 低优先 | 验收服务器 users 表残留 M4 验收用户(tmpuser/sess-test/2fatest 等),可在用户管理页清理 |
