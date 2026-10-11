@@ -52,7 +52,8 @@ const caddyfileLanguage = {
 }
 
 interface CaddyfileEditorProps {
-  value: string
+  /** 受控值;作为 antd Form.Item 子元素时由表单注入,可省略。 */
+  value?: string
   onChange?: (value: string) => void
   readOnly?: boolean
   height?: string
@@ -80,7 +81,7 @@ export function CaddyfileEditor({
       height={height}
       defaultLanguage="caddyfile"
       language="caddyfile"
-      value={value}
+      value={value ?? ''}
       onChange={(v) => onChange?.(v ?? '')}
       onMount={onMount}
       theme={isDark ? 'vs-dark' : 'vs'}

@@ -62,7 +62,9 @@
     "done": "完成",
     "tableTotal": "共 {{total}} 条",
     "copy": "复制",
-    "copied": "已复制"
+    "copied": "已复制",
+    "collapse": "收起",
+    "expand": "展开"
   },
   "sites": {
     "title": "站点管理",
@@ -211,9 +213,9 @@
       "edit": "直接编辑"
     },
     "action": {
-      "saveApply": "校验并生效",
-      "diff": "对比当前",
-      "rollback": "回滚到此版"
+      "discard": "放弃",
+      "exitDiff": "退出对比",
+      "editNotes": "编辑备注"
     },
     "status": {
       "applied": "已生效",
@@ -225,7 +227,46 @@
     "saveConfirm": "确认保存?校验通过后立即热加载生效",
     "rollbackSuccess": "已回滚并生成新版本记录",
     "rollbackFailed": "回滚失败",
-    "rollbackConfirm": "确认回滚到此版本?线上配置将恢复为该版本内容。若该版本不含面板入口站点、或关闭了其自动 HTTPS,回滚后面板域名可能无法访问,需通过服务器本地端口恢复。"
+    "tab": {
+      "main": "主配置",
+      "snippets": "片段"
+    },
+    "unsaved": "有未保存更改",
+    "comparing": "正在对比版本 #{id} 与当前配置",
+    "filter": {
+      "applied": "已生效",
+      "failed": "失败",
+      "all": "全部"
+    },
+    "rollbackConfirmTitle": "回滚到版本 #{id}?",
+    "rollbackConfirmSites": "将恢复该版本的站点快照并重新下发,当前站点列表会被覆盖。",
+    "rollbackConfirmSnippets": "将同时恢复该版本时的片段集合:此后新建或修改的片段会被覆盖。",
+    "notesSaved": "备注已保存",
+    "notesSaveFailed": "备注保存失败",
+    "notesModalTitle": "版本 #{id} 备注",
+    "notesPlaceholder": "记录该版本的用途,留空即清空",
+    "snippet": {
+      "title": "Caddyfile 附加片段",
+      "create": "新建片段",
+      "createTitle": "新建片段",
+      "editTitle": "编辑片段 {name}",
+      "colName": "名称",
+      "colEnabled": "启用",
+      "colUpdatedAt": "更新时间",
+      "colContent": "片段内容",
+      "hintTitle": "启用片段按创建顺序追加到主配置尾部(仅本机节点)",
+      "hintBody": "片段必须是自包含的合法 Caddyfile 块(站点块或具名片段),禁止包含全局块(顶层裸花括号);保存或启停会重新渲染并下发主配置,任一片段非法则整体下发失败。",
+      "empty": "暂无片段",
+      "saved": "片段已保存并下发",
+      "deleted": "片段已删除",
+      "saveFailed": "片段保存失败",
+      "deleteConfirmTitle": "删除片段 {name}?",
+      "deleteConfirmEnabled": "该片段已启用,删除会重新渲染并下发主配置以移除其内容;下发失败则不会删除。",
+      "deleteConfirmDisabled": "该片段已停用,删除仅移除记录,不影响当前配置。",
+      "nameRequired": "请输入片段名称",
+      "contentRequired": "请输入片段内容",
+      "contentExtra": "自包含合法块;禁止顶层全局块(裸花括号开头)"
+    }
   },
   "settings": {
     "title": "系统设置",

@@ -4,10 +4,29 @@ import { apiClient } from './client'
 export interface ConfigVersion {
   id: number
   sites_snapshot: string
+  snippets_snapshot?: string
   rendered_caddyfile: string
   status: 'applied' | 'failed'
   error_msg: string
+  notes: string
   created_at: string
+}
+
+/** Caddyfile 附加片段(与后端 model.Snippet 对应)。 */
+export interface Snippet {
+  id: number
+  name: string
+  content: string
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** 片段新建/编辑输入。 */
+export interface SnippetInput {
+  name: string
+  content: string
+  enabled: boolean
 }
 
 /** 系统设置(键 → 生效值,FR-601)。 */
@@ -29,6 +48,35 @@ export async function getVersion(id: number): Promise<ConfigVersion> {
 export async function rollbackTo(id: number): Promise<ConfigVersion> {
   const res = await apiClient.post<ConfigVersion>(`/config/versions/${id}/rollback`)
   return res.data
+}
+
+/** 编辑版本备注(空字符串清空;仅 admin)。 */
+export async function updateVersionNotes(id: number, notes: string): Promise<ConfigVersion> {
+  const res = await apiClient.patch<ConfigVersion>(`/config/versions/${id}/notes`, { notes })
+  return res.data
+}
+
+/** 片段列表(ID 升序 = 渲染追加顺序)。 */
+export async function listSnippets(): Promise<Snippet[]> {
+  const res = await apiClient.get<{ snippets: Snippet[] }>('/config/snippets')
+  return res.data.snippets
+}
+
+/** 新建片段:校验通过并下发成功才落库。 */
+export async function createSnippet(input: SnippetInput): Promise<Snippet> {
+  const res = await apiClient.post<Snippet>('/config/snippets', input)
+  return res.data
+}
+
+/** 编辑片段(名称/内容/启用开关),变更经管线下发。 */
+export async function updateSnippet(id: number, input: SnippetInput): Promise<Snippet> {
+  const res = await apiClient.put<Snippet>(`/config/snippets/${id}`, input)
+  return res.data
+}
+
+/** 删除片段(启用片段先重下发移除产物块)。 */
+export async function deleteSnippet(id: number): Promise<void> {
+  await apiClient.delete(`/config/snippets/${id}`)
 }
 
 /** 读取磁盘上的渲染产物。 */

@@ -62,7 +62,9 @@
     "done": "Done",
     "tableTotal": "{{total}} items in total",
     "copy": "Copy",
-    "copied": "Copied"
+    "copied": "Copied",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "sites": {
     "title": "Sites",
@@ -211,9 +213,9 @@
       "edit": "Direct Edit"
     },
     "action": {
-      "saveApply": "Validate & Apply",
-      "diff": "Diff vs current",
-      "rollback": "Rollback"
+      "discard": "Discard",
+      "exitDiff": "Exit diff",
+      "editNotes": "Edit notes"
     },
     "status": {
       "applied": "applied",
@@ -225,7 +227,46 @@
     "saveConfirm": "Save now? It will be validated and hot-reloaded immediately",
     "rollbackSuccess": "Rolled back and a new version was recorded",
     "rollbackFailed": "Rollback failed",
-    "rollbackConfirm": "Roll back to this version? Live config will be restored to its contentIf this version does not include the panel entry site or turns off its automatic HTTPS, the panel domain may become unreachable after rollback; recover via the server's local port."
+    "tab": {
+      "main": "Main Config",
+      "snippets": "Snippets"
+    },
+    "unsaved": "Unsaved changes",
+    "comparing": "Comparing version #{id} with current config",
+    "filter": {
+      "applied": "Applied",
+      "failed": "Failed",
+      "all": "All"
+    },
+    "rollbackConfirmTitle": "Roll back to version #{id}?",
+    "rollbackConfirmSites": "The site snapshot of that version will be restored and redeployed; the current site list will be overwritten.",
+    "rollbackConfirmSnippets": "The snippet set captured at that version will also be restored: snippets created or modified afterwards will be overwritten.",
+    "notesSaved": "Notes saved",
+    "notesSaveFailed": "Failed to save notes",
+    "notesModalTitle": "Notes for version #{id}",
+    "notesPlaceholder": "What is this version for? Leave empty to clear",
+    "snippet": {
+      "title": "Caddyfile Snippets",
+      "create": "New snippet",
+      "createTitle": "New snippet",
+      "editTitle": "Edit snippet {name}",
+      "colName": "Name",
+      "colEnabled": "Enabled",
+      "colUpdatedAt": "Updated",
+      "colContent": "Content",
+      "hintTitle": "Enabled snippets are appended to the main config in creation order (local node only)",
+      "hintBody": "Each snippet must be a self-contained valid Caddyfile block (a site block or named snippet); a top-level global block is not allowed. Saving or toggling re-renders and deploys the main config — any invalid snippet fails the whole deployment.",
+      "empty": "No snippets",
+      "saved": "Snippet saved and deployed",
+      "deleted": "Snippet deleted",
+      "saveFailed": "Failed to save snippet",
+      "deleteConfirmTitle": "Delete snippet {name}?",
+      "deleteConfirmEnabled": "This snippet is enabled: deleting re-renders and deploys the main config to remove its content. If the deploy fails, nothing is deleted.",
+      "deleteConfirmDisabled": "This snippet is disabled: deleting only removes the record and does not affect the current config.",
+      "nameRequired": "Name is required",
+      "contentRequired": "Content is required",
+      "contentExtra": "Self-contained valid block; a top-level global block is not allowed"
+    }
   },
   "settings": {
     "title": "Settings",
