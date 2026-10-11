@@ -271,7 +271,9 @@
       "smtpPassword": "保存后不回显;留空表示保留当前密码",
       "smtpTo": "多个收件人用英文逗号分隔;服务器/端口/收件人齐备即启用邮件渠道",
       "gravatarMirror": "头像源;官方源不可达时可切换镜像,留空使用 gravatar.com",
-      "panelPublic": "Agent 安装命令据此生成 ws 连接地址;留空用启动 env"
+      "panelPublic": "Agent 安装命令据此生成 ws 连接地址;留空用启动 env",
+      "managedByEnv": "由部署环境变量(compose/env)管理,如需变更请修改部署配置后重启",
+      "deployManaged": "下方 Caddy 连接与路径为部署级配置,此处只读展示;面板对外地址可修改"
     },
     "saved": "设置已保存",
     "saveFailed": "设置保存失败",
@@ -307,12 +309,12 @@
     "smtpTestOk": "测试邮件已发送,请查收",
     "smtpTestFailed": "测试邮件发送失败",
     "cat": {
-      "caddy": "Caddy 连接",
-      "paths": "路径",
+      "caddy": "连接与部署",
       "security": "安全",
       "notify": "通知",
       "avatar": "头像",
-      "advanced": "高级"
+      "advanced": "高级",
+      "deployment": "部署配置(只读)"
     },
     "webhookTest": "发送 Webhook 测试消息",
     "webhookTestOk": "测试消息已发送,请在群内查看",

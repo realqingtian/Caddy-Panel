@@ -19,6 +19,7 @@ import {
   Tabs,
   Typography,
   Upload,
+  type FormInstance,
 } from 'antd'
 import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd'
@@ -188,13 +189,8 @@ export default function SettingsPage() {
             items={[
               {
                 key: 'caddy',
-                label: t('settings.cat.caddy'),
-                children: <CaddyPane savePending={saveMutation.isPending} />,
-              },
-              {
-                key: 'paths',
-                label: t('settings.cat.paths'),
-                children: <PathsPane savePending={saveMutation.isPending} />,
+                label: t('settings.cat.caddy'), // 连接与部署
+                children: <CaddyPane savePending={saveMutation.isPending} form={form} />,
               },
               {
                 key: 'security',
@@ -276,30 +272,31 @@ const GRAVATAR_PRESETS = [
   'https://loli.net',
 ]
 
-/** Caddy 连接:Admin API 与 admin 监听地址、面板对外地址。 */
-function CaddyPane({ savePending }: { savePending: boolean }) {
+/** 连接与部署:面板对外地址可编辑;Caddy 连接与路径为部署级配置,只读展示(误改即失联,I6 评审)。 */
+function CaddyPane({ savePending, form }: { savePending: boolean; form: FormInstance }) {
   const { t } = useTranslation()
+  const ro = (label: string, value: string) => (
+    <Col span={12}>
+      <Form.Item label={label} style={{ marginBottom: 8 }}>
+        <Typography.Text copyable style={{ fontFamily: 'monospace' }}>
+          {value}
+        </Typography.Text>
+      </Form.Item>
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t('settings.hint.managedByEnv')}
+      </Typography.Text>
+    </Col>
+  )
   return (
     <>
+      <Alert
+        type="info"
+        showIcon
+        message={t('settings.cat.caddy')}
+        description={t('settings.hint.deployManaged')}
+        style={{ marginBottom: 24 }}
+      />
       <Row gutter={24}>
-        <Col span={12}>
-          <Form.Item
-            name="admin_url"
-            label={t('settings.field.adminUrl')}
-            extra={t('settings.hint.adminUrl')}
-          >
-            <Input placeholder="http://localhost:2019" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="caddy_admin_bind"
-            label={t('settings.field.adminBind')}
-            extra={t('settings.hint.adminBind')}
-          >
-            <Input placeholder="localhost:2019" />
-          </Form.Item>
-        </Col>
         <Col span={12}>
           <Form.Item
             name="panel_public_url"
@@ -312,46 +309,14 @@ function CaddyPane({ savePending }: { savePending: boolean }) {
         <Col span={12} />
       </Row>
       <SaveButton pending={savePending} />
-    </>
-  )
-}
-
-/** 路径:Caddyfile 落盘与日志 tail 目标。 */
-function PathsPane({ savePending }: { savePending: boolean }) {
-  const { t } = useTranslation()
-  return (
-    <>
+      <Divider titlePlacement="start">{t('settings.cat.deployment')}</Divider>
       <Row gutter={24}>
-        <Col span={12}>
-          <Form.Item
-            name="caddyfile_path"
-            label={t('settings.field.caddyfilePath')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/etc/caddy/Caddyfile" />
-          </Form.Item>
-        </Col>
-        <Col span={12} />
-        <Col span={12}>
-          <Form.Item
-            name="log_access_path"
-            label={t('settings.field.logAccess')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/data/logs/access.log" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="log_error_path"
-            label={t('settings.field.logError')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/data/logs/error.log" />
-          </Form.Item>
-        </Col>
+        {ro(t('settings.field.adminUrl'), String(form.getFieldValue('admin_url') || ''))}
+        {ro(t('settings.field.adminBind'), String(form.getFieldValue('caddy_admin_bind') || ''))}
+        {ro(t('settings.field.caddyfilePath'), String(form.getFieldValue('caddyfile_path') || ''))}
+        {ro(t('settings.field.logAccess'), String(form.getFieldValue('log_access_path') || ''))}
+        {ro(t('settings.field.logError'), String(form.getFieldValue('log_error_path') || ''))}
       </Row>
-      <SaveButton pending={savePending} />
     </>
   )
 }
@@ -461,15 +426,15 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
               ]}
             />
           </Form.Item>
-          <Form.Item
-            name="notify_webhook_url"
-            label={t('settings.field.notifyWebhook')}
-            extra={t('settings.hint.notifyWebhook')}
-          >
-            <Input placeholder="https://example.com/hook" />
-          </Form.Item>
         </Col>
       </Row>
+      <Form.Item
+        name="notify_webhook_url"
+        label={t('settings.field.notifyWebhook')}
+        extra={t('settings.hint.notifyWebhook')}
+      >
+        <Input placeholder="https://example.com/hook" />
+      </Form.Item>
       <Divider titlePlacement="start">{t('settings.smtp.title')}</Divider>
       <Row gutter={24}>
         <Col span={12}>
@@ -511,7 +476,7 @@ function NotifyPane({ savePending }: { savePending: boolean }) {
           </Form.Item>
         </Col>
       </Row>
-      <Space style={{ marginBottom: 16 }}>
+      <Space size={8} style={{ marginBottom: 24 }}>
         <Button
           onClick={() => {
             void apiClient

@@ -271,7 +271,9 @@
       "smtpPassword": "Not shown after saving; leave empty to keep the current password",
       "smtpTo": "Comma separated; the email channel activates when server/port/to are all set",
       "gravatarMirror": "Avatar source; switch to a mirror if gravatar.com is unreachable, empty uses gravatar.com",
-      "panelPublic": "Agent install command derives its ws URL from this; empty uses the startup env"
+      "panelPublic": "Agent install command derives its ws URL from this; empty uses the startup env",
+      "managedByEnv": "Managed by deployment env (compose/env); edit the deployment config and restart to change",
+      "deployManaged": "Caddy connection and paths below are deployment-level settings shown read-only; the panel public URL is editable"
     },
     "saved": "Settings saved",
     "saveFailed": "Failed to save settings",
@@ -307,12 +309,12 @@
     "smtpTestOk": "Test email sent, please check the inbox",
     "smtpTestFailed": "Failed to send test email",
     "cat": {
-      "caddy": "Caddy Connection",
-      "paths": "Paths",
+      "caddy": "Connection & Deployment",
       "security": "Security",
       "notify": "Notifications",
       "avatar": "Avatar",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "deployment": "Deployment (read-only)"
     },
     "webhookTest": "Send webhook test message",
     "webhookTestOk": "Test message sent, please check the group",
