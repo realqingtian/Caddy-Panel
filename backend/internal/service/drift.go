@@ -16,7 +16,7 @@ import (
 
 // DriftRepo drift 检测对数据层的依赖。
 type DriftRepo interface {
-	LatestAppliedVersion(ctx context.Context) (*model.ConfigVersion, error)
+	LatestAppliedVersion(ctx context.Context, nodeID string) (*model.ConfigVersion, error)
 }
 
 // DriftChecker 漂移检测器(无状态,可并发调用)。
@@ -76,7 +76,9 @@ func (c *DriftChecker) Check(ctx context.Context) *DriftReport {
 }
 
 func (c *DriftChecker) dbRendered(ctx context.Context) (string, bool) {
-	version, err := c.repo.LatestAppliedVersion(ctx)
+	// 磁盘产物与运行态都是 local 节点的,DB 基准必须取 local 的最新成功版本
+	// (远程节点版本交错写入,不过滤会必然误报,T3.3 演示环境实测)。
+	version, err := c.repo.LatestAppliedVersion(ctx, model.NodeIDLocal)
 	if err != nil || strings.TrimSpace(version.RenderedCaddyfile) == "" {
 		return "", false
 	}

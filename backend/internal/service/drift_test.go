@@ -20,7 +20,7 @@ type fakeDriftRepo struct {
 	listErr error
 }
 
-func (f *fakeDriftRepo) LatestAppliedVersion(context.Context) (*model.ConfigVersion, error) {
+func (f *fakeDriftRepo) LatestAppliedVersion(_ context.Context, _ string) (*model.ConfigVersion, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.listErr != nil {
