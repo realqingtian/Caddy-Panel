@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 
 import {
   ApiOutlined,
@@ -16,10 +16,11 @@ import {
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { App, Button, Dropdown, Layout, Menu, Segmented } from 'antd'
+import { App, Button, Dropdown, Layout, Menu, Segmented, Typography, theme } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import { BrandMark } from '@/components/BrandMark'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore, type AppLocale, type ThemeMode } from '@/stores/theme'
 
@@ -31,11 +32,12 @@ const themeOptions: { value: ThemeMode; icon: ReactNode }[] = [
   { value: 'system', icon: <DesktopOutlined /> },
 ]
 
-/** 管理后台布局:Sider 导航 + Header(语言/主题/用户)。 */
+/** 管理后台布局:Sider 导航 + Header(页面标题/语言/主题/用户)。 */
 export function AdminLayout() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { token } = theme.useToken()
   const [collapsed, setCollapsed] = useState(false)
 
   const role = useAuthStore((state) => state.role)
@@ -51,13 +53,34 @@ export function AdminLayout() {
     { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
     ...(isAdmin ? [{ key: '/terminal', icon: <CodeOutlined />, label: t('menu.terminal') }] : []),
   ]
+  const pageTitle = menuItems.find((item) => item.key === location.pathname)?.label
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
-        <div className="layout-logo">{t('app.title')}</div>
+    // 应用壳:外层固定视口不滚动,Sider/Header 常驻,仅内容区独立滚动
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        style={
+          {
+            // 背景与内容区同源(token),交由亮/暗 algorithm 自适应,避免 dark 主题深藏青与中性灰内容区打架
+            background: token.colorBgContainer,
+            borderRight: `1px solid ${token.colorSplit}`,
+            height: '100vh',
+            overflowY: 'auto',
+            '--sider-trigger-bg': token.colorBgContainer,
+            '--sider-trigger-fg': token.colorTextSecondary,
+          } as CSSProperties
+        }
+      >
+        <div className="layout-logo" style={{ color: token.colorText }}>
+          <BrandMark color={token.colorPrimary} />
+          <span className={collapsed ? 'layout-logo-text collapsed' : 'layout-logo-text'}>
+            {t('app.title')}
+          </span>
+        </div>
         <Menu
-          theme="dark"
           mode="inline"
           items={menuItems}
           selectedKeys={[location.pathname]}
@@ -65,10 +88,19 @@ export function AdminLayout() {
         />
       </Sider>
       <Layout>
-        <Header className="layout-header">
+        <Header
+          className="layout-header"
+          style={{
+            background: token.colorBgContainer,
+            borderBottom: `1px solid ${token.colorSplit}`,
+          }}
+        >
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {pageTitle}
+          </Typography.Title>
           <HeaderActions />
         </Header>
-        <Content style={{ margin: 16 }}>
+        <Content style={{ margin: 16, overflowY: 'auto', minHeight: 0 }}>
           <Outlet />
         </Content>
       </Layout>
