@@ -3,6 +3,7 @@
 package service
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -11,18 +12,18 @@ type WebhookType string
 
 // 渠道类型枚举;auto = 按 URL 特征识别,识别不出按通用 JSON。
 const (
-	WebhookAuto    WebhookType = "auto"
-	WebhookFeishu  WebhookType = "feishu"
+	WebhookAuto     WebhookType = "auto"
+	WebhookFeishu   WebhookType = "feishu"
 	WebhookDingTalk WebhookType = "dingtalk"
-	WebhookWeCom   WebhookType = "wecom"
-	WebhookSlack   WebhookType = "slack"
-	WebhookDiscord WebhookType = "discord"
-	WebhookJSON    WebhookType = "json"
+	WebhookWeCom    WebhookType = "wecom"
+	WebhookSlack    WebhookType = "slack"
+	WebhookDiscord  WebhookType = "discord"
+	WebhookJSON     WebhookType = "json"
 )
 
-// webhookTypePatterns auto 模式的 URL 特征表(顺序即优先级)。
+// webhookTypePatterns auto 模式的 URL 特征表。
 var webhookTypePatterns = []struct {
-	prefix  string
+	feature string
 	typ     WebhookType
 }{
 	{"open.feishu.cn/open-apis/bot", WebhookFeishu},
@@ -38,18 +39,17 @@ func ResolveWebhookType(cfgType, url string) WebhookType {
 	switch WebhookType(cfgType) {
 	case WebhookFeishu, WebhookDingTalk, WebhookWeCom, WebhookSlack, WebhookDiscord, WebhookJSON:
 		return WebhookType(cfgType)
-	default:
-		for _, p := range webhookTypePatterns {
-			if strings.Contains(url, p.prefix) {
-				return p.typ
-			}
-		}
-		return WebhookJSON
 	}
+	for _, p := range webhookTypePatterns {
+		if strings.Contains(url, p.feature) {
+			return p.typ
+		}
+	}
+	return WebhookJSON
 }
 
 // BuildWebhookPayload 按渠道包装通知文本,返回可直接 POST 的 JSON 体。
-// json/未知渠道维持 I6 之前的原始事件 JSON(向后兼容,events 字段原样传入)。
+// json/未知渠道维持 I6 之前的原始事件 JSON(rawEventJSON 原样,向后兼容)。
 func BuildWebhookPayload(typ WebhookType, text, rawEventJSON string) string {
 	switch typ {
 	case WebhookFeishu:
@@ -67,22 +67,38 @@ func BuildWebhookPayload(typ WebhookType, text, rawEventJSON string) string {
 	}
 }
 
-// IsPlatformSuccess 解析渠道响应体判断业务是否成功
-// (HTTP 2xx 不够:飞书关键词/签名错误时仍 200,body code 非 0)。
+// IsPlatformSuccess 解析渠道响应体判断业务是否成功(HTTP 2xx 不够:
+// 飞书关键词/签名错误时仍 200 但 body code 非 0;钉钉/企微为 errcode)。
 func IsPlatformSuccess(typ WebhookType, body string) (bool, string) {
 	b := strings.TrimSpace(body)
 	switch typ {
 	case WebhookFeishu:
-		ok := strings.Contains(b, `"code":0`) && !strings.Contains(b, `"code":`+nonZeroDigit())
-		return ok, b
+		return platformCodeZero(b, "code")
 	case WebhookDingTalk, WebhookWeCom:
-		ok := strings.Contains(b, `"errcode":0`)
-		return ok, b
+		return platformCodeZero(b, "errcode")
 	default:
 		return true, b
 	}
 }
 
-// nonZeroDigit 占位辅助:飞书 code 为整数,非 0 即失败(含负数/错误码);
-// 简化判定:只要包含 "code":0 且不包含其它 code 字样。此处返回哨兵避免误判。
-func nonZeroDigit() string { return "-999999" }
+// platformCodeZero 判定 body JSON 中指定业务码字段是否为 0;非 JSON 响应视为失败。
+func platformCodeZero(body, field string) (bool, string) {
+	var m map[string]json.Number
+	if err := json.Unmarshal([]byte(body), &m); err != nil {
+		return false, body
+	}
+	code, ok := m[field]
+	if !ok {
+		return false, body
+	}
+	return code.String() == "0", body
+}
+
+// jsonString JSON 字符串转义(引号/换行等),用于手工拼装 payload。
+func jsonString(s string) string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return `""`
+	}
+	return string(b)
+}
