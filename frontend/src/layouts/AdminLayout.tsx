@@ -50,8 +50,9 @@ export function AdminLayout() {
     { key: '/config', icon: <ControlOutlined />, label: t('menu.config') },
     { key: '/logs', icon: <FileTextOutlined />, label: t('menu.logs') },
     { key: '/metrics', icon: <LineChartOutlined />, label: t('menu.metrics') },
-    { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
+    // 工具(终端)在前,系统管理(设置)置底
     ...(isAdmin ? [{ key: '/terminal', icon: <CodeOutlined />, label: t('menu.terminal') }] : []),
+    { key: '/settings', icon: <SettingOutlined />, label: t('menu.settings') },
   ]
   const pageTitle = menuItems.find((item) => item.key === location.pathname)?.label
 
@@ -100,8 +101,11 @@ export function AdminLayout() {
           </Typography.Title>
           <HeaderActions />
         </Header>
-        <Content style={{ margin: 16, overflowY: 'auto', minHeight: 0 }}>
-          <Outlet />
+        {/* key=pathname:路由切换时重新触发淡入动画(见 index.css .page-fade) */}
+        <Content style={{ padding: 16, overflowY: 'auto', minHeight: 0 }}>
+          <div key={location.pathname} className="page-fade">
+            <Outlet />
+          </div>
         </Content>
       </Layout>
     </Layout>

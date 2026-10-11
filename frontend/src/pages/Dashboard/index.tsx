@@ -5,7 +5,19 @@ import {
   MonitorOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons'
-import { Alert, Card, Col, List, Row, Space, Statistic, Tag, Typography, theme } from 'antd'
+import {
+  Alert,
+  Card,
+  Col,
+  List,
+  Row,
+  Skeleton,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+  theme,
+} from 'antd'
 import { useTranslation } from 'react-i18next'
 
 import { getStatus } from '@/api/dashboard'
@@ -94,6 +106,26 @@ export default function DashboardPage() {
         : token.colorTextSecondary,
     },
   ]
+
+  // 首次加载:统计卡与列表骨架屏(refetch 静默更新,不回骨架)
+  if (statusQuery.isPending) {
+    return (
+      <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Row gutter={16}>
+          {[0, 1, 2, 3].map((i) => (
+            <Col span={6} key={i}>
+              <Card style={{ height: '100%' }}>
+                <Skeleton active title={false} paragraph={{ rows: 2 }} />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        <Card title={t('dashboard.recentTitle')}>
+          <Skeleton active title={false} paragraph={{ rows: 4 }} />
+        </Card>
+      </Space>
+    )
+  }
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>

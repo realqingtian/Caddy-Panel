@@ -220,6 +220,16 @@
   },
   "settings": {
     "title": "Settings",
+    "tab": {
+      "general": "General",
+      "notify": "Certificates & Alerts"
+    },
+    "group": {
+      "connection": "Caddy Connection",
+      "paths": "Paths",
+      "security": "Login Security",
+      "advanced": "Advanced"
+    },
     "field": {
       "adminUrl": "Admin API URL",
       "adminBind": "Caddy admin bind (global block)",
@@ -342,7 +352,9 @@
     "warning": "Runs as the panel process user (not root); all sessions are audited",
     "connectionFailed": "Terminal connection failed",
     "closed": "Connection closed",
-    "closedBanner": "—— session ended, refresh to reopen ——"
+    "closedBanner": "—— session ended, refresh to reopen ——",
+    "connected": "Connected",
+    "reconnect": "Reconnect"
   },
   "nodes": {
     "title": "Remote Nodes",

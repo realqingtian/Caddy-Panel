@@ -168,6 +168,83 @@ body,
   gap: 12px;
 }
 
+/* 路由切换淡入动画;reduced-motion 用户直接显示 */
+.page-fade {
+  animation: page-fade 0.25s ease both;
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fade {
+    animation: none;
+  }
+}
+
+/* Web 终端:经典终端形态(始终深色),高度 = 内容区剩余(64px Header + 16px×2 内边距) */
+.terminal-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: calc(100vh - 96px);
+}
+
+.terminal-frame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+}
+
+.terminal-titlebar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #8b949e;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.terminal-title {
+  font-weight: 600;
+}
+
+.terminal-status {
+  margin-left: auto;
+}
+
+.terminal-status[data-state='open'] {
+  color: #3fb950;
+}
+
+.terminal-status[data-state='closed'] {
+  color: #f85149;
+}
+
+.terminal-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 12px;
+}
+
 /* Dashboard 统计卡:语义图标(淡色圆底)+ 标题行 */
 .stat-head {
   display: flex;

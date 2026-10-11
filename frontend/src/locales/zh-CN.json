@@ -220,6 +220,16 @@
   },
   "settings": {
     "title": "系统设置",
+    "tab": {
+      "general": "常规",
+      "notify": "证书与通知"
+    },
+    "group": {
+      "connection": "Caddy 连接",
+      "paths": "路径",
+      "security": "登录安全",
+      "advanced": "高级"
+    },
     "field": {
       "adminUrl": "Admin API 地址",
       "adminBind": "Caddy admin 监听地址(渲染全局块)",
@@ -342,7 +352,9 @@
     "warning": "终端以面板进程用户执行(非 root);所有操作均记录审计",
     "connectionFailed": "终端连接失败",
     "closed": "连接已关闭",
-    "closedBanner": "—— 会话已结束,刷新页面重新打开 ——"
+    "closedBanner": "—— 会话已结束,刷新页面重新打开 ——",
+    "connected": "已连接",
+    "reconnect": "重新连接"
   },
   "nodes": {
     "title": "远程节点",

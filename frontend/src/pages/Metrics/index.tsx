@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Alert, App, Button, Card, Segmented, Select, Space, Typography } from 'antd'
+import { Alert, App, Button, Card, Segmented, Select, Skeleton, Space, Typography } from 'antd'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -116,37 +116,43 @@ export default function MetricsPage() {
           </Space>
         }
       >
-        {metricNames.length === 0 && (
-          <Alert
-            type="info"
-            showIcon
-            message={t('metrics.emptyTitle')}
-            description={t('metrics.emptyHint')}
-          />
-        )}
-        {metricNames.length > 0 && series.length === 0 && (
-          <Alert type="info" showIcon message={t('metrics.noSeries')} />
-        )}
-        {chartData.length > 0 && (
-          <ResponsiveContainer width="100%" height={480}>
-            <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-              <XAxis dataKey="ts" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip contentStyle={{ fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              {seriesKeys.map((key, index) => (
-                <Line
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stroke={palette[index % palette.length]}
-                  dot={false}
-                  strokeWidth={2}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+        {summaryQuery.isPending ? (
+          <Skeleton active title={false} paragraph={{ rows: 6 }} />
+        ) : (
+          <>
+            {metricNames.length === 0 && (
+              <Alert
+                type="info"
+                showIcon
+                message={t('metrics.emptyTitle')}
+                description={t('metrics.emptyHint')}
+              />
+            )}
+            {metricNames.length > 0 && series.length === 0 && (
+              <Alert type="info" showIcon message={t('metrics.noSeries')} />
+            )}
+            {chartData.length > 0 && (
+              <ResponsiveContainer width="100%" height={480}>
+                <LineChart data={chartData} margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="ts" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  {seriesKeys.map((key, index) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={palette[index % palette.length]}
+                      dot={false}
+                      strokeWidth={2}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </>
         )}
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           {t('metrics.counterHint')}

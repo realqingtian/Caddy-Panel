@@ -4,14 +4,18 @@ import {
   App,
   Button,
   Card,
+  Col,
+  Divider,
   Form,
   Input,
   Modal,
   Popconfirm,
+  Row,
   Select,
   Space,
   Switch,
   Table,
+  Tabs,
   Typography,
   Upload,
 } from 'antd'
@@ -53,10 +57,18 @@ const formKeys: (keyof SettingsFormValues)[] = [
   'login_max_fails',
   'login_lock_window',
   'metrics_enabled',
+  'acme_email',
+  'notify_webhook_url',
+  'smtp_host',
+  'smtp_port',
+  'smtp_username',
+  'smtp_password',
+  'smtp_from',
+  'smtp_to',
   'global_extra',
 ]
 
-/** 系统设置页:路径/Admin 地址/登录锁定/metrics/全局片段(FR-601)。 */
+/** 系统设置页:Tab 分组(常规/证书与通知/API Token/备份),常规与通知为双列表单(FR-601)。 */
 export default function SettingsPage() {
   const { t } = useTranslation()
   const { message } = App.useApp()
@@ -149,159 +161,50 @@ export default function SettingsPage() {
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <Card title={t('settings.title')}>
+        {/* Form 包裹 Tabs:两个表单 Tab 共用一个 form 实例;forceRender 保证未激活 tab 的字段参与提交 */}
         <Form<SettingsFormValues>
           form={form}
           layout="vertical"
-          style={{ maxWidth: 640 }}
           onFinish={(values) => saveMutation.mutate(values)}
         >
-          <Form.Item
-            name="admin_url"
-            label={t('settings.field.adminUrl')}
-            extra={t('settings.hint.adminUrl')}
-          >
-            <Input placeholder="http://localhost:2019" />
-          </Form.Item>
-          <Form.Item
-            name="caddy_admin_bind"
-            label={t('settings.field.adminBind')}
-            extra={t('settings.hint.adminBind')}
-          >
-            <Input placeholder="localhost:2019" />
-          </Form.Item>
-          <Form.Item
-            name="caddyfile_path"
-            label={t('settings.field.caddyfilePath')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/etc/caddy/Caddyfile" />
-          </Form.Item>
-          <Form.Item
-            name="log_access_path"
-            label={t('settings.field.logAccess')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/data/logs/access.log" />
-          </Form.Item>
-          <Form.Item
-            name="log_error_path"
-            label={t('settings.field.logError')}
-            extra={t('settings.hint.nextOp')}
-          >
-            <Input placeholder="/data/logs/error.log" />
-          </Form.Item>
-          <Form.Item
-            name="login_max_fails"
-            label={t('settings.field.loginMaxFails')}
-            extra={t('settings.hint.immediate')}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="login_lock_window"
-            label={t('settings.field.loginLockWindow')}
-            extra={t('settings.hint.immediate')}
-          >
-            <Input placeholder="1m" />
-          </Form.Item>
-          <Form.Item
-            name="metrics_enabled"
-            label={t('settings.field.metrics')}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-          <Form.Item
-            name="global_extra"
-            label={t('settings.field.globalExtra')}
-            extra={t('settings.hint.globalExtra')}
-          >
-            <Input.TextArea rows={4} placeholder={'servers {\n\tprotocols h1 h2\n}'} />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" loading={saveMutation.isPending}>
-            {t('common.save')}
-          </Button>
+          <Tabs
+            items={[
+              {
+                key: 'general',
+                label: t('settings.tab.general'),
+                children: <GeneralPane savePending={saveMutation.isPending} />,
+              },
+              {
+                key: 'notify',
+                label: t('settings.tab.notify'),
+                forceRender: true,
+                children: <NotifyPane savePending={saveMutation.isPending} />,
+              },
+              {
+                key: 'tokens',
+                label: t('settings.tokens.title'),
+                children: (
+                  <TokensPane
+                    tokens={tokens}
+                    newTokenName={newTokenName}
+                    onNewTokenName={setNewTokenName}
+                    newTokenScope={newTokenScope}
+                    onNewTokenScope={setNewTokenScope}
+                    newTokenExpiry={newTokenExpiry}
+                    onNewTokenExpiry={setNewTokenExpiry}
+                    onCreate={() => void runCreateToken()}
+                    onDelete={(id) => void runDeleteToken(id)}
+                  />
+                ),
+              },
+              {
+                key: 'backup',
+                label: t('settings.backup.title'),
+                children: <BackupPane onRestore={restoreFile} />,
+              },
+            ]}
+          />
         </Form>
-      </Card>
-      <Card title={t('settings.backup.title')}>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Alert type="warning" showIcon message={t('settings.backup.warning')} />
-          <Space>
-            <Button onClick={() => void exportBackup()}>{t('settings.backup.export')}</Button>
-            <Upload accept=".json" showUploadList={false} beforeUpload={restoreFile}>
-              <Button danger>{t('settings.backup.restore')}</Button>
-            </Upload>
-          </Space>
-          <Typography.Text type="secondary">{t('settings.backup.hint')}</Typography.Text>
-        </Space>
-      </Card>
-      <Card
-        title={t('settings.tokens.title')}
-        extra={
-          <Space>
-            <Input
-              value={newTokenName}
-              onChange={(e) => setNewTokenName(e.target.value)}
-              placeholder={t('settings.tokens.namePlaceholder')}
-              style={{ width: 160 }}
-            />
-            <Select
-              value={newTokenScope}
-              onChange={setNewTokenScope}
-              style={{ width: 100 }}
-              options={[
-                { value: 'read', label: 'read' },
-                { value: 'write', label: 'write' },
-              ]}
-            />
-            <Input
-              value={newTokenExpiry}
-              onChange={(e) => setNewTokenExpiry(e.target.value)}
-              placeholder="720h"
-              style={{ width: 90 }}
-            />
-            <Button disabled={!newTokenName.trim()} onClick={() => void runCreateToken()}>
-              {t('settings.tokens.create')}
-            </Button>
-          </Space>
-        }
-      >
-        <Alert
-          type="info"
-          showIcon
-          message={t('settings.tokens.hint')}
-          style={{ marginBottom: 12 }}
-        />
-        <Table<ApiToken>
-          rowKey="id"
-          size="small"
-          dataSource={tokens}
-          pagination={false}
-          columns={[
-            { title: t('settings.tokens.column.name'), dataIndex: 'name' },
-            { title: t('settings.tokens.column.prefix'), dataIndex: 'prefix' },
-            { title: t('settings.tokens.column.scope'), dataIndex: 'scopes' },
-            {
-              title: t('settings.tokens.column.lastUsed'),
-              dataIndex: 'last_used_at',
-              render: (v: string | null) => (v ? new Date(v).toLocaleString() : '—'),
-            },
-            {
-              title: t('common.actions'),
-              key: 'actions',
-              render: (_: unknown, record: ApiToken) => (
-                <Popconfirm
-                  title={t('settings.tokens.deleteConfirm')}
-                  onConfirm={() => void runDeleteToken(record.id)}
-                >
-                  <Button type="link" size="small" danger>
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
-              ),
-            },
-          ]}
-        />
       </Card>
       <Modal
         open={plainToken !== null}
@@ -323,6 +226,290 @@ export default function SettingsPage() {
           {plainToken}
         </Typography.Paragraph>
       </Modal>
+    </Space>
+  )
+}
+
+/** 常规:Caddy 连接 / 路径 / 登录安全 / metrics / 全局片段,双列布局。 */
+function GeneralPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Divider titlePlacement="start">{t('settings.group.connection')}</Divider>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="admin_url"
+            label={t('settings.field.adminUrl')}
+            extra={t('settings.hint.adminUrl')}
+          >
+            <Input placeholder="http://localhost:2019" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="caddy_admin_bind"
+            label={t('settings.field.adminBind')}
+            extra={t('settings.hint.adminBind')}
+          >
+            <Input placeholder="localhost:2019" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Divider titlePlacement="start">{t('settings.group.paths')}</Divider>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="caddyfile_path"
+            label={t('settings.field.caddyfilePath')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/etc/caddy/Caddyfile" />
+          </Form.Item>
+        </Col>
+        <Col span={12} />
+        <Col span={12}>
+          <Form.Item
+            name="log_access_path"
+            label={t('settings.field.logAccess')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/data/logs/access.log" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="log_error_path"
+            label={t('settings.field.logError')}
+            extra={t('settings.hint.nextOp')}
+          >
+            <Input placeholder="/data/logs/error.log" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Divider titlePlacement="start">{t('settings.group.security')}</Divider>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="login_max_fails"
+            label={t('settings.field.loginMaxFails')}
+            extra={t('settings.hint.immediate')}
+          >
+            <Input />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="login_lock_window"
+            label={t('settings.field.loginLockWindow')}
+            extra={t('settings.hint.immediate')}
+          >
+            <Input placeholder="1m" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item name="metrics_enabled" label={t('settings.field.metrics')} valuePropName="checked">
+        <Switch />
+      </Form.Item>
+      <Divider titlePlacement="start">{t('settings.group.advanced')}</Divider>
+      <Form.Item
+        name="global_extra"
+        label={t('settings.field.globalExtra')}
+        extra={t('settings.hint.globalExtra')}
+      >
+        <Input.TextArea rows={4} placeholder={'servers {\n\tprotocols h1 h2\n}'} />
+      </Form.Item>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+/** 证书与通知:ACME 邮箱 / 到期 Webhook / SMTP 渠道(M2 起后端支持但 UI 首次补齐,见 iterations I3-4)。 */
+function NotifyPane({ savePending }: { savePending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="acme_email"
+            label={t('settings.field.acmeEmail')}
+            extra={t('settings.hint.acmeEmail')}
+          >
+            <Input placeholder="admin@example.com" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="notify_webhook_url"
+            label={t('settings.field.notifyWebhook')}
+            extra={t('settings.hint.notifyWebhook')}
+          >
+            <Input placeholder="https://example.com/hook" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Divider titlePlacement="start">{t('settings.smtp.title')}</Divider>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item name="smtp_host" label={t('settings.field.smtpHost')}>
+            <Input placeholder="smtp.example.com" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="smtp_port" label={t('settings.field.smtpPort')}>
+            <Input placeholder="465" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="smtp_username" label={t('settings.field.smtpUsername')}>
+            <Input autoComplete="off" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="smtp_password"
+            label={t('settings.field.smtpPassword')}
+            extra={t('settings.hint.smtpPassword')}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="smtp_from" label={t('settings.field.smtpFrom')}>
+            <Input placeholder="panel@example.com" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="smtp_to"
+            label={t('settings.field.smtpTo')}
+            extra={t('settings.hint.smtpTo')}
+          >
+            <Input placeholder="ops@example.com" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <SaveButton pending={savePending} />
+    </>
+  )
+}
+
+function SaveButton({ pending }: { pending: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <Button type="primary" htmlType="submit" loading={pending}>
+      {t('common.save')}
+    </Button>
+  )
+}
+
+interface TokensPaneProps {
+  tokens: ApiToken[]
+  newTokenName: string
+  onNewTokenName: (v: string) => void
+  newTokenScope: string
+  onNewTokenScope: (v: string) => void
+  newTokenExpiry: string
+  onNewTokenExpiry: (v: string) => void
+  onCreate: () => void
+  onDelete: (id: number) => void
+}
+
+/** API Token:签发 + 列表管理(仅 JWT+admin 可见,页面入口已由 RBAC 控制)。 */
+function TokensPane({
+  tokens,
+  newTokenName,
+  onNewTokenName,
+  newTokenScope,
+  onNewTokenScope,
+  newTokenExpiry,
+  onNewTokenExpiry,
+  onCreate,
+  onDelete,
+}: TokensPaneProps) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Space style={{ marginBottom: 12 }} wrap>
+        <Input
+          value={newTokenName}
+          onChange={(e) => onNewTokenName(e.target.value)}
+          placeholder={t('settings.tokens.namePlaceholder')}
+          style={{ width: 160 }}
+        />
+        <Select
+          value={newTokenScope}
+          onChange={onNewTokenScope}
+          style={{ width: 100 }}
+          options={[
+            { value: 'read', label: 'read' },
+            { value: 'write', label: 'write' },
+          ]}
+        />
+        <Input
+          value={newTokenExpiry}
+          onChange={(e) => onNewTokenExpiry(e.target.value)}
+          placeholder="720h"
+          style={{ width: 90 }}
+        />
+        <Button disabled={!newTokenName.trim()} onClick={onCreate}>
+          {t('settings.tokens.create')}
+        </Button>
+      </Space>
+      <Alert
+        type="info"
+        showIcon
+        message={t('settings.tokens.hint')}
+        style={{ marginBottom: 12 }}
+      />
+      <Table<ApiToken>
+        rowKey="id"
+        size="small"
+        dataSource={tokens}
+        pagination={false}
+        columns={[
+          { title: t('settings.tokens.column.name'), dataIndex: 'name' },
+          { title: t('settings.tokens.column.prefix'), dataIndex: 'prefix' },
+          { title: t('settings.tokens.column.scope'), dataIndex: 'scopes' },
+          {
+            title: t('settings.tokens.column.lastUsed'),
+            dataIndex: 'last_used_at',
+            render: (v: string | null) => (v ? new Date(v).toLocaleString() : '—'),
+          },
+          {
+            title: t('common.actions'),
+            key: 'actions',
+            render: (_: unknown, record: ApiToken) => (
+              <Popconfirm
+                title={t('settings.tokens.deleteConfirm')}
+                onConfirm={() => onDelete(record.id)}
+              >
+                <Button type="link" size="small" danger>
+                  {t('common.delete')}
+                </Button>
+              </Popconfirm>
+            ),
+          },
+        ]}
+      />
+    </>
+  )
+}
+
+/** 备份与恢复:导出 JSON / 导入恢复(不自动下发)。 */
+function BackupPane({ onRestore }: { onRestore: (file: UploadFile) => Promise<boolean> }) {
+  const { t } = useTranslation()
+  return (
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Alert type="warning" showIcon message={t('settings.backup.warning')} />
+      <Space>
+        <Button onClick={() => void exportBackup()}>{t('settings.backup.export')}</Button>
+        <Upload accept=".json" showUploadList={false} beforeUpload={onRestore}>
+          <Button danger>{t('settings.backup.restore')}</Button>
+        </Upload>
+      </Space>
+      <Typography.Text type="secondary">{t('settings.backup.hint')}</Typography.Text>
     </Space>
   )
 }
