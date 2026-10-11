@@ -87,7 +87,10 @@ export function AdminLayout() {
       ? [{ key: '/users', icon: <UserOutlined />, label: t('menu.users') }]
       : []),
   ]
-  const pageTitle = menuItems.find((item) => item.key === location.pathname)?.label
+  // /profile 不在侧栏菜单中,单独回退标题(I4-D4)
+  const pageTitle =
+    menuItems.find((item) => item.key === location.pathname)?.label ??
+    (location.pathname === '/profile' ? t('profile.title') : undefined)
 
   // Gravatar 镜像:登录后拉取一次设置(设置页修改后刷新页面生效)。
   useEffect(() => {

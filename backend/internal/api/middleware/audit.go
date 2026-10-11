@@ -59,11 +59,17 @@ func auditNodeID(c *gin.Context) string {
 
 // auditAction 归一化动作标识:"/api/v1/auth/login" → "auth.login";
 // 未匹配路由(FullPath 为空)退回原始路径。
+// 含路由参数的路径(如 "/users/:id")在尾部追加 HTTP 方法区分操作
+// ("users.:id.patch"/"users.:id.delete"),避免同路径不同动作无法区分(验收 I4-D15)。
 func auditAction(c *gin.Context) string {
 	path := c.FullPath()
 	if path == "" {
 		path = c.Request.URL.Path
 	}
 	path = strings.TrimPrefix(path, apiPrefix)
-	return strings.ReplaceAll(path, "/", ".")
+	action := strings.ReplaceAll(path, "/", ".")
+	if strings.Contains(path, ":") {
+		action += "." + strings.ToLower(c.Request.Method)
+	}
+	return action
 }

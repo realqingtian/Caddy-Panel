@@ -52,12 +52,13 @@ func (h *BackupHandler) Export() gin.HandlerFunc {
 
 // Restore godoc
 // @Summary 导入备份
-// @Description 事务内替换站点/版本历史/设置;不自动下发,恢复后需重新启用或下发(FR-706)
+// @Description 事务内替换站点/版本历史/设置;import_users=true 时增量导入备份中的用户与节点(同名/同 ID 跳过,不覆盖现网账号);不自动下发,恢复后需重新启用或下发(FR-706/I4-D9)
 // @Tags backup
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param body body service.BackupFile true "备份文件内容"
+// @Param import_users query bool false "同时导入 users/nodes(纯增量)" default(false)
 // @Success 200 {object} service.RestoreResult
 // @Failure 400 {object} apierr.ErrorResponse "备份格式或数据非法"
 // @Failure 401 {object} apierr.ErrorResponse
@@ -69,7 +70,7 @@ func (h *BackupHandler) Restore() gin.HandlerFunc {
 			apierr.RespondError(c, http.StatusBadRequest, apierr.CodeBadRequest, i18n.MsgBadRequest, nil, err.Error())
 			return
 		}
-		result, err := h.backup.Restore(c.Request.Context(), &file)
+		result, err := h.backup.Restore(c.Request.Context(), &file, c.Query("import_users") == "true")
 		if err != nil {
 			var invalid *service.InvalidInputError
 			if errors.As(err, &invalid) {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
+  AutoComplete,
   App,
   Button,
   Card,
@@ -22,6 +23,8 @@ import {
 import { useEffect, useState } from 'react'
 import type { UploadFile } from 'antd'
 import { useTranslation } from 'react-i18next'
+
+import { useLocaleTag } from '@/hooks/useLocale'
 
 import { apiErrorMessage } from '@/api/auth'
 import { getSettings, updateSettings, type Settings } from '@/api/config'
@@ -233,6 +236,15 @@ export default function SettingsPage() {
   )
 }
 
+// Gravatar 镜像预设(I4-D3):空 = 官方源;须兼容 Gravatar URL 协议
+const GRAVATAR_PRESETS = [
+  'https://gravatar.com',
+  'https://gravatar.qingtian.dev',
+  'https://cravatar.cn',
+  'https://weavatar.com',
+  'https://loli.net',
+]
+
 /** 常规:Caddy 连接 / 路径 / 登录安全 / metrics / 全局片段,双列布局。 */
 function GeneralPane({ savePending }: { savePending: boolean }) {
   const { t } = useTranslation()
@@ -314,6 +326,23 @@ function GeneralPane({ savePending }: { savePending: boolean }) {
       <Form.Item name="metrics_enabled" label={t('settings.field.metrics')} valuePropName="checked">
         <Switch />
       </Form.Item>
+      <Divider titlePlacement="start">{t('settings.group.avatar')}</Divider>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="gravatar_mirror_url"
+            label={t('settings.field.gravatarMirror')}
+            extra={t('settings.hint.gravatarMirror')}
+          >
+            <AutoComplete
+              options={GRAVATAR_PRESETS.map((url) => ({ value: url }))}
+              placeholder="https://gravatar.com"
+              allowClear
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12} />
+      </Row>
       <Divider titlePlacement="start">{t('settings.group.advanced')}</Divider>
       <Form.Item
         name="global_extra"
@@ -432,6 +461,7 @@ function TokensPane({
   onDelete,
 }: TokensPaneProps) {
   const { t } = useTranslation()
+  const localeTag = useLocaleTag()
   return (
     <>
       <Space style={{ marginBottom: 12 }} wrap>
@@ -478,7 +508,7 @@ function TokensPane({
           {
             title: t('settings.tokens.column.lastUsed'),
             dataIndex: 'last_used_at',
-            render: (v: string | null) => (v ? new Date(v).toLocaleString() : '—'),
+            render: (v: string | null) => (v ? new Date(v).toLocaleString(localeTag) : '—'),
           },
           {
             title: t('common.actions'),

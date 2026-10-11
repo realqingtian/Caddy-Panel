@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import {
   Button,
@@ -56,15 +56,30 @@ export default function UsersPage() {
     setDrawerOpen(true)
   }
 
-  const onDelete = async (user: UserView) => {
-    try {
-      await deleteUser(user.id)
-      void message.success(t('users.msg.deleted'))
-      refresh()
-    } catch (error) {
-      message.error(apiErrorMessage(error, t('users.msg.deleted')))
-    }
-  }
+  const onDelete = useCallback(
+    async (user: UserView) => {
+      try {
+        await deleteUser(user.id)
+        void message.success(t('users.msg.deleted'))
+        refresh()
+      } catch (error) {
+        message.error(apiErrorMessage(error, t('users.msg.deleted')))
+      }
+    },
+    [message, t, refresh],
+  )
+
+  const toggleDisable = useCallback(
+    async (record: UserView, disabled: boolean) => {
+      try {
+        await updateUser(record.id, { disabled })
+        refresh()
+      } catch (error) {
+        message.error(apiErrorMessage(error, t('users.msg.saved')))
+      }
+    },
+    [message, t, refresh],
+  )
 
   const columns: ColumnsType<UserView> = useMemo(
     () => [
@@ -157,17 +172,8 @@ export default function UsersPage() {
         ),
       },
     ],
-    [t, me.userID],
+    [t, me.userID, onDelete, toggleDisable],
   )
-
-  const toggleDisable = async (record: UserView, disabled: boolean) => {
-    try {
-      await updateUser(record.id, { disabled })
-      refresh()
-    } catch (error) {
-      message.error(apiErrorMessage(error, t('users.msg.saved')))
-    }
-  }
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"time"
 	"strings"
 
 	"caddy-panel/backend/internal/caddy"
@@ -170,4 +171,37 @@ func routeFingerprint(raw json.RawMessage) (string, error) {
 		parts = append(parts, fmt.Sprintf("%s(%d)", k, hosts[k]))
 	}
 	return strings.Join(parts, "; "), nil
+}
+
+// Repair 当 DB 渲染产物与磁盘一致、而 Caddy 运行态落后(如 caddy 容器重启丢失配置)时,
+// 自动重新下发 DB 渲染产物恢复事实源(I4-D16:重启后面板域名不可达且无法自助恢复)。
+// DB 与磁盘不一致时不做任何动作 —— 那种漂移必须由人工判断来源。
+func (c *DriftChecker) Repair(ctx context.Context) (bool, error) {
+	// caddy 与 panel 同批启动,admin 端口就绪有先后:有限次等待后再判定(否则首查不可达即放弃)。
+	var report *DriftReport
+	for attempt := 0; ; attempt++ {
+		report = c.Check(ctx)
+		if report.CaddyReachable || attempt >= 9 {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return false, ctx.Err()
+		case <-time.After(3 * time.Second):
+		}
+	}
+	if !report.CaddyReachable || !report.HasApplied || report.InSync {
+		return false, nil
+	}
+	if report.DbVsDisk == nil || !report.DbVsDisk.InSync {
+		return false, nil
+	}
+	rendered, ok := c.dbRendered(ctx)
+	if !ok {
+		return false, nil
+	}
+	if _, err := c.pipeline.DeployRenderedOn(ctx, model.NodeIDLocal, rendered, caddy.OpDeploy); err != nil {
+		return false, fmt.Errorf("重启自愈下发: %w", err)
+	}
+	return true, nil
 }

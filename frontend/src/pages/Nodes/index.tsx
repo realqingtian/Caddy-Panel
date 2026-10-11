@@ -17,6 +17,8 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useLocaleTag } from '@/hooks/useLocale'
+
 import { apiErrorMessage } from '@/api/auth'
 import {
   createEnrollToken,
@@ -33,11 +35,12 @@ import {
 const { Paragraph, Text } = Typography
 
 /** 时间本地化展示;空值占位。 */
-const formatTime = (v: string) => new Date(v).toLocaleString()
+const formatTimeLocaled = (v: string, locale: string) => new Date(v).toLocaleString(locale)
 
 /** 节点管理页:节点列表、接入向导(令牌 + 安装命令)与令牌管理。 */
 export default function NodesPage() {
   const { t } = useTranslation()
+  const localeTag = useLocaleTag()
   const { message } = App.useApp()
   const queryClient = useQueryClient()
 
@@ -73,7 +76,7 @@ export default function NodesPage() {
     {
       title: t('nodes.field.lastSeen'),
       dataIndex: 'last_seen_at',
-      render: (v: string | null) => (v ? formatTime(v) : '-'),
+      render: (v: string | null) => (v ? formatTimeLocaled(v, localeTag) : '-'),
     },
     {
       title: t('common.actions'),
@@ -115,7 +118,7 @@ export default function NodesPage() {
     {
       title: t('nodes.enroll.expiresAt'),
       dataIndex: 'expires_at',
-      render: (v: string) => formatTime(v),
+      render: (v: string) => formatTimeLocaled(v, localeTag),
     },
     {
       title: t('common.actions'),

@@ -7,9 +7,9 @@
 
 ## 1. 当前状态
 
-**阶段:🎯 M4(用户系统)设计定稿 —— T4.1–T4.6 待开工(2026-10-11 设计评审完成)。**
-M0–M3 已交付(任务表与决策已归档);迭代 I1–I3(UI 走查/布局壳/体验打磨)已完成 ✅(明细见 iterations.md)。
-M4 设计见 [m4-users-design.md](./m4-users-design.md):本地多用户 + 权限点矩阵 + 可吊销会话 + TOTP 2FA。
+**阶段:✅ 迭代 I4(全项目全面验收)完成(2026-10-11);看板空闲。**
+M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺陷(D1–D16)全部修复并在验收服务器回归通过。
+服务器部署形态已升级:数据卷 bind mount 化(`/opt/caddy-panel/data/`)+ caddy/panel 用户权限对齐(见 ops/server.md)。
 
 ## 2. 里程碑总览
 
@@ -38,7 +38,7 @@ M4 设计见 [m4-users-design.md](./m4-users-design.md):本地多用户 + 权限
 
 | 迭代 | 任务 | 状态 | 备注 |
 | --- | --- | --- | --- |
-| — | 暂无进行中迭代 | — | 下一看板任务为 M4 T4.1 |
+| I4 | 全项目全面验收:界面轨(全部页面 × 中英 × 亮暗)+ 功能轨(M1–M4 全部 FR 逐条对 PRD 验收标准);缺陷分级修复后回归 | ✅ | 2026-10-11 | 环境:验收服务器 caddy-panel.realqingtian.com;16 缺陷(D1–D16)修复清零,回归全过;部署形态升级 bind mount(见决策日志) |
 
 ## 4. 决策日志(活跃期)
 
@@ -46,6 +46,7 @@ M4 设计见 [m4-users-design.md](./m4-users-design.md):本地多用户 + 权限
 
 | 日期 | 决策 | 理由摘要 |
 | --- | --- | --- |
+| 2026-10-11 | **迭代 I4 全项目全面验收通过**(界面轨 12 页 × 中英 × 亮暗;功能轨 M1 认证锁定/退出吊销/站点三类型/回滚直编/漂移、M2 健康/监控/证书/访问控制/导入/备份、M3 Token RBAC/终端/Agent 全链路/l4、M4 用户系统 V0–V28 抽样)。**发现并修复 16 项缺陷**:严重 —— D2 日志页跨容器权限不可读(部署 caddy/panel uid 对齐 + 后端可读错误 + 前端错误 Alert 三层)/D3 Gravatar 镜像设置 UI 从未渲染(补表单)/D5 证书状态路径差一层 caddy/(compose env 指向卷内 storage 根)/D12 手动上传证书写只读卷(独立 cert-uploads 共享卷 + PANEL_CERT_UPLOAD_PATH)/D13 上游状态前后端契约断裂永远为空(后端归一化包装)/D14 l4 UDP 透传无响应(caddy-l4 按上游 dial 前缀解析网络,渲染补 udp/ 前缀;M3 验收"Docker Desktop 限制"归因有误,服务器容器内实测定位)/D16 caddy 重启后入口站点丢失面板不可达(启动漂移检测 DB/磁盘一致而运行态落后时自动重下发恢复事实源);一般 —— D1 时间格式不随界面语言(4 处 toLocaleString 补 locale)/D9 备份不含用户体系与节点(**用户拍板扩展 v2**:BackupFile 含 users/nodes,恢复为纯增量 upsert 绝不覆盖现网账号,`import_users=true` 显式开启)/D15 审计 action 含 :id 字面量(参数段路径追加 HTTP 方法);建议 —— D4 Profile 页标题缺失/D8 useMemo 缺依赖/D10 metrics 开启需重新下发的引导文案/D11 回滚确认追加入口站点失联警告。**两项用户拍板**:备份扩展 users+nodes(推荐项);服务器数据卷迁 bind mount 并入 S5 部署。教训留痕:验收脚本回滚用例曾误选最旧版本(https_redirect=false)致入口 443 中断(行为正确,恢复靠 PUT 站点);2FA 回归脚本未保存恢复码致 admin 锁定,直改 panel.db 解锁(登记 DEPLOY-LOG) | 用户要求"全面验收+修复+回归";16 项全部当场修复并回归;已知限制:caddy 单独重启(panel 不重启)不触发自愈,按仪表盘告警手工重新下发 |
 | 2026-10-11 | **M4 用户系统四项关键决策拍板**:①路线 A 自建本地用户系统(否决独立 IdP/OIDC 外接,保持一键部署);②权限粒度走**权限点矩阵 + 三级内置角色**(admin=*,editor 中间层,viewer 只读;不做自定义角色,users:manage 与 terminal:use 为 admin 硬规则);③JWT 升级为**有状态可吊销会话**(sessions 表 + sid claim 双检,改密/禁用即刻踢人);④本期纳入 **TOTP 2FA**(pquerna/otp,自助绑定 + 恢复码,解绑需密码+验证码) | 用户确认(A/细粒度/有状态/本期 2FA);M3 的 admin/viewer 硬编码判断全面改造为权限点;设计固化进 m4-users-design.md |
 | 2026-10-11 | 进度文档重构:已完成里程碑/历史决策归档至 docs/archive/completed-milestones.md,progress.md 瘦身为活跃看板 + 当前决策(新需求/迭代/优化/bug 修复管理);**归档铁律:以完整需求单元(里程碑/迭代/需求)整体迁移,任务表+相关决策+验收记录同进同出,禁止拆散** | 用户提出并强调;降低信噪比,活跃文档聚焦"接下来做什么";防拆散保证历史记录可整体追溯 |
 | 2026-10-11 | 迭代明细文档并入归档体系:iterations.md 整体迁入 docs/archive/(I1–I3 均已完成,本身即历史记录);新制度:进行中迭代的明细写在 progress.md 迭代看板下方,完成时整段迁入 archive/iterations.md —— 与"整单元迁移"铁律一致,活跃文档区收敛为 progress/requirements/tech-stack/project-structure/m4-users-design 五份 | 用户提出"iterations.md 是否可省";文档只保留"活跃"与"归档"两层,不再有中间层 |

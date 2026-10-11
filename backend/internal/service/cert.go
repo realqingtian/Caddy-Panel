@@ -15,15 +15,28 @@ import (
 	"caddy-panel/backend/internal/store"
 )
 
-// CertService 证书状态查询。
+// CertService 证书状态查询与手动上传。
 type CertService struct {
 	storagePathFn func() string
-	siteRepo      SiteRepo
+	// UploadPathFn 手动上传证书目录;nil 或返回空时回落 storagePathFn。
+	// 容器部署两者必须同时满足 Panel 可写且 Caddy 可读(共享卷;I4-D12)。
+	UploadPathFn func() string
+	siteRepo     SiteRepo
 }
 
 // NewCert 构造证书查询服务。
 func NewCert(storagePathFn func() string, siteRepo SiteRepo) *CertService {
 	return &CertService{storagePathFn: storagePathFn, siteRepo: siteRepo}
+}
+
+// uploadRoot 手动上传证书的根目录。
+func (s *CertService) uploadRoot() string {
+	if s.UploadPathFn != nil {
+		if p := s.UploadPathFn(); p != "" {
+			return p
+		}
+	}
+	return s.storagePathFn()
 }
 
 // DomainCertStatus 单域名证书状态。

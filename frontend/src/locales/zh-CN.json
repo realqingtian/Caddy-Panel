@@ -221,7 +221,7 @@
     "saveConfirm": "确认保存?校验通过后立即热加载生效",
     "rollbackSuccess": "已回滚并生成新版本记录",
     "rollbackFailed": "回滚失败",
-    "rollbackConfirm": "确认回滚到此版本?线上配置将恢复为该版本内容"
+    "rollbackConfirm": "确认回滚到此版本?线上配置将恢复为该版本内容。若该版本不含面板入口站点、或关闭了其自动 HTTPS,回滚后面板域名可能无法访问,需通过服务器本地端口恢复。"
   },
   "settings": {
     "title": "系统设置",
@@ -233,7 +233,8 @@
       "connection": "Caddy 连接",
       "paths": "路径",
       "security": "登录安全",
-      "advanced": "高级"
+      "advanced": "高级",
+      "avatar": "头像与 Gravatar"
     },
     "field": {
       "adminUrl": "Admin API 地址",
@@ -310,7 +311,8 @@
     "missing": "日志文件尚未生成",
     "missingHint": "未找到 {{path}};产生访问/错误日志后此处会自动显示内容",
     "truncated": "文件较大,仅展示末尾部分",
-    "empty": "(暂无内容)"
+    "empty": "(暂无内容)",
+    "loadFailed": "日志读取失败"
   },
   "dashboard": {
     "stat": {
@@ -348,7 +350,7 @@
     "promConfig": "生成 Prometheus 配置",
     "promConfigTitle": "Prometheus 抓取配置示例",
     "emptyTitle": "暂无监控数据",
-    "emptyHint": "在设置页开启 metrics 端点后,面板每 15 秒抓取一次 Caddy 指标,数据保留 24 小时",
+    "emptyHint": "在设置页开启 metrics 端点后,面板每 15 秒抓取一次 Caddy 指标,数据保留 24 小时;若刚开启,需对任意站点重新保存(或回滚/直编一次)触发重新下发,metrics 才会写入 Caddy 全局块。",
     "noSeries": "当前指标在所选窗口内无数据",
     "counterHint": "counter 类型指标为累计值;开启抓取约 15 分钟后曲线可见",
     "loadFailed": "加载失败"

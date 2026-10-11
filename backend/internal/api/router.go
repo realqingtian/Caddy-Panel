@@ -163,9 +163,13 @@ func New(deps Deps) *gin.Engine {
 		},
 	})
 	sites := handler.NewSite(siteSvc)
-	certHandler := handler.NewCert(service.NewCert(func() string {
+	certSvc := service.NewCert(func() string {
 		return deps.Cfg.CertStoragePath
-	}, deps.Store))
+	}, deps.Store)
+	// 手动上传目录独立配置:容器部署指向 panel 可写且 caddy 可读的共享卷(I4-D12);
+	// 单机部署 env 留空时回落 CertStoragePath(与 caddy 同机可读)。
+	certSvc.UploadPathFn = func() string { return deps.Cfg.CertUploadPath }
+	certHandler := handler.NewCert(certSvc)
 	sitesRead := readPerm(model.PermSitesRead)
 	sitesWrite := writePerm(model.PermSitesWrite)
 	sitesWrite.POST("/sites", sites.Create())

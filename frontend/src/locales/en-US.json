@@ -221,7 +221,7 @@
     "saveConfirm": "Save now? It will be validated and hot-reloaded immediately",
     "rollbackSuccess": "Rolled back and a new version was recorded",
     "rollbackFailed": "Rollback failed",
-    "rollbackConfirm": "Roll back to this version? Live config will be restored to its content"
+    "rollbackConfirm": "Roll back to this version? Live config will be restored to its contentIf this version does not include the panel entry site or turns off its automatic HTTPS, the panel domain may become unreachable after rollback; recover via the server's local port."
   },
   "settings": {
     "title": "Settings",
@@ -233,7 +233,8 @@
       "connection": "Caddy Connection",
       "paths": "Paths",
       "security": "Login Security",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "avatar": "Avatar & Gravatar"
     },
     "field": {
       "adminUrl": "Admin API URL",
@@ -310,7 +311,8 @@
     "missing": "Log file not generated yet",
     "missingHint": "{{path}} not found; content appears here once access/error logs are produced",
     "truncated": "File is large, showing the tail only",
-    "empty": "(empty)"
+    "empty": "(empty)",
+    "loadFailed": "Failed to load logs"
   },
   "dashboard": {
     "stat": {
@@ -348,7 +350,7 @@
     "promConfig": "Prometheus config",
     "promConfigTitle": "Prometheus scrape config example",
     "emptyTitle": "No metrics yet",
-    "emptyHint": "Enable the metrics endpoint in Settings; the panel scrapes Caddy every 15s and keeps 24h of data",
+    "emptyHint": "After enabling the metrics endpoint in Settings, the panel scrapes Caddy metrics every 15s (kept 24h). If just enabled, re-save any site (or rollback/direct-edit once) to trigger a re-deploy so metrics are written into the Caddy global block.",
     "noSeries": "No data for this metric in the selected window",
     "counterHint": "Counters are cumulative; curves appear after ~15 minutes of scraping",
     "loadFailed": "Load failed"

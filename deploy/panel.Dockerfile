@@ -31,7 +31,7 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest \
 # ---------- 阶段 3:运行时(目标平台) ----------
 FROM alpine:3
 RUN apk add --no-cache ca-certificates tzdata \
-  && addgroup -S panel && adduser -S panel -G panel \
+  && addgroup -g 101 -S panel && adduser -S -u 100 -G panel panel \
   && mkdir -p /data && chown -R panel:panel /data
 COPY --from=backend /out/panel /usr/local/bin/panel
 USER panel

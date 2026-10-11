@@ -113,12 +113,22 @@ func funcMap() template.FuncMap {
 }
 
 // toL4Route l4 站点 → layer4 块数据;network 空值归一 tcp。
+// UDP 上游必须带 "udp/" 网络前缀:caddy-l4 按上游 dial 地址解析拨号网络,
+// 无前缀默认 tcp —— UDP 透传会退化成 TCP 拨号而永远无响应(验收 I4-D14 实测)。
 func toL4Route(site model.Site) L4Route {
 	network := site.L4Network
 	if network == "" {
 		network = model.L4NetworkTCP
 	}
-	return L4Route{Network: network, Listen: site.L4Listen, Upstreams: splitList(site.L4Upstreams)}
+	upstreams := splitList(site.L4Upstreams)
+	if network == model.L4NetworkUDP {
+		for i, u := range upstreams {
+			if !strings.HasPrefix(u, "udp/") && !strings.HasPrefix(u, "tcp/") {
+				upstreams[i] = "udp/" + u
+			}
+		}
+	}
+	return L4Route{Network: network, Listen: site.L4Listen, Upstreams: upstreams}
 }
 
 // toTmplSite 领域模型 → 模板数据;所有语法相关加工集中在这里。

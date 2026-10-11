@@ -127,6 +127,17 @@ func run() error {
 	// 启动漂移检测(FR-202):结果日志留痕;Dashboard 每次访问都会实时复核。
 	go func() {
 		checker := service.NewDriftChecker(st, pipeline, caddyfilePathFn)
+		// 运行态落后(如 caddy 容器重启丢配置)而 DB/磁盘一致时自动恢复事实源,
+		// 否则面板域名可能不可达、管理员无法进入面板重新下发(I4-D16)。
+		repaired, err := checker.Repair(ctx)
+		if err != nil {
+			slog.Warn("启动漂移检测:自愈下发失败,请在仪表盘查看差异来源", "error", err)
+			return
+		}
+		if repaired {
+			slog.Info("启动漂移检测:Caddy 运行态落后于 DB,已自动重新下发恢复")
+			return
+		}
 		report := checker.Check(ctx)
 		switch {
 		case !report.CaddyReachable:

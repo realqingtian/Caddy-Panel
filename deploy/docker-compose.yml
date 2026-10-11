@@ -1,3 +1,14 @@
+# 数据布局(2026-10-11 I4 验收后定稿):
+#   全部持久化数据落在 compose 文件同级的 ./data/ 下(bind mount,便于备份与巡检;
+#   由 named volume 迁移的部署见 ops/DEPLOY-LOG 的一次性迁移步骤)。
+#   ./data/panel        panel 数据库/渲染产物/头像(uid 100)
+#   ./data/caddy        Caddy 证书存储(storage 根在其 caddy/ 子目录,uid 100)
+#   ./data/caddy-config Caddy autosave(uid 100)
+#   ./data/logs         访问/错误日志(caddy 写、panel 读,双方 uid 均为 100 → 0600 可读,I4-D2)
+#   ./data/cert-uploads 手动上传证书(panel 写、caddy 读,I4-D12)
+# 权限约束:caddy 以 user "100:101" 运行(与 panel 镜像内用户一致),绑定 <1024 端口
+#   依赖下方 cap_add NET_BIND_SERVICE;首次部署或迁移后需一次性:
+#   chown -R 100:101 ./data/{caddy,caddy-config,logs,cert-uploads}
 services:
   caddy:
     # 带插件镜像(GH Actions 构建推 GHCR,服务器 pull 部署);
@@ -7,6 +18,10 @@ services:
       context: .
       dockerfile: caddy/Dockerfile
     restart: unless-stopped
+    # 与 panel 容器内用户(uid/gid 100:101)对齐:写出的日志/证书文件 0600 对 panel 可读(I4-D2)
+    user: "100:101"
+    cap_add:
+      - NET_BIND_SERVICE
     ports:
       - "80:80"
       - "443:443"
@@ -16,10 +31,12 @@ services:
       - "15353:15353/udp"
     volumes:
       - ./caddy/Caddyfile.initial:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-      # 访问/错误日志卷,与 panel 共享以支撑日志 tail(FR-501)
-      - caddy_logs:/data/logs
+      - ./data/caddy:/data
+      - ./data/caddy-config:/config
+      # 访问/错误日志,与 panel 共享以支撑日志 tail(FR-501)
+      - ./data/logs:/data/logs
+      # 手动上传证书(panel 写 / caddy 读;渲染 tls 指令用同一绝对路径,I4-D12)
+      - ./data/cert-uploads:/cert-data
 
   panel:
     # 面板镜像(GH Actions 构建推 GHCR);build 段保留为本地构建备选。
@@ -51,7 +68,11 @@ services:
       PANEL_JWT_TTL: "${PANEL_JWT_TTL:-24h}"
       PANEL_LOGIN_MAX_FAILS: "${PANEL_LOGIN_MAX_FAILS:-5}"
       PANEL_LOGIN_LOCK_WINDOW: "${PANEL_LOGIN_LOCK_WINDOW:-1m}"
-      PANEL_CERT_STORAGE_PATH: "${PANEL_CERT_STORAGE_PATH:-/data/caddy}"
+      # Caddy 证书存储根:panel 把 caddy 数据卷挂到 /data/caddy,
+      # Caddy 的 storage 根在卷内 caddy/ 子目录 → 必须指到 /data/caddy/caddy(I4-D5)
+      PANEL_CERT_STORAGE_PATH: "${PANEL_CERT_STORAGE_PATH:-/data/caddy/caddy}"
+      # 手动上传证书目录:cert-uploads 卷,panel 可写、caddy 同路径只读可读(I4-D12)
+      PANEL_CERT_UPLOAD_PATH: "${PANEL_CERT_UPLOAD_PATH:-/cert-data}"
       # 容器内部布局(卷对应,勿改):DB/Caddyfile/日志路径。
       PANEL_DB_PATH: "/data/panel.db"
       PANEL_CADDYFILE_PATH: "/data/Caddyfile"
@@ -60,13 +81,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - panel_data:/data
-      - caddy_logs:/data/logs
+      - ./data/panel:/data
+      - ./data/logs:/data/logs
       # 证书状态查看(FR-308):只读共享 Caddy 证书存储
-      - caddy_data:/data/caddy:ro
-
-volumes:
-  caddy_data:
-  caddy_config:
-  caddy_logs:
-  panel_data:
+      - ./data/caddy:/data/caddy:ro
+      # 手动上传证书(panel 侧可写)
+      - ./data/cert-uploads:/cert-data

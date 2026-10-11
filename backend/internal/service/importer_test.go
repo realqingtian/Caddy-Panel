@@ -140,7 +140,7 @@ func TestBackupExportAndRestore(t *testing.T) {
 	// 清空后恢复。
 	_ = repo.ReplaceAllSites(ctx, nil)
 	_ = repo.ReplaceConfigVersions(ctx, nil)
-	result, err := svc.Restore(ctx, file)
+	result, err := svc.Restore(ctx, file, false)
 	if err != nil {
 		t.Fatalf("恢复失败: %v", err)
 	}
@@ -154,7 +154,86 @@ func TestBackupExportAndRestore(t *testing.T) {
 	// 版本不兼容拒绝。
 	bad := *file
 	bad.Version = 99
-	if _, err := svc.Restore(ctx, &bad); err == nil {
+	if _, err := svc.Restore(ctx, &bad, false); err == nil {
 		t.Fatal("未知版本应拒绝")
+	}
+}
+
+// backupDataFakeRepo 在站点 fake 之上补用户/节点内存存储(I4-D9 导入语义测试)。
+type backupDataFakeRepo struct {
+	*fakeSiteRepo
+	users map[string]bool
+	nodes map[string]bool
+}
+
+func newBackupDataFakeRepo() *backupDataFakeRepo {
+	return &backupDataFakeRepo{fakeSiteRepo: newFakeSiteRepo(), users: map[string]bool{}, nodes: map[string]bool{}}
+}
+
+func (f *backupDataFakeRepo) ListAllUsers(_ context.Context) ([]model.User, error) {
+	return nil, nil
+}
+
+func (f *backupDataFakeRepo) ListAllNodes(_ context.Context) ([]model.Node, error) {
+	return nil, nil
+}
+
+func (f *backupDataFakeRepo) HasUserIncludingDeleted(_ context.Context, username string) (bool, error) {
+	return f.users[username], nil
+}
+
+func (f *backupDataFakeRepo) CreateUserFromBackup(_ context.Context, u *model.User) error {
+	f.users[u.Username] = true
+	return nil
+}
+
+func (f *backupDataFakeRepo) HasNodeByNodeID(_ context.Context, nodeID string) (bool, error) {
+	return f.nodes[nodeID], nil
+}
+
+func (f *backupDataFakeRepo) CreateNodeFromBackup(_ context.Context, n *model.Node) error {
+	f.nodes[n.NodeID] = true
+	return nil
+}
+
+// TestRestore_ImportUsersIncrementalOnlyAddsNew:v2 备份的用户/节点导入为纯增量。
+func TestRestore_ImportUsersIncrementalOnlyAddsNew(t *testing.T) {
+	repo := newBackupDataFakeRepo()
+	svc := NewBackup(repo, NewSetting(repo, map[string]string{}))
+	ctx := context.Background()
+
+	repo.users["existing"] = true
+	repo.nodes["n_existing"] = true
+	file := &BackupFile{
+		Version: backupFormatVersion,
+		Users: []UserBackup{
+			{Username: "existing", PasswordHash: "x", Role: "viewer"},
+			{Username: "newbie", PasswordHash: "x", Role: "editor"},
+		},
+		Nodes: []NodeBackup{
+			{NodeID: "n_existing", Name: "old", SecretHash: "h", SecretPrefix: "cnd_"},
+			{NodeID: "n_new", Name: "fresh", SecretHash: "h", SecretPrefix: "cnd_"},
+		},
+	}
+
+	result, err := svc.Restore(ctx, file, true)
+	if err != nil {
+		t.Fatalf("导入失败: %v", err)
+	}
+	if result.UsersImported != 1 || result.UsersSkipped != 1 || result.NodesImported != 1 || result.NodesSkipped != 1 {
+		t.Fatalf("增量计数不符: %+v", result)
+	}
+	if !repo.users["newbie"] || repo.users["existing"] == false {
+		t.Fatalf("用户导入状态不符: %v", repo.users)
+	}
+
+	// 默认不导入。
+	repo2 := newBackupDataFakeRepo()
+	svc2 := NewBackup(repo2, NewSetting(repo2, map[string]string{}))
+	if _, err := svc2.Restore(ctx, file, false); err != nil {
+		t.Fatalf("恢复失败: %v", err)
+	}
+	if len(repo2.users) != 0 || len(repo2.nodes) != 0 {
+		t.Fatalf("import_users=false 不应导入用户/节点")
 	}
 }

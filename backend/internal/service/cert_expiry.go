@@ -36,7 +36,7 @@ func (s *CertService) UploadCertificate(ctx context.Context, siteID uint, certPE
 		return nil, &InvalidInputError{Reason: fmt.Sprintf("证书或私钥非法/不匹配: %v", err)}
 	}
 
-	root := s.storagePathFn()
+	root := s.uploadRoot()
 	dir := filepath.Join(root, certUploadDir, fmt.Sprintf("%d", siteID))
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("创建证书目录: %w", err)

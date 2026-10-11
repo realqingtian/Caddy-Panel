@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+
+import { useLocaleTag } from '@/hooks/useLocale'
 import {
   CodeOutlined,
   GlobalOutlined,
@@ -26,6 +28,7 @@ import type { ReactNode } from 'react'
 /** Dashboard:运行状态卡片 + 漂移告警 + 最近下发(FR-201/202)。 */
 export default function DashboardPage() {
   const { t } = useTranslation()
+  const localeTag = useLocaleTag()
   const { token } = theme.useToken()
   const statusQuery = useQuery({ queryKey: ['status'], queryFn: getStatus, refetchInterval: 10000 })
   const status = statusQuery.data
@@ -214,7 +217,7 @@ export default function DashboardPage() {
                   <Tag color="red">{t('config.status.failed')}</Tag>
                 )}
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  {new Date(version.created_at).toLocaleString()}
+                  {new Date(version.created_at).toLocaleString(localeTag)}
                 </Typography.Text>
                 {version.error_msg && (
                   <Typography.Text type="danger" style={{ fontSize: 12 }}>

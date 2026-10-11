@@ -4,6 +4,8 @@ import { DiffEditor } from '@monaco-editor/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useLocaleTag } from '@/hooks/useLocale'
+
 import { apiErrorMessage } from '@/api/auth'
 import {
   getCurrentCaddyfile,
@@ -19,6 +21,7 @@ type EditorMode = 'preview' | 'edit'
 /** 配置中心:渲染产物预览/直编 + 版本历史 + diff + 回滚(FR-401~404)。 */
 export default function ConfigEditorPage() {
   const { t } = useTranslation()
+  const localeTag = useLocaleTag()
   const { message, notification } = App.useApp()
   const queryClient = useQueryClient()
 
@@ -165,7 +168,7 @@ export default function ConfigEditorPage() {
                 }
               >
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  {new Date(version.created_at).toLocaleString()}
+                  {new Date(version.created_at).toLocaleString(localeTag)}
                 </Typography.Text>
                 {version.status === 'failed' && version.error_msg && (
                   <Typography.Paragraph

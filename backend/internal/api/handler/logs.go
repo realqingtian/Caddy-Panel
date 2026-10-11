@@ -52,7 +52,9 @@ func (h *LogsHandler) Tail() gin.HandlerFunc {
 					i18n.MsgBadRequest, map[string]any{"reason": invalid.Reason}, invalid.Reason)
 				return
 			}
-			apierr.RespondError(c, http.StatusInternalServerError, apierr.CodeInternal, i18n.MsgInternal, nil, nil)
+			// 读取失败(常见为跨容器文件权限)返回带原因的可读消息而非笼统 500(I4-D2)
+			apierr.RespondError(c, http.StatusInternalServerError, apierr.CodeInternal,
+				i18n.MsgLogReadFailed, nil, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, result)

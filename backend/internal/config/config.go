@@ -26,7 +26,8 @@ type Config struct {
 	LoginLockWindow time.Duration // 登录锁定时长
 	LogAccessPath   string        // 访问日志路径(tail 读取目标)
 	LogErrorPath    string        // 错误日志路径(tail 读取目标)
-	CertStoragePath string        // Caddy 证书存储根目录(只读;FR-308)
+	CertStoragePath string        // Caddy 证书存储根目录(只读;FR-308)。注意:容器部署下 caddy 数据卷根 != Caddy storage 根(storage 在卷内 caddy/ 子目录),env 需指到 storage 根(I4-D5)
+	CertUploadPath  string        // 手动上传证书目录(需 Panel 可写且 Caddy 可读;空 = 回落 CertStoragePath,I4-D12)
 	PanelPublicURL  string        // 面板对外可达地址(agent 安装命令生成 ws URL 用,可在设置页覆盖)
 }
 
@@ -50,6 +51,7 @@ func Load() (*Config, error) {
 	v.SetDefault("log_access_path", "./data/access.log")
 	v.SetDefault("log_error_path", "./data/error.log")
 	v.SetDefault("cert_storage_path", "/data/caddy")
+	v.SetDefault("cert_upload_path", "")
 	v.SetDefault("panel_public_url", "")
 
 	jwtTTL, err := time.ParseDuration(v.GetString("jwt_ttl"))
@@ -80,6 +82,7 @@ func Load() (*Config, error) {
 		LogAccessPath:   v.GetString("log_access_path"),
 		LogErrorPath:    v.GetString("log_error_path"),
 		CertStoragePath: v.GetString("cert_storage_path"),
+		CertUploadPath:  v.GetString("cert_upload_path"),
 		PanelPublicURL:  v.GetString("panel_public_url"),
 	}, nil
 }

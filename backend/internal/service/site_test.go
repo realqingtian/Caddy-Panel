@@ -388,3 +388,29 @@ func TestSiteInput_BasicAuthValidation(t *testing.T) {
 		t.Fatal("非法 IP 应被拒绝")
 	}
 }
+
+// —— BackupRepo v2 扩展(用户/节点导入):站点域 fake 的 no-op 满足(I4-D9)——
+
+func (f *fakeSiteRepo) ListAllUsers(_ context.Context) ([]model.User, error) {
+	return nil, nil
+}
+
+func (f *fakeSiteRepo) ListAllNodes(_ context.Context) ([]model.Node, error) {
+	return nil, nil
+}
+
+func (f *fakeSiteRepo) HasUserIncludingDeleted(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
+func (f *fakeSiteRepo) CreateUserFromBackup(_ context.Context, _ *model.User) error {
+	return nil
+}
+
+func (f *fakeSiteRepo) HasNodeByNodeID(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
+func (f *fakeSiteRepo) CreateNodeFromBackup(_ context.Context, _ *model.Node) error {
+	return nil
+}

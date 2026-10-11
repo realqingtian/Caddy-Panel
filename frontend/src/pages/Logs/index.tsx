@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { tailLog, type LogKind, type LogTail } from '@/api/logs'
+import { apiErrorMessage } from '@/api/auth'
 import { usePolling } from '@/hooks/usePolling'
 
 const lineOptions = [100, 200, 500, 1000]
@@ -14,10 +15,17 @@ export default function LogsPage() {
   const [lines, setLines] = useState(200)
   const [paused, setPaused] = useState(false)
   const [tail, setTail] = useState<LogTail | null>(null)
+  const [loadError, setLoadError] = useState('')
 
   const { ticking } = usePolling(
     async () => {
-      setTail(await tailLog(kind, lines))
+      try {
+        setTail(await tailLog(kind, lines))
+        setLoadError('')
+      } catch (error) {
+        // 读取失败(常见为日志文件权限)必须可见而非静默显示"暂无内容"(I4-D2)
+        setLoadError(apiErrorMessage(error, t('logs.loadFailed')))
+      }
     },
     { intervalMs: 3000, paused },
   )
@@ -61,6 +69,15 @@ export default function LogsPage() {
         </Space>
       }
     >
+      {loadError && (
+        <Alert
+          type="error"
+          showIcon
+          message={t('logs.loadFailed')}
+          description={loadError}
+          style={{ marginBottom: 12 }}
+        />
+      )}
       {tail && !tail.exists && (
         <Alert
           type="warning"
