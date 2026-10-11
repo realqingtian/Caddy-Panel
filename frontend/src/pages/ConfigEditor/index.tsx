@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth'
 import { apiErrorMessage } from '@/api/auth'
 import { getCurrentCaddyfile, listVersions, saveCaddyfile, type ConfigVersion } from '@/api/config'
 import { CaddyfileEditor } from '@/components/CaddyfileEditor'
+import { useIsDarkMode } from '@/hooks/useThemeAlgorithm'
 import { SnippetPane } from './SnippetPane'
 import { VersionList } from './VersionList'
 
@@ -177,15 +178,16 @@ export default function ConfigEditorPage() {
   )
 }
 
-/** 对比视图:左侧当前产物,右侧历史版本。 */
+/** 对比视图:左侧当前产物,右侧历史版本;主题跟随面板外观。 */
 function DiffViewer({ version, current }: { version: ConfigVersion; current: string }) {
+  const isDark = useIsDarkMode()
   return (
     <DiffEditor
       height="520px"
       original={current}
       modified={version.rendered_caddyfile}
       language="caddyfile"
-      theme="vs"
+      theme={isDark ? 'vs-dark' : 'vs'}
       options={{ readOnly: true, renderSideBySide: true, automaticLayout: true }}
     />
   )

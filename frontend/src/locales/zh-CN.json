@@ -215,7 +215,10 @@
     "action": {
       "discard": "放弃",
       "exitDiff": "退出对比",
-      "editNotes": "编辑备注"
+      "editNotes": "编辑备注",
+      "saveApply": "校验并生效",
+      "diff": "对比当前",
+      "rollback": "回滚到此版"
     },
     "status": {
       "applied": "已生效",

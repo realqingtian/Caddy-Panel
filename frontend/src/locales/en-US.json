@@ -215,7 +215,10 @@
     "action": {
       "discard": "Discard",
       "exitDiff": "Exit diff",
-      "editNotes": "Edit notes"
+      "editNotes": "Edit notes",
+      "saveApply": "Validate & Apply",
+      "diff": "Diff vs current",
+      "rollback": "Rollback"
     },
     "status": {
       "applied": "applied",
