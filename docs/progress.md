@@ -7,7 +7,8 @@
 
 ## 1. 当前状态
 
-**阶段:✅ 迭代 I4(全项目全面验收)完成(2026-10-11);看板空闲。**
+**阶段:🔨 迭代 I6(通知渠道闭环+设置页重构)进行中(2026-10-11)。**
+SMTP 已验收通过;Webhook 多渠道(飞书/钉钉/企微/Slack/Discord)+ 设置页左侧分类导航重构已评审开工,设计见 [notify-channels-design.md](./notify-channels-design.md) 与 [settings-redesign.md](./settings-redesign.md)。
 M0–M4 已全部交付;I4 对全部功能与界面做了真实验收,16 项缺陷(D1–D16)全部修复并在验收服务器回归通过。
 服务器部署形态已升级:数据卷 bind mount 化(`/opt/caddy-panel/data/`)+ caddy/panel 用户权限对齐(见 ops/server.md)。
 
