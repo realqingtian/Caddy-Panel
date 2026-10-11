@@ -160,6 +160,11 @@ func (a *Auth) Login(ctx context.Context, username, password, clientIP, userAgen
 	}
 
 	if user.TOTPEnabled {
+		// 账号级二段锁定检查:错码计数绑用户名,换票据/换 IP 都不会清零(I6-M4遗留强化)。
+		params := a.lockParamsOrDefault(ctx)
+		if remain := a.guard.RemainingLock(twoFAUserKey(user.Username), params.MaxFails, params.LockWindow); remain > 0 {
+			return nil, &LockedError{RetryAfter: remain}
+		}
 		ticket, ticketErr := a.issueTwoFATicket(user.ID)
 		if ticketErr != nil {
 			return nil, ticketErr
@@ -185,12 +190,22 @@ func (a *Auth) Login2FA(ctx context.Context, ticket, code, clientIP, userAgent s
 		return nil, ErrInvalidCredentials
 	}
 	params := a.lockParamsOrDefault(ctx)
+	userKey := twoFAUserKey(user.Username)
+	if remain := a.guard.RemainingLock(userKey, params.MaxFails, params.LockWindow); remain > 0 {
+		return nil, &LockedError{RetryAfter: remain}
+	}
 	if !a.verifyTwoFACode(ctx, user, code) {
+		// 双计数:IP 防单源爆破,用户名防换源/换票据绕过(I6-M4遗留强化)。
 		a.guard.Fail(clientIP, params.MaxFails, params.LockWindow)
+		a.guard.Fail(userKey, params.MaxFails, params.LockWindow)
 		return nil, ErrInvalidTwoFACode
 	}
+	a.guard.Reset(userKey)
 	return a.issueSession(ctx, user, clientIP, userAgent)
 }
+
+// twoFAUserKey 账号级二段错码计数的 LoginGuard key(与 IP 计数共用阈值/窗口)。
+func twoFAUserKey(username string) string { return "2fa-user:" + username }
 
 // verifyIdentity 凭证校验 + 状态检查 + 锁定判定;成功返回存活用户。
 func (a *Auth) verifyIdentity(ctx context.Context, username, password, clientIP string) (*model.User, error) {

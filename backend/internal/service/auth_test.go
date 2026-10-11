@@ -1,11 +1,14 @@
 package service
 
 import (
+	"time"
+
+	otp "github.com/pquerna/otp"
+	totp "github.com/pquerna/otp/totp"
 	"context"
 	"errors"
 	"sync"
 	"testing"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -196,7 +199,7 @@ func TestLogin_InvalidSettingsFallBackToDefaults(t *testing.T) {
 		model.SettingKeyLoginMaxFails:   "not-a-number",
 		model.SettingKeyLoginLockWindow: "garbage",
 	}}
-	auth := newTestAuth(t, repo, 3, time.Minute)
+	auth := newTestAuth(t, repo, 3, 100*time.Millisecond)
 	ctx := context.Background()
 
 	for i := 0; i < 2; i++ {
@@ -215,4 +218,82 @@ func errAs(err error, target *(*LockedError)) bool {
 		return true
 	}
 	return false
+}
+
+// TestLogin2FA_FailCountBindsToUser:二段错码计数绑定用户名——
+// 连续错码达到阈值后,换新票据(甚至换 IP)二段仍被锁,直到窗口过期(I6-M4遗留强化)。
+func TestLogin2FA_FailCountBindsToUser(t *testing.T) {
+	repo := &fakeAuthRepo{}
+	auth := newTestAuth(t, repo, 3, 100*time.Millisecond)
+	ctx := context.Background()
+
+	// 启用 2FA 并注入密钥(verifyTwoFACode 走 TOTP 校验,用固定密钥出码)。
+	secret := "JBSWY3DPEHPK3PXP"
+	repo.user.TOTPEnabled = true
+	repo.user.TOTPSecret = mustEncryptTOTPSecret(t, auth, secret)
+
+	// 一段:密码正确拿票据。
+	res, err := auth.Login(ctx, "admin", "right-password", "10.0.0.1", "agent")
+	var twoFA *TwoFARequiredError
+	if !errors.As(err, &twoFA) {
+		t.Fatalf("期望进入二段,实际 %v", err)
+	}
+	_ = res
+
+	// 二段错码 3 次(阈值);票据一次性,每轮重新获取。
+	for i := 0; i < 3; i++ {
+		_, err := auth.Login(ctx, "admin", "right-password", "10.0.0.1", "agent")
+		var tf *TwoFARequiredError
+		if !errors.As(err, &tf) {
+			t.Fatalf("第 %d 轮期望进入二段,实际 %v", i+1, err)
+		}
+		if _, err := auth.Login2FA(ctx, tf.Ticket, "000000", "10.0.0.1", "agent"); err == nil {
+			t.Fatalf("错码不应成功")
+		}
+	}
+	_ = twoFA
+
+	// 换全新票据 + 换 IP:账号级锁定在一段即拦截(不发新票据)。
+	var locked *LockedError
+	if _, err = auth.Login(ctx, "admin", "right-password", "10.0.0.9", "agent"); !errors.As(err, &locked) {
+		t.Fatalf("换票据/换 IP 后应仍处账号级锁定,实际 %v", err)
+	}
+
+	// 锁定窗口过后自动恢复,正确验证码可完成登录。
+	time.Sleep(150 * time.Millisecond)
+	r2, err := auth.Login(ctx, "admin", "right-password", "10.0.0.2", "agent")
+	var tf *TwoFARequiredError
+	if !errors.As(err, &tf) {
+		t.Fatalf("窗口后期望进入二段,实际 %v", err)
+	}
+	_ = r2
+	code := currentTOTPCode(t, secret)
+	if _, err := auth.Login2FA(ctx, tf.Ticket, code, "10.0.0.2", "agent"); err != nil {
+		t.Fatalf("窗口后正确验证码应成功,实际 %v", err)
+	}
+}
+
+// currentTOTPCode 按测试密钥生成当前 TOTP 出码(RFC 6238,SHA1/6 位/30s,与生产一致)。
+func currentTOTPCode(t *testing.T, secret string) string {
+	t.Helper()
+	code, err := totp.GenerateCodeCustom(secret, time.Now(), totp.ValidateOpts{
+		Period:    30,
+		Skew:      1,
+		Digits:    otp.DigitsSix,
+		Algorithm: otp.AlgorithmSHA1,
+	})
+	if err != nil {
+		t.Fatalf("生成 TOTP 出码: %v", err)
+	}
+	return code
+}
+
+// mustEncryptTOTPSecret 用 auth 的 TOTP 服务加密 secret,模拟库内存量数据。
+func mustEncryptTOTPSecret(t *testing.T, auth *Auth, secret string) string {
+	t.Helper()
+	enc, err := auth.totp.Encrypt(secret)
+	if err != nil {
+		t.Fatalf("加密 TOTP secret: %v", err)
+	}
+	return enc
 }
